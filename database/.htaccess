@@ -1,0 +1,4 @@
+# Denegar acceso a archivos SQL
+<FilesMatch "\.(sql|bak)$">
+    Require all denied
+</FilesMatch>

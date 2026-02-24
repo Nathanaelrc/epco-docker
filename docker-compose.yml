@@ -1,0 +1,98 @@
+# =============================================
+# EPCO - Docker Compose
+# Servicios: Apache/PHP + MySQL + phpMyAdmin
+# =============================================
+
+services:
+  # =============================================
+  # Aplicación PHP/Apache
+  # =============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: epco-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./logs:/var/www/html/logs
+      - ./public/uploads:/var/www/html/public/uploads
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME:-epco}
+      - DB_USER=${DB_USER:-epco_user}
+      - DB_PASS=${DB_PASS:-EpcoSecure2026}
+      - DB_CHARSET=utf8mb4
+      - APP_ENV=${APP_ENV:-production}
+      - TZ=America/Santiago
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - epco-network
+
+  # =============================================
+  # Base de Datos MySQL
+  # =============================================
+  db:
+    image: mysql:8.0
+    container_name: epco-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-EpcoRoot2026}
+      MYSQL_DATABASE: ${DB_NAME:-epco}
+      MYSQL_USER: ${DB_USER:-epco_user}
+      MYSQL_PASSWORD: ${DB_PASS:-EpcoSecure2026}
+      TZ: America/Santiago
+    volumes:
+      - epco-db-data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-EpcoRoot2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - epco-network
+
+  # =============================================
+  # phpMyAdmin (opcional, para administrar la BD)
+  # =============================================
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: epco-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-EpcoRoot2026}
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - epco-network
+
+# =============================================
+# Volúmenes persistentes
+# =============================================
+volumes:
+  epco-db-data:
+    driver: local
+
+# =============================================
+# Red interna
+# =============================================
+networks:
+  epco-network:
+    driver: bridge

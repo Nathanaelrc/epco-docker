@@ -1,0 +1,45 @@
+# Archivos de control de versión
+.git
+.gitignore
+
+# Archivos de IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Archivos Docker (no copiar dentro del contenedor)
+docker-compose.yml
+docker-compose.override.yml
+.env
+.env.example
+Dockerfile
+.dockerignore
+
+# Documentación
+README.md
+*.md
+
+# Archivos de BD originales (se usa init.sql)
+database/schema.sql
+database/epco_complete.sql
+database/add_bulletins_table.sql
+database/add_denuncia_role.sql
+database/insert_bulletins.sql
+database/remove_chat_tables.sql
+
+# Logs (se montan como volumen)
+logs/*
+!logs/.gitkeep
+
+# Uploads (se montan como volumen)
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/documents/.gitkeep
+!public/uploads/tickets/.gitkeep
+
+# Deploy scripts (no necesarios en Docker)
+deploy/
+
+# Node modules (si existieran)
+node_modules/

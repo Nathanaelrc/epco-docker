@@ -1,0 +1,24 @@
+# Logs
+logs/*.log
+
+# Uploads
+public/uploads/documents/*
+public/uploads/tickets/*
+!public/uploads/documents/.gitkeep
+!public/uploads/tickets/.gitkeep
+
+# Environment
+.env
+
+# Vendor (optional - included for deployment ease)
+# vendor/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

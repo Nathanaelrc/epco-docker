@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0a2540" rx="50"/>
+  <text x="256" y="300" font-family="Arial, sans-serif" font-size="200" font-weight="bold" fill="white" text-anchor="middle">E</text>
+  <text x="256" y="390" font-family="Arial, sans-serif" font-size="64" font-weight="500" fill="#64b5f6" text-anchor="middle">PCO</text>
+</svg>

@@ -1,0 +1,63 @@
+# =============================================
+# EPCO - Configuración Apache (Producción)
+# URLs amigables sin extensión .php
+# =============================================
+
+RewriteEngine On
+RewriteBase /
+
+# =============================================
+# SEGURIDAD
+# =============================================
+
+Options -Indexes
+
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|sql|bak|config|env)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.(?!htaccess)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# =============================================
+# OCULTAR EXTENSIONES .PHP
+# =============================================
+
+# 1. Primero: Redirigir URLs con .php a URLs limpias (301)
+# Preserva query strings con QSA
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+([^.]+)\.php(\?[^\s]*)?\s [NC]
+RewriteRule ^ /%1 [R=301,L,QSA]
+
+# 2. No procesar archivos y directorios existentes
+RewriteCond %{REQUEST_FILENAME} -d [OR]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# 3. Añadir .php internamente si el archivo existe
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^?]*)$ $1.php [L,QSA]
+
+# =============================================
+# ERRORES
+# =============================================
+
+ErrorDocument 404 /404.php
+ErrorDocument 403 /403.php
+ErrorDocument 500 /500.php
+
+# =============================================
+# COMPRESIÓN
+# =============================================
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+</IfModule>
+
+AddDefaultCharset UTF-8
