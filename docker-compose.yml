@@ -61,11 +61,11 @@ services:
       --collation-server=utf8mb4_unicode_ci
       --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-EpcoRoot2026}"]
+      test: ["CMD", "bash", "-c", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent && mysql -u root -p$${MYSQL_ROOT_PASSWORD} -e 'SELECT 1 FROM epco.users LIMIT 1' 2>/dev/null"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 10
+      start_period: 60s
     networks:
       - epco-network
 

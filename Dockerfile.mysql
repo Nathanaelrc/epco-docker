@@ -1,9 +1,19 @@
 # =============================================
 # EPCO - MySQL Dockerfile
-# Incluye init.sql para inicialización automática
+# Incluye init.sql + entrypoint que SIEMPRE
+# verifica y crea las tablas si no existen
 # =============================================
 FROM mysql:8.0
 
-# Copiar script de inicialización dentro de la imagen
-# Se ejecuta automáticamente la primera vez que se crea el volumen
+# Copiar SQL de inicialización a dos ubicaciones:
+# 1. /docker-entrypoint-initdb.d/ - para volúmenes nuevos (comportamiento estándar)
+# 2. /sql/ - para el entrypoint custom que verifica volúmenes existentes
 COPY database/init.sql /docker-entrypoint-initdb.d/01-init.sql
+COPY database/init.sql /sql/init.sql
+
+# Copiar entrypoint personalizado que verifica tablas post-arranque
+COPY docker/mysql-entrypoint.sh /usr/local/bin/epco-entrypoint.sh
+RUN chmod +x /usr/local/bin/epco-entrypoint.sh
+
+ENTRYPOINT ["epco-entrypoint.sh"]
+CMD ["mysqld"]
