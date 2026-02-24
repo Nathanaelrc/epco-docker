@@ -1,6 +1,10 @@
 # =============================================
 # EPCO - Docker Compose
 # Servicios: Apache/PHP + MySQL + phpMyAdmin
+#
+# Los puertos se configuran via .env
+# Usar: bash start.sh (auto-detecta puertos libres)
+# O manualmente: docker compose up -d
 # =============================================
 
 services:
