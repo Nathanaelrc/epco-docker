@@ -1,0 +1,9 @@
+# =============================================
+# EPCO - MySQL Dockerfile
+# Incluye init.sql para inicialización automática
+# =============================================
+FROM mysql:8.0
+
+# Copiar script de inicialización dentro de la imagen
+# Se ejecuta automáticamente la primera vez que se crea el volumen
+COPY database/init.sql /docker-entrypoint-initdb.d/01-init.sql

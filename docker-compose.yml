@@ -36,7 +36,10 @@ services:
   # Base de Datos MySQL
   # =============================================
   db:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    image: epco-db:latest
     container_name: epco-db
     restart: unless-stopped
     ports:
@@ -49,7 +52,6 @@ services:
       TZ: America/Santiago
     volumes:
       - epco-db-data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
