@@ -62,6 +62,10 @@ RUN mkdir -p /var/www/html/logs \
 # Copiar todo el proyecto
 COPY . /var/www/html/
 
+# Copiar entrypoint
+COPY docker/app-entrypoint.sh /usr/local/bin/app-entrypoint.sh
+RUN chmod +x /usr/local/bin/app-entrypoint.sh
+
 # Establecer permisos correctos
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
@@ -74,3 +78,7 @@ EXPOSE 80
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD curl -f http://localhost/ || exit 1
+
+# Entrypoint que ajusta permisos de volúmenes montados en runtime
+ENTRYPOINT ["app-entrypoint.sh"]
+CMD ["apache2-foreground"]
