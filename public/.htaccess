@@ -7,6 +7,14 @@ RewriteEngine On
 RewriteBase /
 
 # =============================================
+# FORZAR DOMINIO (redirigir IP a dominio oficial)
+# =============================================
+RewriteCond %{HTTP_HOST} !^soporteti\.puertocoquimbo\.cl$ [NC]
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
+RewriteRule ^(.*)$ https://soporteti.puertocoquimbo.cl/$1 [R=301,L]
+
+# =============================================
 # SEGURIDAD
 # =============================================
 
