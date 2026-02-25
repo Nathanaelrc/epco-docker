@@ -1449,6 +1449,41 @@ $topActions = $pdo->query("
                 </div>
             </div>
 
+            <!-- Acciones Rápidas -->
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h5 class="chart-title mb-3">Acciones Rápidas</h5>
+                        <div class="row g-3">
+                            <div class="col-lg-3 col-md-6">
+                                <a href="?page=nuevo_ticket" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-plus-lg" style="color:var(--primary-dark)"></i></div>
+                                    <div><div class="fw-semibold">Crear Ticket</div><small class="text-muted">Nuevo ticket</small></div>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <a href="?page=tickets&filter=urgent" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-exclamation-triangle" style="color:#dc2626"></i></div>
+                                    <div><div class="fw-semibold">Ver Urgentes</div><small class="text-muted"><?= $stats['urgentes'] ?> pendientes</small></div>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <a href="?page=tickets&filter=mine" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-person-badge" style="color:var(--primary-dark)"></i></div>
+                                    <div><div class="fw-semibold">Mis Tickets</div><small class="text-muted">Asignados a mí</small></div>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <a href="?page=sla" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-speedometer2" style="color:var(--primary-dark)"></i></div>
+                                    <div><div class="fw-semibold">Métricas SLA</div><small class="text-muted">Rendimiento</small></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Gráficos y Alertas -->
             <div class="row g-3 mb-4">
                 <!-- Tendencia Semanal -->
@@ -1567,41 +1602,6 @@ $topActions = $pdo->query("
                             <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Acciones Rápidas -->
-            <div class="row g-3 mb-4">
-                <div class="col-12">
-                    <div class="chart-card">
-                        <h5 class="chart-title mb-3">Acciones Rápidas</h5>
-                        <div class="row g-3">
-                            <div class="col-lg-3 col-md-6">
-                                <a href="?page=nuevo_ticket" class="quick-action">
-                                    <div class="quick-action-icon"><i class="bi bi-plus-lg" style="color:var(--primary-dark)"></i></div>
-                                    <div><div class="fw-semibold">Crear Ticket</div><small class="text-muted">Nuevo ticket</small></div>
-                                </a>
-                            </div>
-                            <div class="col-lg-3 col-md-6">
-                                <a href="?page=tickets&filter=urgent" class="quick-action">
-                                    <div class="quick-action-icon"><i class="bi bi-exclamation-triangle" style="color:#dc2626"></i></div>
-                                    <div><div class="fw-semibold">Ver Urgentes</div><small class="text-muted"><?= $stats['urgentes'] ?> pendientes</small></div>
-                                </a>
-                            </div>
-                            <div class="col-lg-3 col-md-6">
-                                <a href="?page=tickets&filter=mine" class="quick-action">
-                                    <div class="quick-action-icon"><i class="bi bi-person-badge" style="color:var(--primary-dark)"></i></div>
-                                    <div><div class="fw-semibold">Mis Tickets</div><small class="text-muted">Asignados a mí</small></div>
-                                </a>
-                            </div>
-                            <div class="col-lg-3 col-md-6">
-                                <a href="?page=sla" class="quick-action">
-                                    <div class="quick-action-icon"><i class="bi bi-speedometer2" style="color:var(--primary-dark)"></i></div>
-                                    <div><div class="fw-semibold">Métricas SLA</div><small class="text-muted">Rendimiento</small></div>
-                                </a>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
