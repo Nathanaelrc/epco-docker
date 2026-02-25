@@ -149,9 +149,9 @@ if [ -f "$ENV_FILE" ] && [ "$FORCE_PORTS" = false ]; then
     source "$ENV_FILE" 2>/dev/null || true
 fi
 
-DEFAULT_APP_PORT=${APP_PORT:-8080}
+DEFAULT_APP_PORT=${APP_PORT:-8090}
 DEFAULT_DB_PORT=${DB_PORT:-3306}
-DEFAULT_PMA_PORT=${PMA_PORT:-8081}
+DEFAULT_PMA_PORT=${PMA_PORT:-8082}
 
 # =============================================
 # Detectar puertos libres (sin colisiones entre sí)

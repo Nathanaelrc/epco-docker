@@ -122,9 +122,9 @@ Configurables en `.env`:
 
 | Variable    | Default | Descripción           |
 |-------------|---------|----------------------|
-| `APP_PORT`  | 8080    | Puerto web EPCO      |
+| `APP_PORT`  | 8090    | Puerto web EPCO      |
 | `DB_PORT`   | 3306    | Puerto MySQL         |
-| `PMA_PORT`  | 8081    | Puerto phpMyAdmin    |
+| `PMA_PORT`  | 8082    | Puerto phpMyAdmin    |
 
 ## Reset completo
 
