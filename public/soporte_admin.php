@@ -103,6 +103,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$assignTo ?: null, $assignTo, $ticketId]);
         logActivity($user['id'], 'ticket_assigned', 'tickets', $ticketId, "Ticket asignado a usuario #$assignTo");
         
+        // Enviar correo al técnico asignado
+        if ($assignTo > 0) {
+            try {
+                $assigneeStmt = $pdo->prepare('SELECT name, email FROM users WHERE id = ?');
+                $assigneeStmt->execute([$assignTo]);
+                $assignee = $assigneeStmt->fetch();
+                if ($assignee && !empty($assignee['email'])) {
+                    $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+                    $ticketStmt->execute([$ticketId]);
+                    $ticketData = $ticketStmt->fetch();
+                    if ($ticketData) {
+                        require_once __DIR__ . '/../includes/MailService.php';
+                        $mailService = new MailService();
+                        $mailService->sendTicketAssignedNotification($ticketData, $assignee['name'], $assignee['email']);
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('[EPCO] Error enviando email de asignación: ' . $e->getMessage());
+            }
+        }
+        
         $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=assigned';
         header("Location: $redirectUrl");
         exit;
@@ -141,6 +162,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('UPDATE tickets SET assigned_to = ?, status = "en_proceso" WHERE id = ?');
         $stmt->execute([$user['id'], $ticketId]);
         logActivity($user['id'], 'ticket_assigned', 'tickets', $ticketId, 'Auto-asignación de ticket');
+        
+        // Enviar correo al técnico (a sí mismo)
+        try {
+            $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+            $ticketStmt->execute([$ticketId]);
+            $ticketData = $ticketStmt->fetch();
+            if ($ticketData && !empty($user['email'])) {
+                require_once __DIR__ . '/../includes/MailService.php';
+                $mailService = new MailService();
+                $mailService->sendTicketAssignedNotification($ticketData, $user['name'], $user['email']);
+            }
+        } catch (Exception $e) {
+            error_log('[EPCO] Error enviando email de auto-asignación: ' . $e->getMessage());
+        }
         
         $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=assigned';
         header("Location: $redirectUrl");

@@ -763,4 +763,287 @@ Ver en Panel de Soporte:
 Correo automático · No responder a este mensaje
 TEXT;
     }
+
+    /**
+     * Enviar notificación al técnico cuando se le asigna un ticket
+     */
+    public function sendTicketAssignedNotification($ticket, $assigneeName, $assigneeEmail) {
+        if (empty($assigneeEmail) || !filter_var($assigneeEmail, FILTER_VALIDATE_EMAIL)) {
+            error_log("[EPCO Mail] No se puede enviar notificación de asignación: email inválido o vacío");
+            return false;
+        }
+
+        try {
+            $this->mailer->clearAddresses();
+            $this->mailer->addAddress(trim($assigneeEmail));
+
+            $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+            $this->mailer->Subject = "Ticket #{$ticketNumber} asignado a ti - Soporte TI EPCO";
+            $this->mailer->Body = $this->getTicketAssignedTemplate($ticket, $assigneeName);
+            $this->mailer->AltBody = $this->getTicketAssignedPlainText($ticket, $assigneeName);
+
+            $this->mailer->send();
+            error_log("[EPCO Mail] Notificación de asignación enviada a: $assigneeEmail para ticket #{$ticketNumber}");
+            return true;
+        } catch (Exception $e) {
+            error_log("[EPCO Mail] Error enviando notificación de asignación a $assigneeEmail: " . $this->mailer->ErrorInfo);
+            return false;
+        }
+    }
+
+    /**
+     * Template HTML de notificación de asignación
+     */
+    private function getTicketAssignedTemplate($ticket, $assigneeName) {
+        $priority = $ticket['priority'] ?? 'media';
+        $category = $ticket['category'] ?? 'otro';
+
+        $priorityLabels = [
+            'urgente' => 'URGENTE', 'alta' => 'ALTA', 'media' => 'MEDIA', 'baja' => 'BAJA'
+        ];
+        $categoryLabels = [
+            'hardware' => 'Hardware', 'software' => 'Software', 'red' => 'Red / Conectividad',
+            'acceso' => 'Accesos / Permisos', 'otro' => 'Otro'
+        ];
+        $slaLabels = [
+            'urgente' => '4 horas', 'alta' => '8 horas', 'media' => '24 horas', 'baja' => '48 horas'
+        ];
+
+        $priorityLabel = $priorityLabels[$priority] ?? ucfirst($priority);
+        $categoryLabel = $categoryLabels[$category] ?? ucfirst($category);
+        $slaLabel = $slaLabels[$priority] ?? '24 horas';
+        $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
+        $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "TK-{$ticket['id']}", ENT_QUOTES, 'UTF-8');
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+
+        $safe = array_map(function($v) {
+            return is_string($v) ? htmlspecialchars($v, ENT_QUOTES, 'UTF-8') : $v;
+        }, $ticket);
+
+        $subject = $safe['subject'] ?? $safe['title'] ?? 'Sin asunto';
+        $userName = $safe['user_name'] ?? 'Usuario';
+        $description = $safe['description'] ?? 'Sin descripci&oacute;n';
+        $safeName = htmlspecialchars($assigneeName, ENT_QUOTES, 'UTF-8');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <style>
+        :root { color-scheme: light dark; }
+        @media (prefers-color-scheme: dark) {
+            body, .body-wrap { background-color: #1a1a2e !important; }
+            .email-box { background-color: #16213e !important; }
+            .header-bg { background-color: #0a3d62 !important; }
+            .label-cell { background-color: #1a1a2e !important; color: #c4cdd5 !important; }
+            .value-cell { background-color: #16213e !important; color: #e4e7ec !important; }
+            .section-head { color: #e4e7ec !important; border-bottom-color: #3b82f6 !important; }
+            .desc-box { background-color: #1a1a2e !important; border-left-color: #3b82f6 !important; }
+            .desc-box p { color: #c4cdd5 !important; }
+            .footer-box { background-color: #0f1a30 !important; }
+            .footer-main { color: #c4cdd5 !important; }
+            .footer-sub { color: #667085 !important; }
+            .sla-box { background-color: #1a1a2e !important; border-color: #2c3e6b !important; }
+            .sla-text { color: #c4cdd5 !important; }
+            .greeting { color: #e4e7ec !important; }
+            .info-text { color: #c4cdd5 !important; }
+            .ticket-ref { color: #7cb9e8 !important; }
+            .divider { border-color: #2c3e6b !important; }
+        }
+    </style>
+</head>
+<body class="body-wrap" style="margin: 0; padding: 0; font-family: 'Arial Nova', Arial, Helvetica, sans-serif; background-color: #f0f2f5;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="body-wrap" style="background-color: #f0f2f5; padding: 30px 15px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="620" cellspacing="0" cellpadding="0" class="email-box" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+
+                    <!-- HEADER -->
+                    <tr>
+                        <td class="header-bg" style="background-color: #0c5a8a; padding: 28px 40px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">
+                                Ticket Asignado
+                            </h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;">
+                                Empresa Portuaria Coquimbo &mdash; Mesa de Ayuda TI
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- SALUDO -->
+                    <tr>
+                        <td style="padding: 30px 40px 10px;">
+                            <p class="greeting" style="margin: 0 0 10px; color: #1d2939; font-size: 16px; font-weight: 600;">
+                                Hola {$safeName},
+                            </p>
+                            <p class="info-text" style="margin: 0; color: #475467; font-size: 14px; line-height: 1.6;">
+                                Se te ha asignado el siguiente ticket de soporte. Por favor rev&iacute;salo y gestiona su atenci&oacute;n dentro del plazo establecido.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- DATOS DEL TICKET -->
+                    <tr>
+                        <td style="padding: 20px 40px 10px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">N&ordm; de Ticket</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span class="ticket-ref" style="color: #0c5a8a; font-size: 16px; font-weight: 700;">{$ticketNumber}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Asunto</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px; font-weight: 600;">{$subject}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Solicitante</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$userName}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Categor&iacute;a</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$categoryLabel}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Prioridad</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$priorityLabel}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Fecha creaci&oacute;n</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$createdAt}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- DESCRIPCIÓN -->
+                    <tr>
+                        <td style="padding: 15px 40px 10px;">
+                            <h2 class="section-head" style="margin: 0 0 10px; color: #1d2939; font-size: 14px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 6px; display: inline-block;">
+                                Descripci&oacute;n del problema
+                            </h2>
+                            <div class="desc-box" style="background-color: #f9fafb; border-radius: 8px; padding: 15px; border-left: 4px solid #0c5a8a;">
+                                <p style="margin: 0; color: #344054; font-size: 13px; line-height: 1.7; white-space: pre-wrap;">{$description}</p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- SLA INFO -->
+                    <tr>
+                        <td style="padding: 15px 40px 10px;">
+                            <div class="sla-box" style="background-color: #f0f9ff; border-radius: 8px; padding: 15px; border: 1px solid #bae6fd;">
+                                <p class="sla-text" style="margin: 0; color: #344054; font-size: 13px; line-height: 1.6;">
+                                    <strong>Plazo de resoluci&oacute;n SLA:</strong> {$slaLabel}<br>
+                                    Recuerda gestionar este ticket dentro del tiempo establecido seg&uacute;n su prioridad.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- BOTÓN -->
+                    <tr>
+                        <td style="padding: 20px 40px 30px;" align="center">
+                            <a href="{$appUrl}/soporte_admin" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                                Ir al Panel de Soporte
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td class="footer-box" style="background-color: #f2f4f7; padding: 20px 40px; text-align: center; border-top: 1px solid #d0d5dd;">
+                            <p class="footer-main" style="margin: 0 0 4px; color: #344054; font-size: 13px; font-weight: 600;">
+                                Empresa Portuaria Coquimbo
+                            </p>
+                            <p class="footer-sub" style="margin: 0; color: #667085; font-size: 11px;">
+                                Correo autom&aacute;tico del Sistema de Soporte TI &middot; No responder a este mensaje
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * Versión texto plano de la notificación de asignación
+     */
+    private function getTicketAssignedPlainText($ticket, $assigneeName) {
+        $priority = $ticket['priority'] ?? 'media';
+        $category = $ticket['category'] ?? 'otro';
+        $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
+        $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+        $slaLabels = [
+            'urgente' => '4 horas', 'alta' => '8 horas', 'media' => '24 horas', 'baja' => '48 horas'
+        ];
+        $slaLabel = $slaLabels[$priority] ?? '24 horas';
+        $userName = $ticket['user_name'] ?? 'Usuario';
+        $subject = $ticket['subject'] ?? $ticket['title'] ?? 'Sin asunto';
+
+        return <<<TEXT
+═══════════════════════════════════════════════
+  TICKET ASIGNADO
+  Empresa Portuaria Coquimbo - Mesa de Ayuda TI
+═══════════════════════════════════════════════
+
+Hola {$assigneeName},
+
+Se te ha asignado el siguiente ticket de soporte:
+
+───────────────────────────────────────────────
+DATOS DEL TICKET
+───────────────────────────────────────────────
+- N° de Ticket: {$ticketNumber}
+- Asunto: {$subject}
+- Solicitante: {$userName}
+- Categoría: {$category}
+- Prioridad: {$priority}
+- Fecha creación: {$createdAt}
+
+───────────────────────────────────────────────
+DESCRIPCIÓN
+───────────────────────────────────────────────
+{$ticket['description']}
+
+───────────────────────────────────────────────
+Plazo de resolución SLA: {$slaLabel}
+
+Ir al Panel de Soporte:
+{$appUrl}/soporte_admin
+
+Correo automático · No responder a este mensaje
+TEXT;
+    }
 }
