@@ -26,7 +26,7 @@ return [
         'relay_port'  => (int)(getenv('SMTP_RELAY_PORT') ?: 25),
         
         // SMTP externo directo (fallback)
-        'host'        => getenv('SMTP_HOST') ?: 'smtp-mail.outlook.com',
+        'host'        => getenv('SMTP_HOST') ?: 'smtp.gmail.com',
         'port'        => (int)(getenv('SMTP_PORT') ?: 587),
         'username'    => getenv('SMTP_USER') ?: '',
         'password'    => getenv('SMTP_PASS') ?: '',

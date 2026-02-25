@@ -447,7 +447,7 @@ CREATE TABLE IF NOT EXISTS notification_recipients (
 
 -- Insertar destinatario por defecto
 INSERT IGNORE INTO notification_recipients (email, name, event_type) VALUES
-('soportetiepco@outlook.com', 'Soporte EPCO', 'all');
+('soporteepco@gmail.com', 'Soporte EPCO', 'all');
 
 -- =============================================
 -- TABLA: COLA DE EMAILS

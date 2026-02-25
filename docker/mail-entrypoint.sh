@@ -11,7 +11,7 @@ echo " EPCO Mail Relay - Configurando Postfix"
 echo "================================================"
 
 # Variables con defaults
-RELAY_HOST="${RELAY_HOST:-smtp-mail.outlook.com}"
+RELAY_HOST="${RELAY_HOST:-smtp.gmail.com}"
 RELAY_PORT="${RELAY_PORT:-587}"
 RELAY_USER="${RELAY_USER:-}"
 RELAY_PASS="${RELAY_PASS:-}"
