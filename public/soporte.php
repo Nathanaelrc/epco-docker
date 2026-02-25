@@ -788,28 +788,28 @@ $faqs = [
                 <div class="col-md-3 col-6">
                     <div class="sla-card">
                         <span class="sla-priority urgente">URGENTE</span>
-                        <div class="sla-time">1h</div>
-                        <div class="sla-label">Primera respuesta</div>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6">
-                    <div class="sla-card">
-                        <span class="sla-priority alta">ALTA</span>
                         <div class="sla-time">4h</div>
                         <div class="sla-label">Primera respuesta</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="sla-card">
-                        <span class="sla-priority media">MEDIA</span>
+                        <span class="sla-priority alta">ALTA</span>
                         <div class="sla-time">8h</div>
                         <div class="sla-label">Primera respuesta</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="sla-card">
+                        <span class="sla-priority media">MEDIA</span>
+                        <div class="sla-time">48h</div>
+                        <div class="sla-label">Primera respuesta</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="sla-card">
                         <span class="sla-priority baja">BAJA</span>
-                        <div class="sla-time">24h</div>
+                        <div class="sla-time">1 sem</div>
                         <div class="sla-label">Primera respuesta</div>
                     </div>
                 </div>
