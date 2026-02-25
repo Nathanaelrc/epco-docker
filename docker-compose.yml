@@ -52,7 +52,7 @@ services:
         condition: service_healthy
     networks:
       - epco-network
-      - nginx-proxy-manager_default
+      - nginx-proxy-manager
 
   # =============================================
   # Base de Datos MySQL
@@ -144,5 +144,5 @@ volumes:
 networks:
   epco-network:
     driver: bridge
-  nginx-proxy-manager_default:
+  nginx-proxy-manager:
     external: true
