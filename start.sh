@@ -122,6 +122,10 @@ find_free_port() {
     return 1
 }
 
+generate_password() {
+    tr -dc 'A-Za-z0-9@#%+=_' </dev/urandom | head -c 24
+}
+
 # =============================================
 # Recopilar todos los puertos en uso
 # =============================================
@@ -207,8 +211,8 @@ echo -e "${CYAN}[3/5] Generando .env...${NC}"
 
 DB_NAME="${DB_NAME:-epco}"
 DB_USER="${DB_USER:-epco_user}"
-DB_PASS="${DB_PASS:-EpcoSecure2026}"
-DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-EpcoRoot2026}"
+DB_PASS="${DB_PASS:-$(generate_password)}"
+DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-$(generate_password)}"
 APP_ENV="${APP_ENV:-production}"
 
 cat > "$ENV_FILE" << EOF

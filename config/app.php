@@ -41,7 +41,11 @@ date_default_timezone_set('America/Santiago');
 // =============================================
 // MODO DE DESARROLLO / PRODUCCIÓN
 // =============================================
-define('ENVIRONMENT', 'development'); // 'development' o 'production'
+$environment = strtolower(trim((string)(getenv('APP_ENV') ?: 'production')));
+if (!in_array($environment, ['development', 'production'], true)) {
+    $environment = 'production';
+}
+define('ENVIRONMENT', $environment); // 'development' o 'production'
 
 if (ENVIRONMENT === 'development') {
     error_reporting(E_ALL);

@@ -27,8 +27,8 @@ docker compose up -d --build
 
 | Servicio     | URL                          | Descripción                |
 |-------------|------------------------------|----------------------------|
-| **EPCO**     | http://localhost:8080        | Portal corporativo         |
-| **phpMyAdmin** | http://localhost:8081      | Administrar base de datos  |
+| **EPCO**     | http://localhost:8090        | Portal corporativo         |
+| **phpMyAdmin** | http://localhost:8082      | Administrar base de datos  |
 
 ### 4. Credenciales por defecto
 
@@ -115,6 +115,11 @@ epco-docker/
 | `epco-db-data`    | `/var/lib/mysql`    | Datos de MySQL                 |
 | `./logs`          | `/var/www/html/logs` | Logs de la aplicación         |
 | `./public/uploads`| `/var/www/html/public/uploads` | Archivos subidos |
+
+## Seguridad de credenciales
+
+- `start.sh` genera automáticamente contraseñas fuertes para `DB_PASS` y `DB_ROOT_PASSWORD` si no existen en `.env`.
+- Puedes definir valores propios antes de ejecutar `bash start.sh` exportando variables o editando `.env`.
 
 ## Puertos
 

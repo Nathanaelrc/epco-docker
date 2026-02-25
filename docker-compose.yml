@@ -26,7 +26,7 @@ services:
       - DB_HOST=db
       - DB_NAME=${DB_NAME:-epco}
       - DB_USER=${DB_USER:-epco_user}
-      - DB_PASS=${DB_PASS:-EpcoSecure2026}
+      - DB_PASS=${DB_PASS:-}
       - DB_CHARSET=utf8mb4
       - APP_ENV=${APP_ENV:-production}
       - APP_URL=${APP_URL:-http://localhost:8090}
@@ -36,17 +36,17 @@ services:
       - SMTP_MODE=${SMTP_MODE:-relay}
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-soporteepco@gmail.com}
-      - SMTP_PASS=${SMTP_PASS:-uonfzgkcsfzqxgbc}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-tls}
-      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-soporteepco@gmail.com}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Soporte TI - EPCO}
       # Relay interno (microservicio de correo)
       - SMTP_RELAY_HOST=mailrelay
       - SMTP_RELAY_PORT=25
       # Destinatarios de notificaciones (separar con coma)
-      - NOTIFY_TICKET_CREATED=${NOTIFY_TICKET_CREATED:-soporteepco@gmail.com}
-      - NOTIFY_TICKET_UPDATED=${NOTIFY_TICKET_UPDATED:-soporteepco@gmail.com}
+      - NOTIFY_TICKET_CREATED=${NOTIFY_TICKET_CREATED:-}
+      - NOTIFY_TICKET_UPDATED=${NOTIFY_TICKET_UPDATED:-}
     depends_on:
       db:
         condition: service_healthy
@@ -68,10 +68,10 @@ services:
     ports:
       - "${DB_PORT:-3306}:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-EpcoRoot2026}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-}
       MYSQL_DATABASE: ${DB_NAME:-epco}
       MYSQL_USER: ${DB_USER:-epco_user}
-      MYSQL_PASSWORD: ${DB_PASS:-EpcoSecure2026}
+      MYSQL_PASSWORD: ${DB_PASS:-}
       TZ: America/Santiago
     volumes:
       - epco-db-data:/var/lib/mysql
@@ -100,8 +100,8 @@ services:
     environment:
       - RELAY_HOST=${SMTP_HOST:-smtp.gmail.com}
       - RELAY_PORT=${SMTP_PORT:-587}
-      - RELAY_USER=${SMTP_USER:-soporteepco@gmail.com}
-      - RELAY_PASS=${SMTP_PASS:-uonfzgkcsfzqxgbc}
+      - RELAY_USER=${SMTP_USER:-}
+      - RELAY_PASS=${SMTP_PASS:-}
       - MAIL_HOSTNAME=mail.epco.local
     healthcheck:
       test: ["CMD", "postfix", "status"]
@@ -124,7 +124,7 @@ services:
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-EpcoRoot2026}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-}
       UPLOAD_LIMIT: 64M
     depends_on:
       db:

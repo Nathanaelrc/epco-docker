@@ -13,7 +13,8 @@ if (!defined('EPCO_APP')) {
 define('DB_HOST', getenv('DB_HOST') ?: 'db');
 define('DB_NAME', getenv('DB_NAME') ?: 'epco');
 define('DB_USER', getenv('DB_USER') ?: 'epco_user');
-define('DB_PASS', getenv('DB_PASS') ?: 'EpcoSecure2026');
+$dbPass = getenv('DB_PASS');
+define('DB_PASS', $dbPass !== false ? $dbPass : '');
 define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
 
 // Conexión PDO
