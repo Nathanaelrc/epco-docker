@@ -1556,7 +1556,7 @@ $topActions = $pdo->query("
                                     $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
                                 ?>
                                 <?php if ($hasEvidence): ?>
-                                    <span class="badge bg-success" title="Tiene evidencia adjunta"><i class="bi bi-paperclip me-1"></i>S&iacute;</span>
+                                    <a href="#" class="badge bg-success text-decoration-none" title="Ver evidencia adjunta" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-paperclip me-1"></i>Ver</a>
                                 <?php else: ?>
                                     <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
                                 <?php endif; ?>
@@ -1652,7 +1652,7 @@ $topActions = $pdo->query("
                                     $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
                                 ?>
                                 <?php if ($hasEvidence): ?>
-                                    <span class="badge bg-success" title="Tiene evidencia adjunta"><i class="bi bi-paperclip me-1"></i>S&iacute;</span>
+                                    <a href="#" class="badge bg-success text-decoration-none" title="Ver evidencia adjunta" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-paperclip me-1"></i>Ver</a>
                                 <?php else: ?>
                                     <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
                                 <?php endif; ?>
@@ -2708,6 +2708,51 @@ $topActions = $pdo->query("
                             
                             <?php if ($t['resolution']): ?>
                             <div class="alert alert-success"><strong>Resolución:</strong><br><?= nl2br(htmlspecialchars($t['resolution'])) ?></div>
+                            <?php endif; ?>
+                            
+                            <?php
+                            // Evidencia adjunta
+                            $evidenceDir = __DIR__ . '/uploads/tickets/' . $t['ticket_number'];
+                            $evidenceFiles = [];
+                            if (is_dir($evidenceDir)) {
+                                $scan = scandir($evidenceDir);
+                                foreach ($scan as $f) {
+                                    if ($f === '.' || $f === '..') continue;
+                                    $evidenceFiles[] = $f;
+                                }
+                            }
+                            ?>
+                            <?php if (!empty($evidenceFiles)): ?>
+                            <div class="mb-3">
+                                <h6 class="fw-bold mb-2"><i class="bi bi-paperclip me-1"></i>Evidencia Adjunta (<?= count($evidenceFiles) ?>)</h6>
+                                <div class="row g-2">
+                                    <?php foreach ($evidenceFiles as $ef):
+                                        $filePath = 'uploads/tickets/' . $t['ticket_number'] . '/' . $ef;
+                                        $ext = strtolower(pathinfo($ef, PATHINFO_EXTENSION));
+                                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                        $displayName = preg_replace('/^[a-f0-9]+_/', '', $ef);
+                                    ?>
+                                    <div class="col-md-6">
+                                        <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc;">
+                                            <?php if ($isImage): ?>
+                                            <a href="<?= $filePath ?>" target="_blank" title="Ver imagen">
+                                                <img src="<?= $filePath ?>" alt="<?= htmlspecialchars($displayName) ?>" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                            </a>
+                                            <?php else: ?>
+                                            <div class="d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #e2e8f0; border-radius: 6px;">
+                                                <i class="bi bi-file-earmark-<?= $ext === 'pdf' ? 'pdf' : 'text' ?>" style="font-size: 1.3rem; color: #64748b;"></i>
+                                            </div>
+                                            <?php endif; ?>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <p class="mb-0 small fw-semibold text-truncate" title="<?= htmlspecialchars($displayName) ?>"><?= htmlspecialchars($displayName) ?></p>
+                                                <p class="mb-0 text-muted" style="font-size: 0.7rem;"><?= strtoupper($ext) ?></p>
+                                            </div>
+                                            <a href="<?= $filePath ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Abrir"><i class="bi bi-box-arrow-up-right"></i></a>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
                             <?php endif; ?>
                             
                             <hr>
