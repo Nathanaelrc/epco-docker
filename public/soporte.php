@@ -1024,7 +1024,7 @@ $faqs = [
             errorDiv.style.display = 'none';
             infoDiv.style.display = 'none';
 
-            fetch('api/ticket_lookup.php?ticket_number=' + encodeURIComponent(numero))
+            fetch('api/ticket_lookup?ticket_number=' + encodeURIComponent(numero))
                 .then(r => r.json())
                 .then(data => {
                     resultado.style.display = 'block';
