@@ -899,30 +899,95 @@ $faqs = [
     
     <!-- Modal Consultar Ticket -->
     <div class="modal fade" id="consultarTicketModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
                 <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
                     <h5 class="modal-title text-white"><i class="bi bi-search me-2"></i>Consultar Estado de Ticket</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-muted mb-4">Ingresa tu código de seguimiento para consultar el estado de tu ticket.</p>
-                    <form action="ticket_seguimiento.php" method="POST" id="consultarTicketForm">
-                        <?php if ($fromIntranet): ?>
-                        <input type="hidden" name="from" value="intranet">
-                        <?php endif; ?>
-                        <div class="mb-4">
+                    <!-- Formulario de búsqueda -->
+                    <p class="text-muted mb-3">Ingresa tu código de seguimiento para consultar el estado de tu ticket.</p>
+                    <form id="consultarTicketForm" onsubmit="buscarTicket(event)">
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Código de Ticket</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-ticket-perforated"></i></span>
-                                <input type="text" name="ticket_number" class="form-control form-control-lg" placeholder="Ej: TK-20260129-A1B2C" required style="border-radius: 0 10px 10px 0;">
+                                <input type="text" name="ticket_number" id="ticketNumberInput" class="form-control form-control-lg" placeholder="Ej: TK-20260129-A1B2C" required style="border-radius: 0 10px 10px 0;">
                             </div>
-                            <div class="form-text">El código tiene el formato TK-YYYYMMDD-XXXXX (ej: TK-20260129-A1B2C)</div>
                         </div>
-                        <button type="submit" class="btn btn-lg w-100 text-white" style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px;">
+                        <button type="submit" id="btnBuscarTicket" class="btn btn-lg w-100 text-white" style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px;">
                             <i class="bi bi-search me-2"></i>Consultar Ticket
                         </button>
                     </form>
+                    
+                    <!-- Resultado de la búsqueda -->
+                    <div id="ticketResultado" class="mt-4" style="display:none;">
+                        <hr>
+                        <!-- Error -->
+                        <div id="ticketError" class="alert alert-danger rounded-3" style="display:none;">
+                            <i class="bi bi-exclamation-circle me-2"></i><span id="ticketErrorMsg"></span>
+                        </div>
+                        
+                        <!-- Info del ticket -->
+                        <div id="ticketInfo" style="display:none;">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <span id="tkStatus" class="badge mb-2"></span>
+                                    <h5 class="fw-bold mb-1" id="tkTitle"></h5>
+                                    <p class="text-muted mb-0 small">
+                                        <i class="bi bi-ticket me-1"></i><span id="tkNumber"></span>
+                                        <span class="mx-2">·</span>
+                                        <i class="bi bi-calendar me-1"></i><span id="tkDate"></span>
+                                    </p>
+                                </div>
+                                <span id="tkPriority" class="badge"></span>
+                            </div>
+                            
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded-3">
+                                        <p class="text-muted small mb-1">Categoría</p>
+                                        <p class="fw-semibold mb-0" id="tkCategory"></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded-3">
+                                        <p class="text-muted small mb-1">Prioridad</p>
+                                        <p class="fw-semibold mb-0" id="tkPriorityText"></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded-3">
+                                        <p class="text-muted small mb-1">Asignado a</p>
+                                        <p class="fw-semibold mb-0" id="tkAssigned"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <p class="text-muted small mb-1">Descripción</p>
+                                <div class="p-3 bg-light rounded-3">
+                                    <p class="mb-0" id="tkDescription"></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Resolución -->
+                            <div id="tkResolutionWrap" class="mb-3" style="display:none;">
+                                <div class="p-3 rounded-3" style="background: rgba(16,185,129,0.1);">
+                                    <p class="small mb-1" style="color: #059669;"><i class="bi bi-check-circle me-1"></i>Resolución</p>
+                                    <p class="mb-0" id="tkResolution"></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Comentarios -->
+                            <div id="tkCommentsWrap" style="display:none;">
+                                <hr>
+                                <h6 class="fw-bold mb-3"><i class="bi bi-chat-dots me-2"></i>Historial de Comentarios</h6>
+                                <div id="tkComments"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -940,6 +1005,140 @@ $faqs = [
                 });
                 item.classList.toggle('open');
             });
+        });
+
+        // Ticket lookup AJAX
+        function buscarTicket(e) {
+            e.preventDefault();
+            const numero = document.getElementById('ticketNumberInput').value.trim();
+            if (!numero) return;
+
+            const btn = document.getElementById('btnBuscarTicket');
+            const resultado = document.getElementById('ticketResultado');
+            const errorDiv = document.getElementById('ticketError');
+            const infoDiv = document.getElementById('ticketInfo');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Buscando...';
+            resultado.style.display = 'none';
+            errorDiv.style.display = 'none';
+            infoDiv.style.display = 'none';
+
+            fetch('api/ticket_lookup.php?ticket_number=' + encodeURIComponent(numero))
+                .then(r => r.json())
+                .then(data => {
+                    resultado.style.display = 'block';
+
+                    if (!data.success) {
+                        errorDiv.style.display = 'block';
+                        document.getElementById('ticketErrorMsg').textContent = data.error || 'No se encontró el ticket.';
+                        return;
+                    }
+
+                    const tk = data.ticket;
+                    infoDiv.style.display = 'block';
+
+                    // Status badge
+                    const statusMap = {
+                        'abierto':     { label: 'Abierto',      bg: '#3b82f6' },
+                        'en_progreso': { label: 'En Progreso',  bg: '#f59e0b' },
+                        'pendiente':   { label: 'Pendiente',    bg: '#8b5cf6' },
+                        'resuelto':    { label: 'Resuelto',     bg: '#10b981' },
+                        'cerrado':     { label: 'Cerrado',      bg: '#6b7280' }
+                    };
+                    const st = statusMap[tk.status] || { label: tk.status, bg: '#6b7280' };
+                    const stEl = document.getElementById('tkStatus');
+                    stEl.textContent = st.label;
+                    stEl.style.background = st.bg;
+                    stEl.style.color = '#fff';
+                    stEl.style.fontSize = '0.85rem';
+                    stEl.style.padding = '6px 14px';
+                    stEl.style.borderRadius = '20px';
+
+                    // Priority badge
+                    const prioMap = {
+                        'baja':     { label: 'Baja',     bg: '#22c55e' },
+                        'media':    { label: 'Media',    bg: '#f59e0b' },
+                        'alta':     { label: 'Alta',     bg: '#ef4444' },
+                        'urgente':  { label: 'Urgente',  bg: '#dc2626' }
+                    };
+                    const pr = prioMap[tk.priority] || { label: tk.priority, bg: '#6b7280' };
+                    const prEl = document.getElementById('tkPriority');
+                    prEl.textContent = pr.label;
+                    prEl.style.background = pr.bg;
+                    prEl.style.color = '#fff';
+                    prEl.style.fontSize = '0.8rem';
+                    prEl.style.padding = '5px 12px';
+                    prEl.style.borderRadius = '20px';
+
+                    document.getElementById('tkTitle').textContent = tk.title;
+                    document.getElementById('tkNumber').textContent = tk.ticket_number;
+                    document.getElementById('tkDate').textContent = formatDate(tk.created_at);
+                    document.getElementById('tkCategory').textContent = tk.category || 'Sin categoría';
+                    document.getElementById('tkPriorityText').textContent = pr.label;
+                    document.getElementById('tkAssigned').textContent = tk.assigned_name || 'Sin asignar';
+                    document.getElementById('tkDescription').textContent = tk.description;
+
+                    // Resolution
+                    const resWrap = document.getElementById('tkResolutionWrap');
+                    if (tk.resolution) {
+                        resWrap.style.display = 'block';
+                        document.getElementById('tkResolution').textContent = tk.resolution;
+                    } else {
+                        resWrap.style.display = 'none';
+                    }
+
+                    // Comments
+                    const comments = data.comments || [];
+                    const commentsWrap = document.getElementById('tkCommentsWrap');
+                    const commentsCont = document.getElementById('tkComments');
+                    commentsCont.innerHTML = '';
+
+                    if (comments.length > 0) {
+                        commentsWrap.style.display = 'block';
+                        comments.forEach(c => {
+                            const div = document.createElement('div');
+                            div.className = 'p-3 mb-2 bg-light rounded-3';
+                            div.innerHTML = '<div class="d-flex justify-content-between mb-1">' +
+                                '<span class="fw-semibold small">' + escHtml(c.author_name) + '</span>' +
+                                '<span class="text-muted small">' + formatDate(c.created_at) + '</span>' +
+                                '</div>' +
+                                '<p class="mb-0 small">' + escHtml(c.comment) + '</p>';
+                            commentsCont.appendChild(div);
+                        });
+                    } else {
+                        commentsWrap.style.display = 'none';
+                    }
+                })
+                .catch(() => {
+                    resultado.style.display = 'block';
+                    errorDiv.style.display = 'block';
+                    document.getElementById('ticketErrorMsg').textContent = 'Error de conexión. Intenta nuevamente.';
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-search me-2"></i>Consultar Ticket';
+                });
+        }
+
+        function formatDate(str) {
+            if (!str) return '';
+            const d = new Date(str);
+            return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // Reset modal on close
+        document.getElementById('consultarTicketModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('ticketNumberInput').value = '';
+            document.getElementById('ticketResultado').style.display = 'none';
+            document.getElementById('ticketError').style.display = 'none';
+            document.getElementById('ticketInfo').style.display = 'none';
         });
     </script>
 </body>
