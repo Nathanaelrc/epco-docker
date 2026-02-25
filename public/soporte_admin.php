@@ -2763,7 +2763,7 @@ $topActions = $pdo->query("
                                     <div class="col-md-6">
                                         <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc;">
                                             <?php if ($isImage && $fileExists): ?>
-                                            <a href="<?= htmlspecialchars($furl) ?>" target="_blank" title="Ver imagen en tamaño completo" style="flex-shrink:0;">
+                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" title="Ver imagen" style="flex-shrink:0;">
                                                 <img src="<?= htmlspecialchars($furl) ?>" alt="<?= htmlspecialchars($displayName) ?>" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; cursor: zoom-in;">
                                             </a>
                                             <?php elseif ($isImage): ?>
@@ -2786,7 +2786,11 @@ $topActions = $pdo->query("
                                                     <?php endif; ?>
                                                 </p>
                                             </div>
-                                            <a href="<?= htmlspecialchars($furl) ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Abrir archivo" style="flex-shrink:0;"><i class="bi bi-box-arrow-up-right"></i></a>
+                                            <?php if ($isImage && $fileExists): ?>
+                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" class="btn btn-sm btn-outline-primary" title="Ver imagen" style="flex-shrink:0;"><i class="bi bi-eye"></i></a>
+                                            <?php elseif ($fileExists): ?>
+                                            <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-primary" title="Descargar archivo" style="flex-shrink:0;"><i class="bi bi-download"></i></a>
+                                            <?php endif; ?>
                                             <?php if ($fileExists): ?>
                                             <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-secondary" title="Descargar" style="flex-shrink:0;"><i class="bi bi-download"></i></a>
                                             <?php endif; ?>
@@ -2806,10 +2810,11 @@ $topActions = $pdo->query("
                                     <div class="row g-2">
                                         <?php foreach ($imageFiles as $fname => $furl): 
                                             if (!file_exists(__DIR__ . '/' . $furl)) continue;
+                                            $imgDisplayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
                                         ?>
                                         <div class="col-md-4">
-                                            <a href="<?= htmlspecialchars($furl) ?>" target="_blank">
-                                                <img src="<?= htmlspecialchars($furl) ?>" class="img-fluid rounded-3 border" alt="<?= htmlspecialchars(preg_replace('/^[a-f0-9]+_/', '', $fname)) ?>" style="max-height: 180px; width: 100%; object-fit: cover; cursor: zoom-in;">
+                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($imgDisplayName, ENT_QUOTES) ?>')">
+                                                <img src="<?= htmlspecialchars($furl) ?>" class="img-fluid rounded-3 border" alt="<?= htmlspecialchars($imgDisplayName) ?>" style="max-height: 180px; width: 100%; object-fit: cover; cursor: zoom-in;">
                                             </a>
                                         </div>
                                         <?php endforeach; ?>
@@ -2838,7 +2843,13 @@ $topActions = $pdo->query("
                                             if (!$fn) continue;
                                             $fileUrl = 'uploads/tickets/' . $ticketNum . '/' . $fn;
                                             $cleanName = preg_replace('/^[a-f0-9]+_/', '', $fn);
-                                            $linkedNames[] = '<a href="' . htmlspecialchars($fileUrl) . '" target="_blank" class="text-primary"><i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                            $fExt = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
+                                            $fIsImg = in_array($fExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                            if ($fIsImg) {
+                                                $linkedNames[] = '<a href="javascript:void(0)" onclick="openLightbox(\'' . htmlspecialchars($fileUrl, ENT_QUOTES) . '\', \'' . htmlspecialchars($cleanName, ENT_QUOTES) . '\')" class="text-primary" style="cursor:pointer"><i class="bi bi-image me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                            } else {
+                                                $linkedNames[] = '<a href="' . htmlspecialchars($fileUrl) . '" download class="text-primary"><i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                            }
                                         }
                                         $commentText = str_replace(htmlspecialchars($cm[0]), 'Archivos adjuntos: ' . implode(', ', $linkedNames), $commentText);
                                     }
@@ -3075,6 +3086,42 @@ $topActions = $pdo->query("
     }
     updateChileTime();
     setInterval(updateChileTime, 1000);
+    </script>
+
+    <!-- Modal Lightbox para imágenes -->
+    <div class="modal fade" id="imageLightboxModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content" style="background: transparent; border: none; box-shadow: none;">
+                <div class="modal-header border-0 pb-0" style="background: rgba(0,0,0,0.7); border-radius: 12px 12px 0 0;">
+                    <h6 class="modal-title text-white" id="lightboxTitle"></h6>
+                    <div class="d-flex gap-2 align-items-center">
+                        <a id="lightboxDownload" href="#" download class="btn btn-sm btn-outline-light" title="Descargar"><i class="bi bi-download"></i></a>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+                <div class="modal-body text-center p-0" style="background: rgba(0,0,0,0.85); border-radius: 0 0 12px 12px;">
+                    <img id="lightboxImage" src="" alt="" style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 0 0 12px 12px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function openLightbox(src, title) {
+        // Cerrar cualquier modal abierto primero
+        document.querySelectorAll('.modal.show').forEach(function(m) {
+            var inst = bootstrap.Modal.getInstance(m);
+            if (inst) inst.hide();
+        });
+        setTimeout(function() {
+            document.getElementById('lightboxImage').src = src;
+            document.getElementById('lightboxImage').alt = title;
+            document.getElementById('lightboxTitle').textContent = title;
+            document.getElementById('lightboxDownload').href = src;
+            var modal = new bootstrap.Modal(document.getElementById('imageLightboxModal'));
+            modal.show();
+        }, 300);
+    }
     </script>
 </body>
 </html>
