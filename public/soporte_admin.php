@@ -277,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('INSERT INTO tickets (ticket_number, user_id, user_name, user_email, category, priority, title, description, sla_response_target, sla_resolution_target) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->execute([
                 $ticketNumber, $userId, $name, $email, $category, $priority, $title, $description,
-                $sla['first_response_minutes'] ?? 480,
+                $sla['first_response_minutes'] ?? 240,
                 $sla['resolution_minutes'] ?? 2880
             ]);
             $ticketId = $pdo->lastInsertId();
@@ -345,6 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'created_at' => date('Y-m-d H:i:s')
                 ];
                 $mailService->sendTicketCreatedNotification($ticketData);
+                $mailService->sendTicketConfirmationToUser($ticketData);
             } catch (Exception $e) {
                 error_log("Error enviando correo desde admin: " . $e->getMessage());
             }

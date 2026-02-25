@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $priority, 
                 $title, 
                 $description,
-                $sla['first_response_minutes'] ?? 480,
+                $sla['first_response_minutes'] ?? 240,
                 $sla['resolution_minutes'] ?? 2880
             ]);
             $ticketId = $pdo->lastInsertId();
@@ -93,6 +93,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $success = "¡Ticket creado exitosamente! Tu número de seguimiento es: <strong>{$ticketNumber}</strong>";
             if (!empty($uploadedFiles)) {
                 $success .= "<br><small class='text-muted'>Se adjuntaron " . count($uploadedFiles) . " archivo(s)</small>";
+            }
+            
+            // Enviar notificación por correo al equipo de soporte y confirmación al usuario
+            try {
+                require_once __DIR__ . '/../includes/MailService.php';
+                $mailService = new MailService();
+                $ticketData = [
+                    'id' => $ticketId,
+                    'ticket_number' => $ticketNumber,
+                    'subject' => $title,
+                    'title' => $title,
+                    'category' => $category,
+                    'priority' => $priority,
+                    'status' => 'abierto',
+                    'user_name' => $user['name'],
+                    'user_email' => $user['email'],
+                    'department' => 'No especificado',
+                    'description' => $description,
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+                $mailService->sendTicketCreatedNotification($ticketData);
+                $mailService->sendTicketConfirmationToUser($ticketData);
+            } catch (Exception $e) {
+                error_log("Error enviando correo desde intranet_soporte: " . $e->getMessage());
             }
         }
     }
@@ -142,10 +166,10 @@ foreach ($myTickets as $t) {
 // FAQ items
 $faqs = [
     ['question' => '¿Cómo puedo hacer seguimiento a mi ticket?', 'answer' => 'En la pestaña "Mis Tickets" puedes ver todos tus tickets activos y su estado actual.'],
-    ['question' => '¿Cuánto tiempo demora la atención?', 'answer' => '<strong>Urgente:</strong> 1 hora | <strong>Alta:</strong> 4 horas | <strong>Media:</strong> 8 horas | <strong>Baja:</strong> 24 horas'],
+    ['question' => '¿Cuánto tiempo demora la atención?', 'answer' => '<strong>Urgente:</strong> 4 horas | <strong>Alta:</strong> 8 horas | <strong>Media:</strong> 48 horas | <strong>Baja:</strong> 1 semana'],
     ['question' => '¿Qué información debo incluir?', 'answer' => 'Describe detalladamente el problema, incluye mensajes de error si los hay, pasos para reproducirlo y cambios recientes.'],
     ['question' => '¿Puedo adjuntar archivos?', 'answer' => 'Sí, puedes adjuntar hasta 5 archivos (imágenes, PDF, Word) de máximo 5MB cada uno.'],
-    ['question' => '¿Qué hago en caso de emergencia?', 'answer' => 'Contacta directamente al <strong>interno 1234</strong> o envía correo a <strong>soporte@epco.cl</strong>']
+    ['question' => '¿Qué hago en caso de emergencia?', 'answer' => 'Contacta directamente al <strong>interno 6479</strong> o envía correo a <strong>gismodes@puertocoquimbo.cl</strong> / <strong>asesorti@puertocoquimbo.cl</strong>']
 ];
 
 $pageTitle = 'Soporte TI';
@@ -647,8 +671,8 @@ $pageTitle = 'Soporte TI';
                             <div class="mt-4 p-4 bg-light rounded-3">
                                 <h6><i class="bi bi-telephone me-2"></i>¿Necesitas ayuda inmediata?</h6>
                                 <p class="mb-0 text-muted">
-                                    Llama al <strong>interno 1234</strong> o escríbenos a 
-                                    <a href="mailto:soporte@epco.cl">soporte@epco.cl</a>
+                                    Llama al <strong>interno 6479</strong> o escríbenos a 
+                                    <a href="mailto:gismodes@puertocoquimbo.cl">gismodes@puertocoquimbo.cl</a> / <a href="mailto:asesorti@puertocoquimbo.cl">asesorti@puertocoquimbo.cl</a>
                                 </p>
                             </div>
                         </div>

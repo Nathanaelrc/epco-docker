@@ -508,10 +508,10 @@ INSERT INTO users (name, username, email, password, role, department, position) 
 -- CONFIGURACIÓN SLA (tiempos en minutos)
 -- =============================================
 INSERT INTO sla_settings (priority, first_response_minutes, assignment_minutes, resolution_minutes) VALUES
-('urgente', 60, 30, 240),
-('alta', 240, 120, 1440),
-('media', 480, 240, 2880),
-('baja', 1440, 480, 4320);
+('urgente', 30, 15, 240),
+('alta', 60, 30, 480),
+('media', 240, 120, 2880),
+('baja', 480, 240, 10080);
 
 -- =============================================
 -- NOTICIAS

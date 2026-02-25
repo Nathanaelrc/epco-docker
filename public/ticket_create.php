@@ -120,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'created_at' => date('Y-m-d H:i:s')
             ];
             $mailService->sendTicketCreatedNotification($ticketData);
+            $mailService->sendTicketConfirmationToUser($ticketData);
         } catch (Exception $e) {
             // Log error but don't break the ticket creation
             error_log("Error enviando correo de notificación: " . $e->getMessage());

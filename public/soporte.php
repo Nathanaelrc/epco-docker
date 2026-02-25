@@ -30,10 +30,10 @@ if ($user) {
 // FAQ items
 $faqs = [
     ['q' => '¿Cómo puedo hacer seguimiento a mi ticket?', 'a' => 'Ingresa a "Consultar Ticket" con tu número de ticket y correo electrónico.', 'icon' => 'bi-search'],
-    ['q' => '¿Cuánto tiempo demora la atención?', 'a' => 'Urgente: 1h | Alta: 4h | Media: 8h | Baja: 24h', 'icon' => 'bi-clock'],
+    ['q' => '¿Cuánto tiempo demora la atención?', 'a' => 'Urgente: 4h | Alta: 8h | Media: 48h | Baja: 1 semana', 'icon' => 'bi-clock'],
     ['q' => '¿Qué información debo incluir?', 'a' => 'Descripción detallada, mensajes de error, pasos para reproducir y cambios recientes.', 'icon' => 'bi-info-circle'],
     ['q' => '¿Puedo adjuntar archivos?', 'a' => 'Sí, puedes adjuntar capturas de pantalla y documentos al crear el ticket.', 'icon' => 'bi-paperclip'],
-    ['q' => '¿Qué hago en caso de emergencia?', 'a' => 'Contacta al interno 1234 o escribe a soporte@epco.cl', 'icon' => 'bi-exclamation-triangle'],
+    ['q' => '¿Qué hago en caso de emergencia?', 'a' => 'Contacta al interno 6479 o escribe a gismodes@puertocoquimbo.cl / asesorti@puertocoquimbo.cl', 'icon' => 'bi-exclamation-triangle'],
 ];
 ?>
 <!DOCTYPE html>
@@ -828,7 +828,7 @@ $faqs = [
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <?php foreach ($faqs as $i => $faq): ?>
-                    <div class="faq-item" onclick="this.classList.toggle('open')">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <div class="faq-icon">
                                 <i class="bi <?= $faq['icon'] ?>"></i>
@@ -864,7 +864,7 @@ $faqs = [
                                     </div>
                                     <div>
                                         <h6>Interno de Emergencias</h6>
-                                        <p>1234</p>
+                                        <p>6479</p>
                                     </div>
                                 </div>
                                 <div class="contact-info">
@@ -872,8 +872,8 @@ $faqs = [
                                         <i class="bi bi-envelope"></i>
                                     </div>
                                     <div>
-                                        <h6>Correo de Soporte</h6>
-                                        <p>soporte@epco.cl</p>
+                                        <h6>Correos de Soporte</h6>
+                                        <p>gismodes@puertocoquimbo.cl<br>asesorti@puertocoquimbo.cl</p>
                                     </div>
                                 </div>
                             </div>
