@@ -81,6 +81,14 @@ if (isset($_GET['msg'])) {
             $message = "Ticket <strong>$ticketNum</strong> creado exitosamente";
             $messageType = 'success';
             break;
+        case 'ticket_updated':
+            $message = 'Ticket actualizado correctamente';
+            $messageType = 'success';
+            break;
+        case 'ticket_deleted':
+            $message = 'Ticket eliminado correctamente';
+            $messageType = 'success';
+            break;
     }
 }
 
@@ -137,6 +145,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=assigned';
         header("Location: $redirectUrl");
         exit;
+    }
+    
+    // Actualizar ticket (editar campos)
+    if ($action === 'update_ticket') {
+        $ticketId = (int)$_POST['ticket_id'];
+        $title = sanitize($_POST['title'] ?? '');
+        $description = sanitize($_POST['description'] ?? '');
+        $category = sanitize($_POST['category'] ?? '');
+        $priority = sanitize($_POST['priority'] ?? '');
+        $userName = sanitize($_POST['user_name'] ?? '');
+        $userEmail = sanitize($_POST['user_email'] ?? '');
+        
+        if (!empty($title) && !empty($description)) {
+            $stmt = $pdo->prepare('UPDATE tickets SET title = ?, description = ?, category = ?, priority = ?, user_name = ?, user_email = ? WHERE id = ?');
+            $stmt->execute([$title, $description, $category, $priority, $userName, $userEmail, $ticketId]);
+            
+            // Actualizar SLA si cambió la prioridad
+            $slaStmt = $pdo->prepare('SELECT first_response_minutes, resolution_minutes FROM sla_settings WHERE priority = ?');
+            $slaStmt->execute([$priority]);
+            $sla = $slaStmt->fetch();
+            if ($sla) {
+                $pdo->prepare('UPDATE tickets SET sla_response_target = ?, sla_resolution_target = ? WHERE id = ?')
+                    ->execute([$sla['first_response_minutes'], $sla['resolution_minutes'], $ticketId]);
+            }
+            
+            logActivity($user['id'], 'ticket_updated', 'tickets', $ticketId, "Ticket editado: $title");
+            
+            $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=ticket_updated';
+            header("Location: $redirectUrl");
+            exit;
+        }
+    }
+    
+    // Eliminar ticket
+    if ($action === 'delete_ticket') {
+        $ticketId = (int)$_POST['ticket_id'];
+        
+        // Obtener número de ticket para el log
+        $stmt = $pdo->prepare('SELECT ticket_number, title FROM tickets WHERE id = ?');
+        $stmt->execute([$ticketId]);
+        $delTicket = $stmt->fetch();
+        
+        if ($delTicket) {
+            // Eliminar archivos adjuntos del filesystem
+            $ticketDir = __DIR__ . '/uploads/tickets/' . $delTicket['ticket_number'] . '/';
+            if (is_dir($ticketDir)) {
+                $files = glob($ticketDir . '*');
+                foreach ($files as $file) {
+                    if (is_file($file)) unlink($file);
+                }
+                rmdir($ticketDir);
+            }
+            
+            // Eliminar registros relacionados (cascada manual por seguridad)
+            $pdo->prepare('DELETE FROM ticket_comments WHERE ticket_id = ?')->execute([$ticketId]);
+            $pdo->prepare('DELETE FROM ticket_history WHERE ticket_id = ?')->execute([$ticketId]);
+            $pdo->prepare('DELETE FROM ticket_attachments WHERE ticket_id = ?')->execute([$ticketId]);
+            $pdo->prepare('DELETE FROM ticket_surveys WHERE ticket_id = ?')->execute([$ticketId]);
+            $pdo->prepare('DELETE FROM tickets WHERE id = ?')->execute([$ticketId]);
+            
+            logActivity($user['id'], 'ticket_deleted', 'tickets', $ticketId, "Ticket {$delTicket['ticket_number']} eliminado: {$delTicket['title']}");
+            
+            $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=ticket_deleted';
+            header("Location: $redirectUrl");
+            exit;
+        }
     }
     
     // Agregar comentario
@@ -1360,6 +1434,10 @@ $topActions = $pdo->query("
             
             <?php elseif ($page === 'tickets'): ?>
             <!-- ========== TICKETS ========== -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div></div>
+                <a href="?page=nuevo_ticket" class="btn btn-dark"><i class="bi bi-plus-lg me-2"></i>Nuevo Ticket</a>
+            </div>
             <div class="card-custom">
                 <div class="card-header-custom">
                     <h5 class="card-title-custom"><i class="bi bi-ticket-detailed me-2"></i>Gestión de Tickets</h5>
@@ -1387,10 +1465,16 @@ $topActions = $pdo->query("
                             <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
                             <td><span class="small text-muted"><?= $t['assigned_name'] ?? '-' ?></span></td>
                             <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
-                            <td>
-                                <button class="btn-action btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>" title="Ver"><i class="bi bi-eye"></i></button>
+                            <td class="text-nowrap">
+                                <button class="btn-action btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>" title="Ver"><i class="bi bi-eye"></i></button>
+                                <button class="btn-action btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editTicketModal<?= $t['id'] ?>" title="Editar"><i class="bi bi-pencil"></i></button>
+                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
+                                    <input type="hidden" name="action" value="delete_ticket">
+                                    <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                    <button type="submit" class="btn-action btn btn-outline-danger btn-sm" title="Eliminar"><i class="bi bi-trash"></i></button>
+                                </form>
                                 <?php if (!$t['assigned_to'] && !$isAdmin): ?>
-                                <form method="POST" class="d-inline"><input type="hidden" name="action" value="self_assign"><input type="hidden" name="ticket_id" value="<?= $t['id'] ?>"><button type="submit" class="btn-action btn btn-outline-success" title="Asignarme"><i class="bi bi-person-plus"></i></button></form>
+                                <form method="POST" class="d-inline"><input type="hidden" name="action" value="self_assign"><input type="hidden" name="ticket_id" value="<?= $t['id'] ?>"><button type="submit" class="btn-action btn btn-outline-success btn-sm" title="Asignarme"><i class="bi bi-person-plus"></i></button></form>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -2099,6 +2183,67 @@ $topActions = $pdo->query("
         </div>
     </main>
     
+    <!-- Modales de Edición de Tickets -->
+    <?php foreach ($tickets as $t): ?>
+    <div class="modal fade" id="editTicketModal<?= $t['id'] ?>" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning bg-opacity-10">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar <?= $t['ticket_number'] ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="update_ticket">
+                        <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Nombre del solicitante</label>
+                                <input type="text" name="user_name" class="form-control" value="<?= htmlspecialchars($t['user_name'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Email del solicitante</label>
+                                <input type="email" name="user_email" class="form-control" value="<?= htmlspecialchars($t['user_email'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Categoría *</label>
+                                <select name="category" class="form-select" required>
+                                    <option value="hardware" <?= $t['category'] === 'hardware' ? 'selected' : '' ?>>Hardware</option>
+                                    <option value="software" <?= $t['category'] === 'software' ? 'selected' : '' ?>>Software</option>
+                                    <option value="red" <?= $t['category'] === 'red' ? 'selected' : '' ?>>Red</option>
+                                    <option value="acceso" <?= $t['category'] === 'acceso' ? 'selected' : '' ?>>Acceso</option>
+                                    <option value="otro" <?= $t['category'] === 'otro' ? 'selected' : '' ?>>Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Prioridad *</label>
+                                <select name="priority" class="form-select" required>
+                                    <option value="baja" <?= $t['priority'] === 'baja' ? 'selected' : '' ?>>Baja</option>
+                                    <option value="media" <?= $t['priority'] === 'media' ? 'selected' : '' ?>>Media</option>
+                                    <option value="alta" <?= $t['priority'] === 'alta' ? 'selected' : '' ?>>Alta</option>
+                                    <option value="urgente" <?= $t['priority'] === 'urgente' ? 'selected' : '' ?>>Urgente</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Título *</label>
+                                <input type="text" name="title" class="form-control" required value="<?= htmlspecialchars($t['title']) ?>">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Descripción *</label>
+                                <textarea name="description" class="form-control" rows="5" required><?= htmlspecialchars($t['description']) ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+
     <!-- Modales de Tickets -->
     <?php foreach ($tickets as $t): 
         $ticketComments = $pdo->prepare('SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at ASC');
@@ -2193,8 +2338,24 @@ $topActions = $pdo->query("
                                     <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
                                 </select>
                                 <textarea name="resolution" class="form-control form-control-sm mb-2" rows="2" placeholder="Resolución (opcional)"><?= htmlspecialchars($t['resolution'] ?? '') ?></textarea>
-                                <button type="submit" class="btn btn-sm btn-dark w-100">Actualizar</button>
+                                <button type="submit" class="btn btn-sm btn-dark w-100">Actualizar Estado</button>
                             </form>
+                            
+                            <hr>
+                            
+                            <!-- Acciones rápidas -->
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-outline-warning w-100" data-bs-dismiss="modal" onclick="setTimeout(function(){ new bootstrap.Modal(document.getElementById('editTicketModal<?= $t['id'] ?>')).show(); }, 300)">
+                                    <i class="bi bi-pencil me-1"></i>Editar Ticket
+                                </button>
+                                <form method="POST" onsubmit="return confirm('¿Eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
+                                    <input type="hidden" name="action" value="delete_ticket">
+                                    <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                        <i class="bi bi-trash me-1"></i>Eliminar Ticket
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
