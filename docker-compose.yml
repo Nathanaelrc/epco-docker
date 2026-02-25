@@ -17,6 +17,8 @@ services:
       dockerfile: Dockerfile
     container_name: epco-app
     restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8090}:80"
     volumes:
       - ./logs:/var/www/html/logs
       - ./public/uploads:/var/www/html/public/uploads
