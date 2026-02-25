@@ -337,6 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'subject' => $title,
                     'category' => $category,
                     'priority' => $priority,
+                    'status' => 'abierto',
                     'user_name' => $name,
                     'user_email' => $email,
                     'department' => 'No especificado',

@@ -155,21 +155,69 @@ class MailService {
     private function getTicketCreatedTemplate($ticket) {
         $priorityColors = [
             'urgente' => '#dc2626',
-            'alta' => '#f59e0b',
-            'media' => '#3b82f6',
-            'baja' => '#10b981'
+            'alta' => '#ea580c',
+            'media' => '#2563eb',
+            'baja' => '#16a34a'
+        ];
+        $priorityLabels = [
+            'urgente' => '🔴 URGENTE',
+            'alta' => '🟠 ALTA',
+            'media' => '🔵 MEDIA',
+            'baja' => '🟢 BAJA'
+        ];
+        $categoryLabels = [
+            'hardware' => '🖥️ Hardware',
+            'software' => '💻 Software',
+            'red' => '🌐 Red / Conectividad',
+            'acceso' => '🔑 Accesos / Permisos',
+            'otro' => '📌 Otro'
+        ];
+        $statusLabels = [
+            'abierto' => 'Abierto',
+            'asignado' => 'Asignado',
+            'en_proceso' => 'En Proceso',
+            'pendiente' => 'Pendiente',
+            'resuelto' => 'Resuelto',
+            'cerrado' => 'Cerrado'
         ];
         
-        $priorityColor = $priorityColors[$ticket['priority']] ?? '#6b7280';
+        $priority = $ticket['priority'] ?? 'media';
+        $category = $ticket['category'] ?? 'otro';
+        $status = $ticket['status'] ?? 'abierto';
+        $priorityColor = $priorityColors[$priority] ?? '#6b7280';
+        $priorityLabel = $priorityLabels[$priority] ?? ucfirst($priority);
+        $categoryLabel = $categoryLabels[$category] ?? ucfirst($category);
+        $statusLabel = $statusLabels[$status] ?? ucfirst($status);
         $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
-        $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "#{$ticket['id']}", ENT_QUOTES, 'UTF-8');
-        $subject = htmlspecialchars($ticket['subject'] ?? $ticket['title'] ?? 'Sin asunto', ENT_QUOTES, 'UTF-8');
+        $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "TK-{$ticket['id']}", ENT_QUOTES, 'UTF-8');
         $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
         
-        // Sanitizar datos del ticket contra XSS en el HTML del correo
-        $ticket = array_map(function($v) {
+        // Sanitizar datos contra XSS
+        $safe = array_map(function($v) {
             return is_string($v) ? htmlspecialchars($v, ENT_QUOTES, 'UTF-8') : $v;
         }, $ticket);
+        
+        $subject = $safe['subject'] ?? $safe['title'] ?? 'Sin asunto';
+        $userName = $safe['user_name'] ?? 'No especificado';
+        $userEmail = $safe['user_email'] ?? 'No especificado';
+        $department = $safe['department'] ?? 'No especificado';
+        $phone = $safe['user_phone'] ?? '';
+        $description = $safe['description'] ?? 'Sin descripción';
+        
+        // Fila de teléfono (solo si existe)
+        $phoneRow = '';
+        if (!empty($phone)) {
+            $phoneRow = <<<ROW
+                                <tr>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
+                                        <strong style="color: #64748b; font-size: 13px;">📞 Teléfono</strong>
+                                    </td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
+                                        <span style="color: #1e293b; font-size: 14px;">{$phone}</span>
+                                    </td>
+                                </tr>
+ROW;
+        }
         
         return <<<HTML
 <!DOCTYPE html>
@@ -178,39 +226,49 @@ class MailService {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f0f2f5; padding: 30px 15px;">
         <tr>
             <td align="center">
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <table role="presentation" width="620" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
                     
-                    <!-- Header -->
+                    <!-- ===== HEADER ===== -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #0c5a8a 0%, #0a4a6e 100%); padding: 30px 40px; text-align: center;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
+                        <td style="background: linear-gradient(135deg, #0c5a8a 0%, #064e73 100%); padding: 28px 40px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">
                                 🎫 Nuevo Ticket de Soporte
                             </h1>
-                            <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">
-                                Empresa Portuaria Coquimbo - Mesa de Ayuda TI
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;">
+                                Empresa Portuaria Coquimbo — Mesa de Ayuda TI
                             </p>
                         </td>
                     </tr>
                     
-                    <!-- Ticket Info Banner -->
+                    <!-- ===== RESUMEN RÁPIDO ===== -->
                     <tr>
-                        <td style="padding: 30px 40px 20px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                        <td style="padding: 25px 40px 15px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
                                 <tr>
-                                    <td style="background-color: #f8fafc; border-radius: 12px; padding: 20px;">
+                                    <td style="padding: 20px;">
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                             <tr>
-                                                <td width="50%">
-                                                    <p style="margin: 0 0 5px; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Número de Ticket</p>
-                                                    <p style="margin: 0; color: #0c5a8a; font-size: 28px; font-weight: 700;">#{$ticket['id']}</p>
+                                                <!-- Número de ticket -->
+                                                <td width="33%" style="text-align: center; border-right: 1px solid #e2e8f0;">
+                                                    <p style="margin: 0 0 4px; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Ticket</p>
+                                                    <p style="margin: 0; color: #0c5a8a; font-size: 22px; font-weight: 700;">{$ticketNumber}</p>
                                                 </td>
-                                                <td width="50%" align="right">
-                                                    <span style="display: inline-block; background-color: {$priorityColor}; color: #ffffff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">
-                                                        {$ticket['priority']}
+                                                <!-- Prioridad -->
+                                                <td width="34%" style="text-align: center; border-right: 1px solid #e2e8f0;">
+                                                    <p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Prioridad</p>
+                                                    <span style="display: inline-block; background-color: {$priorityColor}; color: #ffffff; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                                        {$priorityLabel}
+                                                    </span>
+                                                </td>
+                                                <!-- Estado -->
+                                                <td width="33%" style="text-align: center;">
+                                                    <p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Estado</p>
+                                                    <span style="display: inline-block; background-color: #dbeafe; color: #1e40af; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                                        {$statusLabel}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -221,47 +279,70 @@ class MailService {
                         </td>
                     </tr>
                     
-                    <!-- Ticket Details -->
+                    <!-- ===== INFORMACIÓN DEL SOLICITANTE ===== -->
                     <tr>
-                        <td style="padding: 0 40px 30px;">
-                            <h2 style="margin: 0 0 20px; color: #1e293b; font-size: 18px; font-weight: 600; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+                        <td style="padding: 10px 40px 5px;">
+                            <h2 style="margin: 0 0 12px; color: #1e293b; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
+                                👤 Solicitante
+                            </h2>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; background-color: #fafbfc; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
+                                        <strong style="color: #64748b; font-size: 13px;">👤 Nombre</strong>
+                                    </td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
+                                        <span style="color: #1e293b; font-size: 14px; font-weight: 600;">{$userName}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
+                                        <strong style="color: #64748b; font-size: 13px;">✉️ Correo</strong>
+                                    </td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
+                                        <a href="mailto:{$userEmail}" style="color: #2563eb; font-size: 14px; text-decoration: none;">{$userEmail}</a>
+                                    </td>
+                                </tr>
+                                {$phoneRow}
+                                <tr>
+                                    <td style="padding: 10px 15px; width: 160px; vertical-align: top;">
+                                        <strong style="color: #64748b; font-size: 13px;">🏢 Departamento</strong>
+                                    </td>
+                                    <td style="padding: 10px 15px;">
+                                        <span style="color: #1e293b; font-size: 14px;">{$department}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- ===== DETALLES DEL TICKET ===== -->
+                    <tr>
+                        <td style="padding: 20px 40px 5px;">
+                            <h2 style="margin: 0 0 12px; color: #1e293b; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
                                 📋 Detalles del Ticket
                             </h2>
-                            
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; background-color: #fafbfc; border-radius: 8px; overflow: hidden;">
                                 <tr>
-                                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                                        <strong style="color: #64748b; font-size: 13px; display: inline-block; width: 140px;">Asunto:</strong>
-                                        <span style="color: #1e293b; font-size: 14px;">{$ticket['subject']}</span>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
+                                        <strong style="color: #64748b; font-size: 13px;">📌 Asunto</strong>
+                                    </td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
+                                        <span style="color: #1e293b; font-size: 14px; font-weight: 600;">{$subject}</span>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                                        <strong style="color: #64748b; font-size: 13px; display: inline-block; width: 140px;">Categoría:</strong>
-                                        <span style="color: #1e293b; font-size: 14px;">{$ticket['category']}</span>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
+                                        <strong style="color: #64748b; font-size: 13px;">🏷️ Categoría</strong>
+                                    </td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
+                                        <span style="color: #1e293b; font-size: 14px;">{$categoryLabel}</span>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                                        <strong style="color: #64748b; font-size: 13px; display: inline-block; width: 140px;">Solicitante:</strong>
-                                        <span style="color: #1e293b; font-size: 14px;">{$ticket['user_name']}</span>
+                                    <td style="padding: 10px 15px; width: 160px; vertical-align: top;">
+                                        <strong style="color: #64748b; font-size: 13px;">📅 Fecha</strong>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                                        <strong style="color: #64748b; font-size: 13px; display: inline-block; width: 140px;">Email:</strong>
-                                        <span style="color: #1e293b; font-size: 14px;">{$ticket['user_email']}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                                        <strong style="color: #64748b; font-size: 13px; display: inline-block; width: 140px;">Departamento:</strong>
-                                        <span style="color: #1e293b; font-size: 14px;">{$ticket['department']}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                                        <strong style="color: #64748b; font-size: 13px; display: inline-block; width: 140px;">Fecha de Creación:</strong>
+                                    <td style="padding: 10px 15px;">
                                         <span style="color: #1e293b; font-size: 14px;">{$createdAt}</span>
                                     </td>
                                 </tr>
@@ -269,35 +350,35 @@ class MailService {
                         </td>
                     </tr>
                     
-                    <!-- Description -->
+                    <!-- ===== DESCRIPCIÓN ===== -->
                     <tr>
-                        <td style="padding: 0 40px 30px;">
-                            <h2 style="margin: 0 0 15px; color: #1e293b; font-size: 18px; font-weight: 600; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+                        <td style="padding: 20px 40px 15px;">
+                            <h2 style="margin: 0 0 12px; color: #1e293b; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
                                 📝 Descripción del Problema
                             </h2>
-                            <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; border-left: 4px solid #0c5a8a;">
-                                <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.7; white-space: pre-wrap;">{$ticket['description']}</p>
+                            <div style="background-color: #f8fafc; border-radius: 8px; padding: 18px; border-left: 4px solid #0c5a8a; margin-top: 4px;">
+                                <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.8; white-space: pre-wrap;">{$description}</p>
                             </div>
                         </td>
                     </tr>
                     
-                    <!-- Action Button -->
+                    <!-- ===== BOTÓN DE ACCIÓN ===== -->
                     <tr>
-                        <td style="padding: 0 40px 40px;" align="center">
-                            <a href="{$appUrl}/soporte_admin.php" style="display: inline-block; background: linear-gradient(135deg, #0c5a8a 0%, #0a4a6e 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 14px; font-weight: 600;">
-                                Ver en Panel de Control →
+                        <td style="padding: 15px 40px 35px;" align="center">
+                            <a href="{$appUrl}/soporte_admin.php?page=tickets" style="display: inline-block; background: linear-gradient(135deg, #0c5a8a 0%, #064e73 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.3px;">
+                                🔗 Ver en Panel de Soporte
                             </a>
                         </td>
                     </tr>
                     
-                    <!-- Footer -->
+                    <!-- ===== FOOTER ===== -->
                     <tr>
-                        <td style="background-color: #f8fafc; padding: 25px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
-                            <p style="margin: 0 0 5px; color: #64748b; font-size: 13px;">
-                                <strong>Empresa Portuaria Coquimbo</strong>
+                        <td style="background-color: #f8fafc; padding: 20px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0 0 4px; color: #475569; font-size: 13px; font-weight: 600;">
+                                Empresa Portuaria Coquimbo
                             </p>
-                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                                Este es un correo automático del sistema de soporte TI. Por favor no responda a este mensaje.
+                            <p style="margin: 0; color: #94a3b8; font-size: 11px;">
+                                Correo automático del Sistema de Soporte TI · No responder a este mensaje
                             </p>
                         </td>
                     </tr>
@@ -315,32 +396,48 @@ HTML;
      * Versión texto plano del correo
      */
     private function getTicketCreatedPlainText($ticket) {
+        $priority = $ticket['priority'] ?? 'media';
+        $category = $ticket['category'] ?? 'otro';
+        $status = $ticket['status'] ?? 'abierto';
         $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
         $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+        $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+        $phone = !empty($ticket['user_phone']) ? "\n- Teléfono: {$ticket['user_phone']}" : '';
         
         return <<<TEXT
-NUEVO TICKET DE SOPORTE - Empresa Portuaria Coquimbo
-=====================================================
+═══════════════════════════════════════════════
+  NUEVO TICKET DE SOPORTE
+  Empresa Portuaria Coquimbo - Mesa de Ayuda TI
+═══════════════════════════════════════════════
 
-TICKET #{$ticket['id']}
-Prioridad: {$ticket['priority']}
+TICKET: {$ticketNumber}
+PRIORIDAD: {$priority}
+ESTADO: {$status}
 
-DETALLES:
-- Asunto: {$ticket['subject']}
-- Categoría: {$ticket['category']}
-- Solicitante: {$ticket['user_name']}
-- Email: {$ticket['user_email']}
+───────────────────────────────────────────────
+SOLICITANTE
+───────────────────────────────────────────────
+- Nombre: {$ticket['user_name']}
+- Email: {$ticket['user_email']}{$phone}
 - Departamento: {$ticket['department']}
-- Fecha: {$createdAt}
 
-DESCRIPCIÓN:
+───────────────────────────────────────────────
+DETALLES DEL TICKET
+───────────────────────────────────────────────
+- Asunto: {$ticket['subject']}
+- Categoría: {$category}
+- Fecha de creación: {$createdAt}
+
+───────────────────────────────────────────────
+DESCRIPCIÓN
+───────────────────────────────────────────────
 {$ticket['description']}
 
----
-Para gestionar este ticket, ingrese al Panel de Control:
-{$appUrl}/soporte_admin.php
+───────────────────────────────────────────────
+Ver en Panel de Soporte:
+{$appUrl}/soporte_admin.php?page=tickets
 
-Este es un correo automático. Por favor no responda a este mensaje.
+Correo automático · No responder a este mensaje
 TEXT;
     }
 }
