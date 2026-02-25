@@ -29,7 +29,7 @@ services:
       - DB_PASS=${DB_PASS:-EpcoSecure2026}
       - DB_CHARSET=utf8mb4
       - APP_ENV=${APP_ENV:-production}
-      - APP_URL=${APP_URL:-https://soporteti.puertocoquimbo.cl}
+      - APP_URL=${APP_URL:-http://localhost:8090}
       - TZ=America/Santiago
       # SMTP - Configuración de correo
       - SMTP_ENABLED=${SMTP_ENABLED:-true}
@@ -54,7 +54,6 @@ services:
         condition: service_healthy
     networks:
       - epco-network
-      - nginx-proxy-manager
 
   # =============================================
   # Base de Datos MySQL
@@ -146,5 +145,3 @@ volumes:
 networks:
   epco-network:
     driver: bridge
-  nginx-proxy-manager:
-    external: true
