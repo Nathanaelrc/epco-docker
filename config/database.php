@@ -35,7 +35,22 @@ $pdoOptions = [
 try {
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $pdoOptions);
 } catch (PDOException $e) {
-    error_log("Error de conexión: " . $e->getMessage());
+    $errorDetail = sprintf(
+        "PDO Error [%s]: %s | Host=%s, DB=%s, User=%s, Pass=%s",
+        $e->getCode(),
+        $e->getMessage(),
+        DB_HOST,
+        DB_NAME,
+        DB_USER,
+        DB_PASS ? str_repeat('*', strlen(DB_PASS)) : '(vacío)'
+    );
+    error_log("[EPCO DB] " . $errorDetail);
+
     http_response_code(500);
-    die("Error de conexión a la base de datos.");
+    // En desarrollo mostrar detalle; en producción mensaje genérico
+    if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+        die("Error de conexión a la base de datos: " . htmlspecialchars($e->getMessage()));
+    } else {
+        die("Error de conexión a la base de datos. Revisa los logs para más detalle.");
+    }
 }
