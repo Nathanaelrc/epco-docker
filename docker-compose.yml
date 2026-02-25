@@ -36,17 +36,17 @@ services:
       - SMTP_MODE=${SMTP_MODE:-relay}
       - SMTP_HOST=${SMTP_HOST:-smtp-mail.outlook.com}
       - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_USER=${SMTP_USER:-soportetiepco@outlook.com}
+      - SMTP_PASS=${SMTP_PASS:-Portuaria01*}
       - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-tls}
-      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-soportetiepco@outlook.com}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Soporte TI - EPCO}
       # Relay interno (microservicio de correo)
       - SMTP_RELAY_HOST=mailrelay
       - SMTP_RELAY_PORT=25
       # Destinatarios de notificaciones (separar con coma)
-      - NOTIFY_TICKET_CREATED=${NOTIFY_TICKET_CREATED:-}
-      - NOTIFY_TICKET_UPDATED=${NOTIFY_TICKET_UPDATED:-}
+      - NOTIFY_TICKET_CREATED=${NOTIFY_TICKET_CREATED:-soportetiepco@outlook.com}
+      - NOTIFY_TICKET_UPDATED=${NOTIFY_TICKET_UPDATED:-soportetiepco@outlook.com}
     depends_on:
       db:
         condition: service_healthy
@@ -100,8 +100,8 @@ services:
     environment:
       - RELAY_HOST=${SMTP_HOST:-smtp-mail.outlook.com}
       - RELAY_PORT=${SMTP_PORT:-587}
-      - RELAY_USER=${SMTP_USER:-}
-      - RELAY_PASS=${SMTP_PASS:-}
+      - RELAY_USER=${SMTP_USER:-soportetiepco@outlook.com}
+      - RELAY_PASS=${SMTP_PASS:-Portuaria01*}
       - MAIL_HOSTNAME=mail.epco.local
     healthcheck:
       test: ["CMD", "postfix", "status"]
