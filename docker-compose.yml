@@ -146,6 +146,5 @@ volumes:
 networks:
   epco-network:
     driver: bridge
-  npm_network:
-    name: nginx-proxy-manager
+  nginx-proxy-manager:
     external: true
