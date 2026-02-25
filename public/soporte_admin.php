@@ -1413,6 +1413,42 @@ $topActions = $pdo->query("
                 </div>
             </div>
             
+            <!-- Tickets Recientes -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">
+                    <h5 class="card-title-custom"><i class="bi bi-clock-history me-2"></i>Tickets Recientes</h5>
+                    <a href="?page=tickets" class="btn btn-sm btn-outline-dark">Ver todos</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Fecha</th><th></th></tr></thead>
+                        <tbody>
+                        <?php foreach (array_slice($tickets, 0, 10) as $t): ?>
+                        <tr>
+                            <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
+                            <td><?= htmlspecialchars(substr($t['title'], 0, 40)) ?><?= strlen($t['title']) > 40 ? '...' : '' ?></td>
+                            <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><?= htmlspecialchars($t['user_name'] ?? '-') ?></div></td>
+                            <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
+                            <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
+                            <td class="text-center">
+                                <?php 
+                                    $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
+                                ?>
+                                <?php if ($hasEvidence): ?>
+                                    <a href="#" class="badge bg-success text-decoration-none" title="Ver evidencia adjunta" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-paperclip me-1"></i>Ver</a>
+                                <?php else: ?>
+                                    <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-muted small"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
+                            <td><button class="btn-action btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-eye"></i></button></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Gráficos y Alertas -->
             <div class="row g-3 mb-4">
                 <!-- Tendencia Semanal -->
@@ -1570,42 +1606,6 @@ $topActions = $pdo->query("
                 </div>
             </div>
             
-            <!-- Tickets Recientes -->
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h5 class="card-title-custom"><i class="bi bi-clock-history me-2"></i>Tickets Recientes</h5>
-                    <a href="?page=tickets" class="btn btn-sm btn-outline-dark">Ver todos</a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Fecha</th><th></th></tr></thead>
-                        <tbody>
-                        <?php foreach (array_slice($tickets, 0, 10) as $t): ?>
-                        <tr>
-                            <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
-                            <td><?= htmlspecialchars(substr($t['title'], 0, 40)) ?><?= strlen($t['title']) > 40 ? '...' : '' ?></td>
-                            <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><?= htmlspecialchars($t['user_name'] ?? '-') ?></div></td>
-                            <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
-                            <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
-                            <td class="text-center">
-                                <?php 
-                                    $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
-                                ?>
-                                <?php if ($hasEvidence): ?>
-                                    <a href="#" class="badge bg-success text-decoration-none" title="Ver evidencia adjunta" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-paperclip me-1"></i>Ver</a>
-                                <?php else: ?>
-                                    <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="text-muted small"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
-                            <td><button class="btn-action btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-eye"></i></button></td>
-                        </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <!-- Guía de Uso del Sistema -->
             <div class="card-custom mt-4">
                 <div class="card-header-custom">
