@@ -2627,7 +2627,7 @@ $topActions = $pdo->query("
     </main>
     
     <!-- Modales de Edición de Tickets -->
-    <?php foreach ($tickets as $t): ?>
+    <?php foreach ($allModalTickets as $t): ?>
     <div class="modal fade" id="editTicketModal<?= $t['id'] ?>" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -2687,8 +2687,14 @@ $topActions = $pdo->query("
     </div>
     <?php endforeach; ?>
 
-    <!-- Modales de Tickets -->
-    <?php foreach ($tickets as $t): 
+    <!-- Modales de Tickets (unificar todos los tickets referenciados) -->
+    <?php 
+    // Unir tickets de todas las fuentes para generar modales
+    $allModalTickets = [];
+    foreach ($tickets as $t) $allModalTickets[$t['id']] = $t;
+    if (!empty($slaTickets)) { foreach ($slaTickets as $t) { if (!isset($allModalTickets[$t['id']])) $allModalTickets[$t['id']] = $t; } }
+    ?>
+    <?php foreach ($allModalTickets as $t): 
         $ticketComments = $pdo->prepare('SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at ASC');
         $ticketComments->execute([$t['id']]);
         $comments = $ticketComments->fetchAll();
@@ -2711,47 +2717,104 @@ $topActions = $pdo->query("
                             <?php endif; ?>
                             
                             <?php
-                            // Evidencia adjunta
-                            $evidenceDir = __DIR__ . '/uploads/tickets/' . $t['ticket_number'];
+                            // ===== EVIDENCIA ADJUNTA =====
+                            $ticketNum = $t['ticket_number'];
+                            $evidenceDir = __DIR__ . '/uploads/tickets/' . $ticketNum;
                             $evidenceFiles = [];
+                            
+                            // 1) Archivos en el filesystem
                             if (is_dir($evidenceDir)) {
-                                $scan = scandir($evidenceDir);
+                                $scan = array_diff(scandir($evidenceDir), ['.', '..', '.gitkeep']);
                                 foreach ($scan as $f) {
-                                    if ($f === '.' || $f === '..') continue;
-                                    $evidenceFiles[] = $f;
+                                    $evidenceFiles[$f] = 'uploads/tickets/' . $ticketNum . '/' . $f;
                                 }
                             }
+                            
+                            // 2) Archivos referenciados en comentarios (fallback si scandir no encuentra)
+                            $commentFiles = [];
+                            foreach ($comments as $c) {
+                                if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $m)) {
+                                    $names = array_map('trim', explode(',', $m[1]));
+                                    foreach ($names as $fname) {
+                                        $fname = trim($fname);
+                                        if ($fname && !isset($evidenceFiles[$fname])) {
+                                            $commentFiles[$fname] = 'uploads/tickets/' . $ticketNum . '/' . $fname;
+                                            $evidenceFiles[$fname] = $commentFiles[$fname];
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            $totalEvidence = count($evidenceFiles);
                             ?>
-                            <?php if (!empty($evidenceFiles)): ?>
+                            <?php if ($totalEvidence > 0): ?>
                             <div class="mb-3">
-                                <h6 class="fw-bold mb-2"><i class="bi bi-paperclip me-1"></i>Evidencia Adjunta (<?= count($evidenceFiles) ?>)</h6>
+                                <h6 class="fw-bold mb-2"><i class="bi bi-paperclip me-1"></i>Evidencia Adjunta (<?= $totalEvidence ?>)</h6>
                                 <div class="row g-2">
-                                    <?php foreach ($evidenceFiles as $ef):
-                                        $filePath = 'uploads/tickets/' . $t['ticket_number'] . '/' . $ef;
-                                        $ext = strtolower(pathinfo($ef, PATHINFO_EXTENSION));
+                                    <?php foreach ($evidenceFiles as $fname => $furl):
+                                        $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
                                         $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                        $displayName = preg_replace('/^[a-f0-9]+_/', '', $ef);
+                                        $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
+                                        $fullDiskPath = __DIR__ . '/' . $furl;
+                                        $fileExists = file_exists($fullDiskPath);
                                     ?>
                                     <div class="col-md-6">
                                         <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc;">
-                                            <?php if ($isImage): ?>
-                                            <a href="<?= $filePath ?>" target="_blank" title="Ver imagen">
-                                                <img src="<?= $filePath ?>" alt="<?= htmlspecialchars($displayName) ?>" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                            <?php if ($isImage && $fileExists): ?>
+                                            <a href="<?= htmlspecialchars($furl) ?>" target="_blank" title="Ver imagen en tamaño completo" style="flex-shrink:0;">
+                                                <img src="<?= htmlspecialchars($furl) ?>" alt="<?= htmlspecialchars($displayName) ?>" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; cursor: zoom-in;">
                                             </a>
+                                            <?php elseif ($isImage): ?>
+                                            <div class="d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background: #dbeafe; border-radius: 6px; flex-shrink:0;">
+                                                <i class="bi bi-image" style="font-size: 1.3rem; color: #3b82f6;"></i>
+                                            </div>
                                             <?php else: ?>
-                                            <div class="d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #e2e8f0; border-radius: 6px;">
-                                                <i class="bi bi-file-earmark-<?= $ext === 'pdf' ? 'pdf' : 'text' ?>" style="font-size: 1.3rem; color: #64748b;"></i>
+                                            <div class="d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background: #e2e8f0; border-radius: 6px; flex-shrink:0;">
+                                                <i class="bi bi-file-earmark-<?= $ext === 'pdf' ? 'pdf' : ($ext === 'doc' || $ext === 'docx' ? 'word' : 'text') ?>" style="font-size: 1.3rem; color: #64748b;"></i>
                                             </div>
                                             <?php endif; ?>
                                             <div class="flex-grow-1 overflow-hidden">
                                                 <p class="mb-0 small fw-semibold text-truncate" title="<?= htmlspecialchars($displayName) ?>"><?= htmlspecialchars($displayName) ?></p>
-                                                <p class="mb-0 text-muted" style="font-size: 0.7rem;"><?= strtoupper($ext) ?></p>
+                                                <p class="mb-0 text-muted" style="font-size: 0.7rem;">
+                                                    <?= strtoupper($ext) ?>
+                                                    <?php if ($fileExists): ?>
+                                                        · <?= round(filesize($fullDiskPath) / 1024) ?> KB
+                                                    <?php else: ?>
+                                                        · <span class="text-warning">Archivo en servidor</span>
+                                                    <?php endif; ?>
+                                                </p>
                                             </div>
-                                            <a href="<?= $filePath ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Abrir"><i class="bi bi-box-arrow-up-right"></i></a>
+                                            <a href="<?= htmlspecialchars($furl) ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Abrir archivo" style="flex-shrink:0;"><i class="bi bi-box-arrow-up-right"></i></a>
+                                            <?php if ($fileExists): ?>
+                                            <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-secondary" title="Descargar" style="flex-shrink:0;"><i class="bi bi-download"></i></a>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                     <?php endforeach; ?>
                                 </div>
+                                <?php if (!empty($evidenceFiles)): ?>
+                                <?php 
+                                    // Mostrar preview grande de imágenes
+                                    $imageFiles = array_filter($evidenceFiles, function($fname) {
+                                        return in_array(strtolower(pathinfo($fname, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                    }, ARRAY_FILTER_USE_KEY);
+                                ?>
+                                <?php if (!empty($imageFiles)): ?>
+                                <div class="mt-2">
+                                    <div class="row g-2">
+                                        <?php foreach ($imageFiles as $fname => $furl): 
+                                            if (!file_exists(__DIR__ . '/' . $furl)) continue;
+                                        ?>
+                                        <div class="col-md-4">
+                                            <a href="<?= htmlspecialchars($furl) ?>" target="_blank">
+                                                <img src="<?= htmlspecialchars($furl) ?>" class="img-fluid rounded-3 border" alt="<?= htmlspecialchars(preg_replace('/^[a-f0-9]+_/', '', $fname)) ?>" style="max-height: 180px; width: 100%; object-fit: cover; cursor: zoom-in;">
+                                            </a>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
                             
@@ -2762,7 +2825,23 @@ $topActions = $pdo->query("
                             <?php else: foreach ($comments as $c): ?>
                             <div class="bg-light rounded p-3 mb-2">
                                 <div class="d-flex justify-content-between"><strong><?= htmlspecialchars($c['user_name'] ?? 'Sistema') ?></strong><small class="text-muted"><?= date('d/m H:i', strtotime($c['created_at'])) ?></small></div>
-                                <p class="mb-0 mt-1"><?= nl2br(htmlspecialchars($c['comment'])) ?></p>
+                                <p class="mb-0 mt-1"><?php
+                                    $commentText = htmlspecialchars($c['comment']);
+                                    // Convertir nombres de archivo en links clickeables
+                                    if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $cm)) {
+                                        $fileNames = array_map('trim', explode(',', $cm[1]));
+                                        $linkedNames = [];
+                                        foreach ($fileNames as $fn) {
+                                            $fn = trim($fn);
+                                            if (!$fn) continue;
+                                            $fileUrl = 'uploads/tickets/' . $ticketNum . '/' . $fn;
+                                            $cleanName = preg_replace('/^[a-f0-9]+_/', '', $fn);
+                                            $linkedNames[] = '<a href="' . htmlspecialchars($fileUrl) . '" target="_blank" class="text-primary"><i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                        }
+                                        $commentText = str_replace(htmlspecialchars($cm[0]), 'Archivos adjuntos: ' . implode(', ', $linkedNames), $commentText);
+                                    }
+                                    echo nl2br($commentText);
+                                ?></p>
                                 <?php if ($c['is_internal']): ?><span class="badge bg-warning text-dark">Interno</span><?php endif; ?>
                             </div>
                             <?php endforeach; endif; ?>
