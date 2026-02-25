@@ -29,7 +29,20 @@ services:
       - DB_PASS=${DB_PASS:-EpcoSecure2026}
       - DB_CHARSET=utf8mb4
       - APP_ENV=${APP_ENV:-production}
+      - APP_URL=${APP_URL:-http://localhost:8080}
       - TZ=America/Santiago
+      # SMTP - Configuración de correo
+      - SMTP_ENABLED=${SMTP_ENABLED:-false}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-tls}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Soporte TI - EPCO}
+      # Destinatarios de notificaciones (separar con coma)
+      - NOTIFY_TICKET_CREATED=${NOTIFY_TICKET_CREATED:-}
+      - NOTIFY_TICKET_UPDATED=${NOTIFY_TICKET_UPDATED:-}
     depends_on:
       db:
         condition: service_healthy

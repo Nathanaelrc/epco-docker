@@ -327,6 +327,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'success';
             logActivity($user['id'], 'ticket_created', 'tickets', $ticketId, "Ticket $ticketNumber creado desde panel admin: $title");
             
+            // Enviar notificación por correo
+            try {
+                require_once __DIR__ . '/../includes/MailService.php';
+                $mailService = new MailService();
+                $ticketData = [
+                    'id' => $ticketId,
+                    'ticket_number' => $ticketNumber,
+                    'subject' => $title,
+                    'category' => $category,
+                    'priority' => $priority,
+                    'user_name' => $name,
+                    'user_email' => $email,
+                    'department' => 'No especificado',
+                    'description' => $description,
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+                $mailService->sendTicketCreatedNotification($ticketData);
+            } catch (Exception $e) {
+                error_log("Error enviando correo desde admin: " . $e->getMessage());
+            }
+            
             // Redirigir al dashboard
             header("Location: " . $_SERVER['PHP_SELF'] . "?page=dashboard&msg=ticket_created&ticket=$ticketNumber");
             exit;

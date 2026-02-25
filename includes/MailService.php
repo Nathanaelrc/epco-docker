@@ -48,22 +48,48 @@ class MailService {
     
     /**
      * Enviar notificación de nuevo ticket creado
+     * Envía a todos los destinatarios configurados en NOTIFY_TICKET_CREATED
      */
     public function sendTicketCreatedNotification($ticket) {
-        try {
-            $this->mailer->clearAddresses();
-            $this->mailer->addAddress($this->config['notifications']['ticket_created']);
-            
-            $this->mailer->Subject = "🎫 Nuevo Ticket #{$ticket['id']} - {$ticket['category']} - {$ticket['priority']}";
-            $this->mailer->Body = $this->getTicketCreatedTemplate($ticket);
-            $this->mailer->AltBody = $this->getTicketCreatedPlainText($ticket);
-            
-            $this->mailer->send();
-            return true;
-        } catch (Exception $e) {
-            error_log("Error enviando correo de ticket: " . $this->mailer->ErrorInfo);
+        $recipients = $this->getRecipients('ticket_created');
+        
+        if (empty($recipients)) {
+            error_log("[EPCO Mail] No hay destinatarios configurados para ticket_created (NOTIFY_TICKET_CREATED)");
             return false;
         }
+        
+        $success = true;
+        foreach ($recipients as $email) {
+            try {
+                $this->mailer->clearAddresses();
+                $this->mailer->addAddress(trim($email));
+                
+                $this->mailer->Subject = "🎫 Nuevo Ticket #{$ticket['ticket_number']} - {$ticket['category']} - {$ticket['priority']}";
+                $this->mailer->Body = $this->getTicketCreatedTemplate($ticket);
+                $this->mailer->AltBody = $this->getTicketCreatedPlainText($ticket);
+                
+                $this->mailer->send();
+                error_log("[EPCO Mail] Notificación enviada a: $email para ticket #{$ticket['ticket_number']}");
+            } catch (Exception $e) {
+                error_log("[EPCO Mail] Error enviando a $email: " . $this->mailer->ErrorInfo);
+                $success = false;
+            }
+        }
+        
+        return $success;
+    }
+    
+    /**
+     * Obtener lista de destinatarios, soporta múltiples separados por coma
+     */
+    private function getRecipients($type) {
+        $raw = $this->config['notifications'][$type] ?? '';
+        if (empty($raw)) return [];
+        
+        $emails = array_map('trim', explode(',', $raw));
+        return array_filter($emails, function($email) {
+            return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+        });
     }
     
     /**
@@ -79,6 +105,9 @@ class MailService {
         
         $priorityColor = $priorityColors[$ticket['priority']] ?? '#6b7280';
         $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
+        $ticketNumber = $ticket['ticket_number'] ?? "#{$ticket['id']}";
+        $subject = $ticket['subject'] ?? $ticket['title'] ?? 'Sin asunto';
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
         
         return <<<HTML
 <!DOCTYPE html>
@@ -193,7 +222,7 @@ class MailService {
                     <!-- Action Button -->
                     <tr>
                         <td style="padding: 0 40px 40px;" align="center">
-                            <a href="https://ticketsportal.cl/soporte_admin" style="display: inline-block; background: linear-gradient(135deg, #0c5a8a 0%, #0a4a6e 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                            <a href="{$appUrl}/soporte_admin.php" style="display: inline-block; background: linear-gradient(135deg, #0c5a8a 0%, #0a4a6e 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 14px; font-weight: 600;">
                                 Ver en Panel de Control →
                             </a>
                         </td>
