@@ -21,12 +21,7 @@ README.md
 *.md
 
 # Archivos de BD originales (se usa init.sql)
-database/schema.sql
-database/epco_complete.sql
-database/add_bulletins_table.sql
-database/add_denuncia_role.sql
-database/insert_bulletins.sql
-database/remove_chat_tables.sql
+# Solo init.sql es necesario, los demás son migrations obsoletas
 
 # Logs (se montan como volumen)
 logs/*
