@@ -540,7 +540,9 @@ if ($page === 'tickets' || $page === 'dashboard' || $page === 'sla') {
 $tickets = $pdo->query("
     SELECT t.*, 
            COALESCE(u.name, t.user_name) as user_name, 
-           a.name as assigned_name
+           a.name as assigned_name,
+           (SELECT COUNT(*) FROM ticket_attachments ta WHERE ta.ticket_id = t.id) as attachment_count,
+           (SELECT COUNT(*) FROM ticket_comments tc WHERE tc.ticket_id = t.id AND tc.comment LIKE '%Archivos adjuntos%') as comment_attachments
     FROM tickets t 
     LEFT JOIN users u ON t.user_id = u.id 
     LEFT JOIN users a ON t.assigned_to = a.id
@@ -1539,7 +1541,7 @@ $topActions = $pdo->query("
                 </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Prioridad</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Fecha</th><th></th></tr></thead>
                         <tbody>
                         <?php foreach (array_slice($tickets, 0, 10) as $t): ?>
                         <tr>
@@ -1548,6 +1550,16 @@ $topActions = $pdo->query("
                             <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><?= htmlspecialchars($t['user_name'] ?? '-') ?></div></td>
                             <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
                             <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
+                            <td class="text-center">
+                                <?php 
+                                    $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
+                                ?>
+                                <?php if ($hasEvidence): ?>
+                                    <span class="badge bg-success" title="Tiene evidencia adjunta"><i class="bi bi-paperclip me-1"></i>S&iacute;</span>
+                                <?php else: ?>
+                                    <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="text-muted small"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
                             <td><button class="btn-action btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-eye"></i></button></td>
                         </tr>
@@ -1576,10 +1588,10 @@ $topActions = $pdo->query("
                 </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Asignado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Asignado</th><th>Fecha</th><th>Acciones</th></tr></thead>
                         <tbody>
                         <?php if (empty($tickets)): ?>
-                        <tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
+                        <tr><td colspan="10" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
                         <?php else: foreach ($tickets as $t): ?>
                         <tr>
                             <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
@@ -1588,6 +1600,16 @@ $topActions = $pdo->query("
                             <td><span class="badge bg-light text-dark"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></td>
                             <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
                             <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
+                            <td class="text-center">
+                                <?php 
+                                    $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
+                                ?>
+                                <?php if ($hasEvidence): ?>
+                                    <span class="badge bg-success" title="Tiene evidencia adjunta"><i class="bi bi-paperclip me-1"></i>S&iacute;</span>
+                                <?php else: ?>
+                                    <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
+                                <?php endif; ?>
+                            </td>
                             <td><span class="small text-muted"><?= $t['assigned_name'] ?? '-' ?></span></td>
                             <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
                             <td class="text-nowrap">

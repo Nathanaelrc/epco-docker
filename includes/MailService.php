@@ -84,7 +84,7 @@ class MailService {
                 $this->mailer->clearAddresses();
                 $this->mailer->addAddress(trim($email));
                 
-                $this->mailer->Subject = "🎫 Nuevo Ticket #{$ticket['ticket_number']} - {$ticket['category']} - {$ticket['priority']}";
+                $this->mailer->Subject = "Nuevo Ticket #{$ticket['ticket_number']} - {$ticket['category']} - {$ticket['priority']}";
                 $this->mailer->Body = $this->getTicketCreatedTemplate($ticket);
                 $this->mailer->AltBody = $this->getTicketCreatedPlainText($ticket);
                 
@@ -140,7 +140,7 @@ class MailService {
         $this->mailer->clearAddresses();
         $this->mailer->addAddress(trim($toEmail));
         
-        $this->mailer->Subject = "✉️ Correo de Prueba - Notificaciones EPCO";
+        $this->mailer->Subject = "Correo de Prueba - Notificaciones EPCO";
         $this->mailer->Body = $this->getTicketCreatedTemplate($ticket);
         $this->mailer->AltBody = $this->getTicketCreatedPlainText($ticket);
         
@@ -160,17 +160,17 @@ class MailService {
             'baja' => '#16a34a'
         ];
         $priorityLabels = [
-            'urgente' => '🔴 URGENTE',
-            'alta' => '🟠 ALTA',
-            'media' => '🔵 MEDIA',
-            'baja' => '🟢 BAJA'
+            'urgente' => 'URGENTE',
+            'alta' => 'ALTA',
+            'media' => 'MEDIA',
+            'baja' => 'BAJA'
         ];
         $categoryLabels = [
-            'hardware' => '🖥️ Hardware',
-            'software' => '💻 Software',
-            'red' => '🌐 Red / Conectividad',
-            'acceso' => '🔑 Accesos / Permisos',
-            'otro' => '📌 Otro'
+            'hardware' => 'Hardware',
+            'software' => 'Software',
+            'red' => 'Red / Conectividad',
+            'acceso' => 'Accesos / Permisos',
+            'otro' => 'Otro'
         ];
         $statusLabels = [
             'abierto' => 'Abierto',
@@ -209,11 +209,11 @@ class MailService {
         if (!empty($phone)) {
             $phoneRow = <<<ROW
                                 <tr>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
-                                        <strong style="color: #64748b; font-size: 13px;">📞 Teléfono</strong>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; vertical-align: top; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Tel&eacute;fono</strong>
                                     </td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
-                                        <span style="color: #1e293b; font-size: 14px;">{$phone}</span>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$phone}</span>
                                     </td>
                                 </tr>
 ROW;
@@ -221,53 +221,102 @@ ROW;
         
         return <<<HTML
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        :root { color-scheme: light dark; supported-color-schemes: light dark; }
+        body, .body-wrapper { background-color: #f0f2f5 !important; }
+        .email-container { background-color: #ffffff !important; }
+        .header-bar { background-color: #0c5a8a !important; }
+        .section-bg { background-color: #f9fafb !important; }
+        .cell-label { background-color: #f9fafb !important; color: #344054 !important; }
+        .cell-value { background-color: #ffffff !important; color: #1d2939 !important; }
+        .text-primary { color: #1d2939 !important; }
+        .text-secondary { color: #475467 !important; }
+        .text-muted-em { color: #667085 !important; }
+        .footer-bg { background-color: #f2f4f7 !important; }
+        .desc-block { background-color: #f9fafb !important; border-left-color: #0c5a8a !important; }
+        @media (prefers-color-scheme: dark) {
+            body, .body-wrapper { background-color: #1a1a2e !important; }
+            .email-container { background-color: #16213e !important; }
+            .header-bar { background-color: #0a3d62 !important; }
+            .section-bg { background-color: #1a1a2e !important; border-color: #2c3e6b !important; }
+            .cell-label { background-color: #1a1a2e !important; color: #c4cdd5 !important; }
+            .cell-value { background-color: #16213e !important; color: #e4e7ec !important; }
+            .cell-value a { color: #7cb9e8 !important; }
+            .text-primary { color: #e4e7ec !important; }
+            .text-secondary { color: #c4cdd5 !important; }
+            .text-muted-em { color: #98a2b3 !important; }
+            .footer-bg { background-color: #0f1a30 !important; }
+            .desc-block { background-color: #1a1a2e !important; border-left-color: #3b82f6 !important; }
+            .desc-text { color: #c4cdd5 !important; }
+            .summary-box { background-color: #1a1a2e !important; border-color: #2c3e6b !important; }
+            .summary-divider { border-color: #2c3e6b !important; }
+            .ticket-num { color: #7cb9e8 !important; }
+            .priority-badge, .status-badge { opacity: 0.95; }
+            .section-title { color: #e4e7ec !important; border-bottom-color: #3b82f6 !important; }
+            .table-border { border-color: #2c3e6b !important; }
+            .btn-action { background-color: #0a3d62 !important; }
+            .footer-text { color: #c4cdd5 !important; }
+            .footer-sub { color: #667085 !important; }
+        }
+    </style>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f0f2f5; padding: 30px 15px;">
+<body class="body-wrapper" style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="body-wrapper" style="background-color: #f0f2f5; padding: 30px 15px;">
         <tr>
             <td align="center">
-                <table role="presentation" width="620" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+                <table role="presentation" width="620" cellspacing="0" cellpadding="0" class="email-container" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
                     
                     <!-- ===== HEADER ===== -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #0c5a8a 0%, #064e73 100%); padding: 28px 40px; text-align: center;">
+                        <td class="header-bar" style="background-color: #0c5a8a; padding: 28px 40px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">
-                                🎫 Nuevo Ticket de Soporte
+                                Nuevo Ticket de Soporte
                             </h1>
                             <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;">
-                                Empresa Portuaria Coquimbo — Mesa de Ayuda TI
+                                Empresa Portuaria Coquimbo &mdash; Mesa de Ayuda TI
                             </p>
                         </td>
                     </tr>
                     
-                    <!-- ===== RESUMEN RÁPIDO ===== -->
+                    <!-- ===== RESUMEN R&Aacute;PIDO ===== -->
                     <tr>
                         <td style="padding: 25px 40px 15px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="summary-box" style="background-color: #f9fafb; border-radius: 10px; border: 1px solid #d0d5dd;">
                                 <tr>
                                     <td style="padding: 20px;">
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                             <tr>
-                                                <!-- Número de ticket -->
-                                                <td width="33%" style="text-align: center; border-right: 1px solid #e2e8f0;">
-                                                    <p style="margin: 0 0 4px; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Ticket</p>
-                                                    <p style="margin: 0; color: #0c5a8a; font-size: 22px; font-weight: 700;">{$ticketNumber}</p>
+                                                <!-- N&uacute;mero de ticket -->
+                                                <td width="33%" style="text-align: center; border-right: 1px solid #d0d5dd;" class="summary-divider">
+                                                    <p class="text-muted-em" style="margin: 0 0 4px; color: #667085; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Ticket</p>
+                                                    <p class="ticket-num" style="margin: 0; color: #0c5a8a; font-size: 22px; font-weight: 700;">{$ticketNumber}</p>
                                                 </td>
                                                 <!-- Prioridad -->
-                                                <td width="34%" style="text-align: center; border-right: 1px solid #e2e8f0;">
-                                                    <p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Prioridad</p>
-                                                    <span style="display: inline-block; background-color: {$priorityColor}; color: #ffffff; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                                <td width="34%" style="text-align: center; border-right: 1px solid #d0d5dd;" class="summary-divider">
+                                                    <p class="text-muted-em" style="margin: 0 0 6px; color: #667085; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Prioridad</p>
+                                                    <span class="priority-badge" style="display: inline-block; background-color: {$priorityColor}; color: #ffffff; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
                                                         {$priorityLabel}
                                                     </span>
                                                 </td>
                                                 <!-- Estado -->
                                                 <td width="33%" style="text-align: center;">
-                                                    <p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Estado</p>
-                                                    <span style="display: inline-block; background-color: #dbeafe; color: #1e40af; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                                    <p class="text-muted-em" style="margin: 0 0 6px; color: #667085; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Estado</p>
+                                                    <span class="status-badge" style="display: inline-block; background-color: #d1d5db; color: #1d2939; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
                                                         {$statusLabel}
                                                     </span>
                                                 </td>
@@ -279,36 +328,36 @@ ROW;
                         </td>
                     </tr>
                     
-                    <!-- ===== INFORMACIÓN DEL SOLICITANTE ===== -->
+                    <!-- ===== INFORMACI&Oacute;N DEL SOLICITANTE ===== -->
                     <tr>
                         <td style="padding: 10px 40px 5px;">
-                            <h2 style="margin: 0 0 12px; color: #1e293b; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
-                                👤 Solicitante
+                            <h2 class="section-title" style="margin: 0 0 12px; color: #1d2939; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
+                                Solicitante
                             </h2>
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; background-color: #fafbfc; border-radius: 8px; overflow: hidden;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border-radius: 8px; overflow: hidden;">
                                 <tr>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
-                                        <strong style="color: #64748b; font-size: 13px;">👤 Nombre</strong>
+                                    <td class="cell-label" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; vertical-align: top; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Nombre</strong>
                                     </td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
-                                        <span style="color: #1e293b; font-size: 14px; font-weight: 600;">{$userName}</span>
+                                    <td class="cell-value" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px; font-weight: 600;">{$userName}</span>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
-                                        <strong style="color: #64748b; font-size: 13px;">✉️ Correo</strong>
+                                    <td class="cell-label" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; vertical-align: top; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Correo</strong>
                                     </td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
-                                        <a href="mailto:{$userEmail}" style="color: #2563eb; font-size: 14px; text-decoration: none;">{$userEmail}</a>
+                                    <td class="cell-value" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <a href="mailto:{$userEmail}" style="color: #0c5a8a; font-size: 14px; text-decoration: none;">{$userEmail}</a>
                                     </td>
                                 </tr>
                                 {$phoneRow}
                                 <tr>
-                                    <td style="padding: 10px 15px; width: 160px; vertical-align: top;">
-                                        <strong style="color: #64748b; font-size: 13px;">🏢 Departamento</strong>
+                                    <td class="cell-label" style="padding: 10px 15px; width: 160px; vertical-align: top; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Departamento</strong>
                                     </td>
-                                    <td style="padding: 10px 15px;">
-                                        <span style="color: #1e293b; font-size: 14px;">{$department}</span>
+                                    <td class="cell-value" style="padding: 10px 15px; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$department}</span>
                                     </td>
                                 </tr>
                             </table>
@@ -318,67 +367,67 @@ ROW;
                     <!-- ===== DETALLES DEL TICKET ===== -->
                     <tr>
                         <td style="padding: 20px 40px 5px;">
-                            <h2 style="margin: 0 0 12px; color: #1e293b; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
-                                📋 Detalles del Ticket
+                            <h2 class="section-title" style="margin: 0 0 12px; color: #1d2939; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
+                                Detalles del Ticket
                             </h2>
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; background-color: #fafbfc; border-radius: 8px; overflow: hidden;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border-radius: 8px; overflow: hidden;">
                                 <tr>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
-                                        <strong style="color: #64748b; font-size: 13px;">📌 Asunto</strong>
+                                    <td class="cell-label" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; vertical-align: top; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Asunto</strong>
                                     </td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
-                                        <span style="color: #1e293b; font-size: 14px; font-weight: 600;">{$subject}</span>
+                                    <td class="cell-value" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px; font-weight: 600;">{$subject}</span>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9; width: 160px; vertical-align: top;">
-                                        <strong style="color: #64748b; font-size: 13px;">🏷️ Categoría</strong>
+                                    <td class="cell-label" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; vertical-align: top; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Categor&iacute;a</strong>
                                     </td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #f1f5f9;">
-                                        <span style="color: #1e293b; font-size: 14px;">{$categoryLabel}</span>
+                                    <td class="cell-value" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$categoryLabel}</span>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 10px 15px; width: 160px; vertical-align: top;">
-                                        <strong style="color: #64748b; font-size: 13px;">📅 Fecha</strong>
+                                    <td class="cell-label" style="padding: 10px 15px; width: 160px; vertical-align: top; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Fecha</strong>
                                     </td>
-                                    <td style="padding: 10px 15px;">
-                                        <span style="color: #1e293b; font-size: 14px;">{$createdAt}</span>
+                                    <td class="cell-value" style="padding: 10px 15px; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$createdAt}</span>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
                     
-                    <!-- ===== DESCRIPCIÓN ===== -->
+                    <!-- ===== DESCRIPCI&Oacute;N ===== -->
                     <tr>
                         <td style="padding: 20px 40px 15px;">
-                            <h2 style="margin: 0 0 12px; color: #1e293b; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
-                                📝 Descripción del Problema
+                            <h2 class="section-title" style="margin: 0 0 12px; color: #1d2939; font-size: 15px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 8px; display: inline-block;">
+                                Descripci&oacute;n del Problema
                             </h2>
-                            <div style="background-color: #f8fafc; border-radius: 8px; padding: 18px; border-left: 4px solid #0c5a8a; margin-top: 4px;">
-                                <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.8; white-space: pre-wrap;">{$description}</p>
+                            <div class="desc-block" style="background-color: #f9fafb; border-radius: 8px; padding: 18px; border-left: 4px solid #0c5a8a; margin-top: 4px;">
+                                <p class="desc-text" style="margin: 0; color: #344054; font-size: 14px; line-height: 1.8; white-space: pre-wrap;">{$description}</p>
                             </div>
                         </td>
                     </tr>
                     
-                    <!-- ===== BOTÓN DE ACCIÓN ===== -->
+                    <!-- ===== BOT&Oacute;N DE ACCI&Oacute;N ===== -->
                     <tr>
                         <td style="padding: 15px 40px 35px;" align="center">
-                            <a href="{$appUrl}/soporte_admin.php?page=tickets" style="display: inline-block; background: linear-gradient(135deg, #0c5a8a 0%, #064e73 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.3px;">
-                                🔗 Ver en Panel de Soporte
+                            <a href="{$appUrl}/soporte_admin.php?page=tickets" class="btn-action" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.3px;">
+                                Ver en Panel de Soporte
                             </a>
                         </td>
                     </tr>
                     
                     <!-- ===== FOOTER ===== -->
                     <tr>
-                        <td style="background-color: #f8fafc; padding: 20px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
-                            <p style="margin: 0 0 4px; color: #475569; font-size: 13px; font-weight: 600;">
+                        <td class="footer-bg" style="background-color: #f2f4f7; padding: 20px 40px; text-align: center; border-top: 1px solid #d0d5dd;">
+                            <p class="footer-text" style="margin: 0 0 4px; color: #344054; font-size: 13px; font-weight: 600;">
                                 Empresa Portuaria Coquimbo
                             </p>
-                            <p style="margin: 0; color: #94a3b8; font-size: 11px;">
-                                Correo automático del Sistema de Soporte TI · No responder a este mensaje
+                            <p class="footer-sub" style="margin: 0; color: #667085; font-size: 11px;">
+                                Correo autom&aacute;tico del Sistema de Soporte TI &middot; No responder a este mensaje
                             </p>
                         </td>
                     </tr>
