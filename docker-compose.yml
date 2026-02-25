@@ -33,7 +33,7 @@ services:
       - TZ=America/Santiago
       # SMTP - Configuración de correo
       - SMTP_ENABLED=${SMTP_ENABLED:-false}
-      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_HOST=${SMTP_HOST:-smtp-mail.outlook.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}

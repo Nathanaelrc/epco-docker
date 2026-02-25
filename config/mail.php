@@ -15,7 +15,7 @@ $smtpEnabled = getenv('SMTP_ENABLED') ?: 'false';
 return [
     'smtp' => [
         'use_smtp'    => filter_var($smtpEnabled, FILTER_VALIDATE_BOOLEAN),
-        'host'        => getenv('SMTP_HOST') ?: 'smtp.gmail.com',
+        'host'        => getenv('SMTP_HOST') ?: 'smtp-mail.outlook.com',
         'port'        => (int)(getenv('SMTP_PORT') ?: 587),
         'username'    => getenv('SMTP_USER') ?: '',
         'password'    => getenv('SMTP_PASS') ?: '',

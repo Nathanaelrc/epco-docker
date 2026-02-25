@@ -33,6 +33,12 @@ class MailService {
             $this->mailer->Password = $smtp['password'];
             $this->mailer->SMTPSecure = $smtp['encryption'] === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
             $this->mailer->Port = $smtp['port'];
+            
+            // Seguridad: desactivar debug para no exponer credenciales en logs
+            $this->mailer->SMTPDebug = SMTP::DEBUG_OFF;
+            
+            // Timeout de conexión (segundos)
+            $this->mailer->Timeout = 15;
         } else {
             // Modo local - usar mail() de PHP
             $this->mailer->isMail();
@@ -105,9 +111,14 @@ class MailService {
         
         $priorityColor = $priorityColors[$ticket['priority']] ?? '#6b7280';
         $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
-        $ticketNumber = $ticket['ticket_number'] ?? "#{$ticket['id']}";
-        $subject = $ticket['subject'] ?? $ticket['title'] ?? 'Sin asunto';
+        $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "#{$ticket['id']}", ENT_QUOTES, 'UTF-8');
+        $subject = htmlspecialchars($ticket['subject'] ?? $ticket['title'] ?? 'Sin asunto', ENT_QUOTES, 'UTF-8');
         $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+        
+        // Sanitizar datos del ticket contra XSS en el HTML del correo
+        $ticket = array_map(function($v) {
+            return is_string($v) ? htmlspecialchars($v, ENT_QUOTES, 'UTF-8') : $v;
+        }, $ticket);
         
         return <<<HTML
 <!DOCTYPE html>
@@ -254,6 +265,7 @@ HTML;
      */
     private function getTicketCreatedPlainText($ticket) {
         $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
         
         return <<<TEXT
 NUEVO TICKET DE SOPORTE - Empresa Portuaria Coquimbo
@@ -275,7 +287,7 @@ DESCRIPCIÓN:
 
 ---
 Para gestionar este ticket, ingrese al Panel de Control:
-https://ticketsportal.cl/soporte_admin
+{$appUrl}/soporte_admin.php
 
 Este es un correo automático. Por favor no responda a este mensaje.
 TEXT;
