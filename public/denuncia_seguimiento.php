@@ -76,7 +76,8 @@ $pageTitle = 'Seguimiento de Denuncias';
     <style>
         * { font-family: 'Barlow', sans-serif; }
         body {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0ea5e9 100%);
+            background: linear-gradient(135deg, rgba(14,165,233,0.6) 0%, rgba(2,132,199,0.65) 50%, rgba(14,165,233,0.6) 100%),
+                        url('img/Puerto03.jpg') center/cover no-repeat fixed;
             min-height: 100vh;
             position: relative;
         }
