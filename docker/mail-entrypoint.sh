@@ -52,7 +52,7 @@ smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
 
 # SASL autenticación para el relay externo
 smtp_sasl_auth_enable = yes
-smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_password_maps = lmdb:/etc/postfix/sasl_passwd
 smtp_sasl_security_options = noanonymous
 smtp_sasl_tls_security_options = noanonymous
 smtp_sasl_mechanism_filter = plain login
@@ -62,7 +62,7 @@ smtp_use_tls = yes
 smtp_tls_security_level = encrypt
 smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
 smtp_tls_loglevel = 1
-smtp_tls_session_cache_database = btree:\${data_directory}/smtp_tls_session_cache
+smtp_tls_session_cache_database = lmdb:\${data_directory}/smtp_tls_session_cache
 
 # TLS para conexiones entrantes (opcional pero buena práctica)
 smtpd_use_tls = no
@@ -90,8 +90,8 @@ EOF
 # Archivo de credenciales SASL
 # =============================================
 echo "[${RELAY_HOST}]:${RELAY_PORT} ${RELAY_USER}:${RELAY_PASS}" > /etc/postfix/sasl_passwd
-postmap /etc/postfix/sasl_passwd
-chmod 600 /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
+postmap lmdb:/etc/postfix/sasl_passwd
+chmod 600 /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.lmdb
 echo "[EPCO Mail] ✓ Credenciales SASL configuradas"
 
 # =============================================
