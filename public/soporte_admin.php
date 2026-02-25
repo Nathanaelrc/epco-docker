@@ -623,18 +623,17 @@ $avgResolutionTime = $pdo->query("
 $avgResolutionHours = $avgResolutionTime ? round($avgResolutionTime, 1) : 0;
 
 // 3. Ranking de técnicos (últimos 30 días)
-$technicianRanking = $pdo->query("
+$ticketsPerTechnician = $pdo->query("
     SELECT u.id, u.name, 
-           COUNT(t.id) as tickets_resueltos,
-           AVG(TIMESTAMPDIFF(HOUR, t.assigned_at, t.resolved_at)) as avg_tiempo
+           COUNT(t.id) as tickets_asignados,
+           SUM(CASE WHEN t.status = 'abierto' THEN 1 ELSE 0 END) as abiertos,
+           SUM(CASE WHEN t.status = 'en_progreso' THEN 1 ELSE 0 END) as en_progreso,
+           SUM(CASE WHEN t.status IN ('resuelto', 'cerrado') THEN 1 ELSE 0 END) as resueltos
     FROM users u
-    LEFT JOIN tickets t ON u.id = t.assigned_to 
-        AND t.status IN ('resuelto', 'cerrado')
-        AND t.resolved_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    LEFT JOIN tickets t ON u.id = t.assigned_to
     WHERE u.role IN ('admin', 'soporte')
     GROUP BY u.id, u.name
-    ORDER BY tickets_resueltos DESC
-    LIMIT 5
+    ORDER BY tickets_asignados DESC
 ")->fetchAll();
 
 // 4. Alertas SLA - Tickets próximos a vencer o ya vencidos
@@ -1463,37 +1462,39 @@ $topActions = $pdo->query("
                         </div>
                     </div>
                 </div>
-                <!-- Ranking Técnicos -->
+                <!-- Tickets Asignados por Técnico -->
                 <div class="col-lg-4">
                     <div class="chart-card">
-                        <h5 class="chart-title"><i class="bi bi-trophy text-warning me-2"></i>Top Técnicos (30 días)</h5>
-                        <?php if (empty($technicianRanking) || $technicianRanking[0]['tickets_resueltos'] == 0): ?>
+                        <h5 class="chart-title"><i class="bi bi-person-badge me-2"></i>Tickets por Técnico</h5>
+                        <?php if (empty($ticketsPerTechnician) || array_sum(array_column($ticketsPerTechnician, 'tickets_asignados')) == 0): ?>
                             <div class="text-center py-4 text-muted">
                                 <i class="bi bi-people" style="font-size: 2rem;"></i>
-                                <p class="mt-2 mb-0">Sin datos aún</p>
+                                <p class="mt-2 mb-0">Sin tickets asignados</p>
                             </div>
                         <?php else: ?>
-                            <?php foreach ($technicianRanking as $index => $tech): 
-                                $medals = ['🥇', '🥈', '🥉', '4°', '5°'];
-                                $maxTickets = $technicianRanking[0]['tickets_resueltos'] ?: 1;
-                                $percentage = round(($tech['tickets_resueltos'] / $maxTickets) * 100);
+                            <div class="list-group list-group-flush">
+                            <?php foreach ($ticketsPerTechnician as $tech): 
+                                $pendientes = $tech['abiertos'] + $tech['en_progreso'];
                             ?>
-                            <div class="d-flex align-items-center gap-3 mb-3">
-                                <div class="fw-bold" style="width: 30px; font-size: 1.2rem;"><?= $medals[$index] ?? ($index + 1) . '°' ?></div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="fw-semibold small"><?= htmlspecialchars($tech['name']) ?></span>
-                                        <span class="badge bg-success"><?= $tech['tickets_resueltos'] ?></span>
-                                    </div>
-                                    <div class="progress" style="height: 6px;">
-                                        <div class="progress-bar bg-<?= $index === 0 ? 'warning' : ($index === 1 ? 'secondary' : 'info') ?>" style="width: <?= $percentage ?>%"></div>
-                                    </div>
-                                    <?php if ($tech['avg_tiempo']): ?>
-                                    <small class="text-muted">Promedio: <?= round($tech['avg_tiempo'], 1) ?>h</small>
+                            <div class="list-group-item px-0 border-0">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold"><i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($tech['name']) ?></span>
+                                    <span class="badge bg-primary rounded-pill"><?= $tech['tickets_asignados'] ?></span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <?php if ($tech['abiertos'] > 0): ?>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Abiertos: <?= $tech['abiertos'] ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($tech['en_progreso'] > 0): ?>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>En progreso: <?= $tech['en_progreso'] ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($tech['resueltos'] > 0): ?>
+                                    <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Resueltos: <?= $tech['resueltos'] ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
                             <?php endforeach; ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -2626,6 +2627,13 @@ $topActions = $pdo->query("
         </div>
     </main>
     
+    <!-- Unir tickets de todas las fuentes para generar modales -->
+    <?php 
+    $allModalTickets = [];
+    foreach ($tickets as $t) $allModalTickets[$t['id']] = $t;
+    if (!empty($slaTickets)) { foreach ($slaTickets as $t) { if (!isset($allModalTickets[$t['id']])) $allModalTickets[$t['id']] = $t; } }
+    ?>
+
     <!-- Modales de Edición de Tickets -->
     <?php foreach ($allModalTickets as $t): ?>
     <div class="modal fade" id="editTicketModal<?= $t['id'] ?>" tabindex="-1">
@@ -2687,13 +2695,7 @@ $topActions = $pdo->query("
     </div>
     <?php endforeach; ?>
 
-    <!-- Modales de Tickets (unificar todos los tickets referenciados) -->
-    <?php 
-    // Unir tickets de todas las fuentes para generar modales
-    $allModalTickets = [];
-    foreach ($tickets as $t) $allModalTickets[$t['id']] = $t;
-    if (!empty($slaTickets)) { foreach ($slaTickets as $t) { if (!isset($allModalTickets[$t['id']])) $allModalTickets[$t['id']] = $t; } }
-    ?>
+    <!-- Modales de Tickets (Ver detalles) -->
     <?php foreach ($allModalTickets as $t): 
         $ticketComments = $pdo->prepare('SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at ASC');
         $ticketComments->execute([$t['id']]);
