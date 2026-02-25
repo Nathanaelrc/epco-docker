@@ -10,7 +10,7 @@ header('Content-Type: application/json');
 $ticketNumber = sanitize($_GET['ticket_number'] ?? $_POST['ticket_number'] ?? '');
 
 if (empty($ticketNumber)) {
-    echo json_encode(['error' => 'Ingresa un número de ticket']);
+    echo json_encode(['success' => false, 'error' => 'Ingresa un número de ticket']);
     exit;
 }
 
@@ -29,7 +29,7 @@ $stmt->execute([$ticketNumber]);
 $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$ticket) {
-    echo json_encode(['error' => 'No se encontró ningún ticket con ese número.']);
+    echo json_encode(['success' => false, 'error' => 'No se encontró ningún ticket con ese número.']);
     exit;
 }
 
@@ -49,6 +49,7 @@ $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 unset($ticket['id']);
 
 echo json_encode([
+    'success' => true,
     'ticket' => $ticket,
     'comments' => $comments
 ]);
