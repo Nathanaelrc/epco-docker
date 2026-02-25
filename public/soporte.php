@@ -30,7 +30,7 @@ if ($user) {
 // FAQ items
 $faqs = [
     ['q' => '¿Cómo puedo hacer seguimiento a mi ticket?', 'a' => 'Ingresa a "Consultar Ticket" con tu número de ticket y correo electrónico.', 'icon' => 'bi-search'],
-    ['q' => '¿Cuánto tiempo demora la atención?', 'a' => 'Urgente: 4h | Alta: 8h | Media: 48h | Baja: 1 semana', 'icon' => 'bi-clock'],
+    ['q' => '¿Cuánto tiempo demora la atención?', 'a' => 'Urgente: 4h | Alta: 8h | Media: 24h | Baja: 48h', 'icon' => 'bi-clock'],
     ['q' => '¿Qué información debo incluir?', 'a' => 'Descripción detallada, mensajes de error, pasos para reproducir y cambios recientes.', 'icon' => 'bi-info-circle'],
     ['q' => '¿Puedo adjuntar archivos?', 'a' => 'Sí, puedes adjuntar capturas de pantalla y documentos al crear el ticket.', 'icon' => 'bi-paperclip'],
     ['q' => '¿Qué hago en caso de emergencia?', 'a' => 'Contacta al interno 6479 o escribe a gismodes@puertocoquimbo.cl / asesorti@puertocoquimbo.cl', 'icon' => 'bi-exclamation-triangle'],
@@ -802,14 +802,14 @@ $faqs = [
                 <div class="col-md-3 col-6">
                     <div class="sla-card">
                         <span class="sla-priority media">MEDIA</span>
-                        <div class="sla-time">48h</div>
+                        <div class="sla-time">24h</div>
                         <div class="sla-label">Primera respuesta</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="sla-card">
                         <span class="sla-priority baja">BAJA</span>
-                        <div class="sla-time">1 sem</div>
+                        <div class="sla-time">48h</div>
                         <div class="sla-label">Primera respuesta</div>
                     </div>
                 </div>
@@ -841,6 +841,73 @@ $faqs = [
                         </div>
                     </div>
                     <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Guía de Uso del Dashboard -->
+    <section class="py-5" id="guia-section" style="background: #f8fafc;">
+        <div class="container">
+            <div class="section-header">
+                <h2><i class="bi bi-book me-2"></i>¿Cómo usar el Portal de Soporte?</h2>
+                <p>Guía rápida para sacar el máximo provecho al sistema</p>
+            </div>
+            
+            <div class="row g-4 justify-content-center">
+                <!-- Paso 1 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
+                        <div class="card-body p-4 text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; font-size: 1.5rem; font-weight: 700;">1</div>
+                            <h5 class="fw-bold mb-2">Crear un Ticket</h5>
+                            <p class="text-muted small mb-3">Haz clic en <strong>"Nuevo Ticket"</strong> y completa el formulario con la categoría, prioridad y descripción de tu problema. Se generará un código de seguimiento único.</p>
+                            <span class="badge" style="background: #eff6ff; color: #2563eb; padding: 6px 12px; border-radius: 20px;"><i class="bi bi-plus-circle me-1"></i>Nuevo Ticket</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Paso 2 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
+                        <div class="card-body p-4 text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 1.5rem; font-weight: 700;">2</div>
+                            <h5 class="fw-bold mb-2">Consultar Estado</h5>
+                            <p class="text-muted small mb-3">Usa el botón <strong>"Consultar Ticket"</strong> e ingresa tu código (ej: TK-20260225-A1B2C). Verás el estado actual, comentarios del equipo TI y la resolución.</p>
+                            <span class="badge" style="background: #ecfdf5; color: #059669; padding: 6px 12px; border-radius: 20px;"><i class="bi bi-search me-1"></i>Seguimiento</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Paso 3 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
+                        <div class="card-body p-4 text-center">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 1.5rem; font-weight: 700;">3</div>
+                            <h5 class="fw-bold mb-2">Tiempos de Respuesta</h5>
+                            <p class="text-muted small mb-3">Cada ticket tiene un SLA según su prioridad. <strong>Urgente: 4h</strong>, <strong>Alta: 8h</strong>, <strong>Media: 24h</strong>, <strong>Baja: 48h</strong>. Recibirás un correo de confirmación al crear tu ticket.</p>
+                            <span class="badge" style="background: #fffbeb; color: #d97706; padding: 6px 12px; border-radius: 20px;"><i class="bi bi-clock me-1"></i>SLA</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4 justify-content-center">
+                <div class="col-lg-10">
+                    <div class="p-4 rounded-4" style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1px solid #e2e8f0;">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-1 text-center">
+                                <i class="bi bi-lightbulb" style="font-size: 2rem; color: #f59e0b;"></i>
+                            </div>
+                            <div class="col-md-11">
+                                <h6 class="fw-bold mb-1">Consejos útiles</h6>
+                                <ul class="text-muted small mb-0" style="list-style: none; padding: 0;">
+                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Describe tu problema con el mayor detalle posible para agilizar la atención.</li>
+                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Adjunta capturas de pantalla o archivos que ayuden a identificar el problema.</li>
+                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Guarda tu código de ticket para poder consultar el estado en cualquier momento.</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Si tu problema es crítico y afecta a múltiples usuarios, selecciona prioridad <strong>Urgente</strong>.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

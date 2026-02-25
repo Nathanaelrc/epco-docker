@@ -510,8 +510,8 @@ INSERT INTO users (name, username, email, password, role, department, position) 
 INSERT INTO sla_settings (priority, first_response_minutes, assignment_minutes, resolution_minutes) VALUES
 ('urgente', 30, 15, 240),
 ('alta', 60, 30, 480),
-('media', 240, 120, 2880),
-('baja', 480, 240, 10080);
+('media', 120, 60, 1440),
+('baja', 240, 120, 2880);
 
 -- =============================================
 -- NOTICIAS

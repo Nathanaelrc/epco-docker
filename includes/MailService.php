@@ -194,12 +194,12 @@ class MailService {
             'acceso' => 'Accesos / Permisos', 'otro' => 'Otro'
         ];
         $slaLabels = [
-            'urgente' => '4 horas', 'alta' => '8 horas', 'media' => '48 horas', 'baja' => '1 semana'
+            'urgente' => '4 horas', 'alta' => '8 horas', 'media' => '24 horas', 'baja' => '48 horas'
         ];
         
         $priorityLabel = $priorityLabels[$priority] ?? ucfirst($priority);
         $categoryLabel = $categoryLabels[$category] ?? ucfirst($category);
-        $slaLabel = $slaLabels[$priority] ?? '48 horas';
+        $slaLabel = $slaLabels[$priority] ?? '24 horas';
         $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
         $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "TK-{$ticket['id']}", ENT_QUOTES, 'UTF-8');
         $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
@@ -243,7 +243,7 @@ class MailService {
         }
     </style>
 </head>
-<body class="body-wrap" style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
+<body class="body-wrap" style="margin: 0; padding: 0; font-family: 'Arial Nova', Arial, Helvetica, sans-serif; background-color: #f0f2f5;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="body-wrap" style="background-color: #f0f2f5; padding: 30px 15px;">
         <tr>
             <td align="center">
@@ -385,9 +385,9 @@ HTML;
         $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
         $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
         $slaLabels = [
-            'urgente' => '4 horas', 'alta' => '8 horas', 'media' => '48 horas', 'baja' => '1 semana'
+            'urgente' => '4 horas', 'alta' => '8 horas', 'media' => '24 horas', 'baja' => '48 horas'
         ];
-        $slaLabel = $slaLabels[$priority] ?? '48 horas';
+        $slaLabel = $slaLabels[$priority] ?? '24 horas';
         
         return <<<TEXT
 ═══════════════════════════════════════════════
@@ -549,7 +549,7 @@ ROW;
         }
     </style>
 </head>
-<body class="body-wrapper" style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5;">
+<body class="body-wrapper" style="margin: 0; padding: 0; font-family: 'Arial Nova', Arial, Helvetica, sans-serif; background-color: #f0f2f5;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="body-wrapper" style="background-color: #f0f2f5; padding: 30px 15px;">
         <tr>
             <td align="center">

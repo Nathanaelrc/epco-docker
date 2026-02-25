@@ -277,8 +277,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('INSERT INTO tickets (ticket_number, user_id, user_name, user_email, category, priority, title, description, sla_response_target, sla_resolution_target) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->execute([
                 $ticketNumber, $userId, $name, $email, $category, $priority, $title, $description,
-                $sla['first_response_minutes'] ?? 240,
-                $sla['resolution_minutes'] ?? 2880
+                $sla['first_response_minutes'] ?? 120,
+                $sla['resolution_minutes'] ?? 1440
             ]);
             $ticketId = $pdo->lastInsertId();
             
@@ -644,9 +644,9 @@ $slaAlerts = $pdo->query("
            TIMESTAMPDIFF(MINUTE, t.created_at, NOW()) as elapsed_minutes,
            CASE t.priority 
                WHEN 'urgente' THEN 60 
-               WHEN 'alta' THEN 240 
-               WHEN 'media' THEN 480 
-               ELSE 1440 
+               WHEN 'alta' THEN 120 
+               WHEN 'media' THEN 240 
+               ELSE 480 
            END as sla_limit_minutes
     FROM tickets t
     LEFT JOIN users u ON t.user_id = u.id
@@ -721,10 +721,10 @@ foreach ($slaSettings as $s) {
 // Fallback si no hay configuración
 if (empty($slaTargets)) {
     $slaTargets = [
-        'urgente' => ['response' => 1, 'assignment' => 0.5, 'resolution' => 4, 'response_min' => 60, 'assignment_min' => 30, 'resolution_min' => 240],
-        'alta' => ['response' => 4, 'assignment' => 2, 'resolution' => 24, 'response_min' => 240, 'assignment_min' => 120, 'resolution_min' => 1440],
-        'media' => ['response' => 8, 'assignment' => 4, 'resolution' => 48, 'response_min' => 480, 'assignment_min' => 240, 'resolution_min' => 2880],
-        'baja' => ['response' => 24, 'assignment' => 8, 'resolution' => 72, 'response_min' => 1440, 'assignment_min' => 480, 'resolution_min' => 4320]
+        'urgente' => ['response' => 0.5, 'assignment' => 0.25, 'resolution' => 4, 'response_min' => 30, 'assignment_min' => 15, 'resolution_min' => 240],
+        'alta' => ['response' => 1, 'assignment' => 0.5, 'resolution' => 8, 'response_min' => 60, 'assignment_min' => 30, 'resolution_min' => 480],
+        'media' => ['response' => 2, 'assignment' => 1, 'resolution' => 24, 'response_min' => 120, 'assignment_min' => 60, 'resolution_min' => 1440],
+        'baja' => ['response' => 4, 'assignment' => 2, 'resolution' => 48, 'response_min' => 240, 'assignment_min' => 120, 'resolution_min' => 2880]
     ];
 }
 

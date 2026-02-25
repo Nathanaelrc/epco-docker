@@ -49,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $priority, 
                 $title, 
                 $description,
-                $sla['first_response_minutes'] ?? 240,
-                $sla['resolution_minutes'] ?? 2880
+                $sla['first_response_minutes'] ?? 120,
+                $sla['resolution_minutes'] ?? 1440
             ]);
             $ticketId = $pdo->lastInsertId();
             
@@ -166,7 +166,7 @@ foreach ($myTickets as $t) {
 // FAQ items
 $faqs = [
     ['question' => '¿Cómo puedo hacer seguimiento a mi ticket?', 'answer' => 'En la pestaña "Mis Tickets" puedes ver todos tus tickets activos y su estado actual.'],
-    ['question' => '¿Cuánto tiempo demora la atención?', 'answer' => '<strong>Urgente:</strong> 4 horas | <strong>Alta:</strong> 8 horas | <strong>Media:</strong> 48 horas | <strong>Baja:</strong> 1 semana'],
+    ['question' => '¿Cuánto tiempo demora la atención?', 'answer' => '<strong>Urgente:</strong> 4 horas | <strong>Alta:</strong> 8 horas | <strong>Media:</strong> 24 horas | <strong>Baja:</strong> 48 horas'],
     ['question' => '¿Qué información debo incluir?', 'answer' => 'Describe detalladamente el problema, incluye mensajes de error si los hay, pasos para reproducirlo y cambios recientes.'],
     ['question' => '¿Puedo adjuntar archivos?', 'answer' => 'Sí, puedes adjuntar hasta 5 archivos (imágenes, PDF, Word) de máximo 5MB cada uno.'],
     ['question' => '¿Qué hago en caso de emergencia?', 'answer' => 'Contacta directamente al <strong>interno 6479</strong> o envía correo a <strong>gismodes@puertocoquimbo.cl</strong> / <strong>asesorti@puertocoquimbo.cl</strong>']
