@@ -32,7 +32,8 @@ services:
       - APP_URL=${APP_URL:-http://localhost:8080}
       - TZ=America/Santiago
       # SMTP - Configuración de correo
-      - SMTP_ENABLED=${SMTP_ENABLED:-false}
+      - SMTP_ENABLED=${SMTP_ENABLED:-true}
+      - SMTP_MODE=${SMTP_MODE:-relay}
       - SMTP_HOST=${SMTP_HOST:-smtp-mail.outlook.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
@@ -40,11 +41,16 @@ services:
       - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-tls}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Soporte TI - EPCO}
+      # Relay interno (microservicio de correo)
+      - SMTP_RELAY_HOST=mailrelay
+      - SMTP_RELAY_PORT=25
       # Destinatarios de notificaciones (separar con coma)
       - NOTIFY_TICKET_CREATED=${NOTIFY_TICKET_CREATED:-}
       - NOTIFY_TICKET_UPDATED=${NOTIFY_TICKET_UPDATED:-}
     depends_on:
       db:
+        condition: service_healthy
+      mailrelay:
         condition: service_healthy
     networks:
       - epco-network
@@ -79,6 +85,30 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
+    networks:
+      - epco-network
+
+  # =============================================
+  # Microservicio de Correo (Postfix Relay)
+  # =============================================
+  mailrelay:
+    build:
+      context: .
+      dockerfile: Dockerfile.mail
+    container_name: epco-mailrelay
+    restart: unless-stopped
+    environment:
+      - RELAY_HOST=${SMTP_HOST:-smtp-mail.outlook.com}
+      - RELAY_PORT=${SMTP_PORT:-587}
+      - RELAY_USER=${SMTP_USER:-}
+      - RELAY_PASS=${SMTP_PASS:-}
+      - MAIL_HOSTNAME=mail.epco.local
+    healthcheck:
+      test: ["CMD", "postfix", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - epco-network
 

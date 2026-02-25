@@ -22,23 +22,37 @@ class MailService {
     
     private function configure() {
         $smtp = $this->config['smtp'];
+        $mode = $smtp['mode'] ?? 'relay';
         
-        // Configuración según el modo (local o SMTP)
         if (!empty($smtp['use_smtp']) && $smtp['use_smtp'] === true) {
-            // Modo SMTP con autenticación
             $this->mailer->isSMTP();
-            $this->mailer->Host = $smtp['host'];
-            $this->mailer->SMTPAuth = true;
-            $this->mailer->Username = $smtp['username'];
-            $this->mailer->Password = $smtp['password'];
-            $this->mailer->SMTPSecure = $smtp['encryption'] === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
-            $this->mailer->Port = $smtp['port'];
-            
-            // Seguridad: desactivar debug para no exponer credenciales en logs
             $this->mailer->SMTPDebug = SMTP::DEBUG_OFF;
             
-            // Timeout de conexión (segundos)
-            $this->mailer->Timeout = 15;
+            if ($mode === 'relay') {
+                // ===== MODO RELAY (RECOMENDADO) =====
+                // Envía al microservicio Postfix interno (sin autenticación)
+                // Postfix se encarga del relay al servidor externo
+                $this->mailer->Host = $smtp['relay_host'] ?? 'mailrelay';
+                $this->mailer->Port = $smtp['relay_port'] ?? 25;
+                $this->mailer->SMTPAuth = false;
+                $this->mailer->SMTPSecure = false;
+                $this->mailer->SMTPAutoTLS = false;
+                $this->mailer->Timeout = 10;
+                
+                error_log("[EPCO Mail] Modo RELAY: enviando via {$this->mailer->Host}:{$this->mailer->Port}");
+            } else {
+                // ===== MODO DIRECTO =====
+                // Conexión directa al SMTP externo (Outlook, Gmail, etc.)
+                $this->mailer->Host = $smtp['host'];
+                $this->mailer->SMTPAuth = true;
+                $this->mailer->Username = $smtp['username'];
+                $this->mailer->Password = $smtp['password'];
+                $this->mailer->SMTPSecure = $smtp['encryption'] === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
+                $this->mailer->Port = $smtp['port'];
+                $this->mailer->Timeout = 15;
+                
+                error_log("[EPCO Mail] Modo DIRECTO: enviando via {$smtp['host']}:{$smtp['port']}");
+            }
         } else {
             // Modo local - usar mail() de PHP
             $this->mailer->isMail();

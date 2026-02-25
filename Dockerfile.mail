@@ -1,0 +1,35 @@
+# =============================================
+# EPCO - Microservicio de Correo (Postfix Relay)
+# Actúa como relay SMTP interno para la aplicación
+# Reenvía correos a través del servidor SMTP externo
+# =============================================
+
+FROM alpine:3.19
+
+# Instalar Postfix + dependencias SASL para autenticación
+RUN apk add --no-cache \
+    postfix \
+    cyrus-sasl \
+    cyrus-sasl-login \
+    cyrus-sasl-plain \
+    ca-certificates \
+    tzdata \
+    mailx \
+    bash
+
+# Timezone
+ENV TZ=America/Santiago
+RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Copiar entrypoint
+COPY docker/mail-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Puerto SMTP interno
+EXPOSE 25
+
+# Healthcheck - verifica que Postfix esté corriendo
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD postfix status 2>/dev/null || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]
