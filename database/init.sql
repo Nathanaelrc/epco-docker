@@ -429,6 +429,27 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 ) ENGINE=InnoDB;
 
 -- =============================================
+-- TABLA: DESTINATARIOS DE NOTIFICACIONES
+-- Correos que reciben alertas cuando se crean/actualizan tickets
+-- =============================================
+CREATE TABLE IF NOT EXISTS notification_recipients (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    name VARCHAR(100) DEFAULT NULL,
+    event_type ENUM('ticket_created', 'ticket_updated', 'all') DEFAULT 'all',
+    is_active TINYINT(1) DEFAULT 1,
+    created_by INT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_email_event (email, event_type),
+    INDEX idx_event_active (event_type, is_active)
+) ENGINE=InnoDB;
+
+-- Insertar destinatario por defecto
+INSERT IGNORE INTO notification_recipients (email, name, event_type) VALUES
+('soportiepco@outlook.com', 'Soporte EPCO', 'all');
+
+-- =============================================
 -- TABLA: COLA DE EMAILS
 -- =============================================
 CREATE TABLE IF NOT EXISTS email_queue (

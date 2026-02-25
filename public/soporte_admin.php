@@ -427,6 +427,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+    
+    // ===== GESTIÓN DE DESTINATARIOS DE NOTIFICACIONES =====
+    if ($action === 'add_notification_email') {
+        $notifEmail = sanitize($_POST['notif_email'] ?? '');
+        $notifName = sanitize($_POST['notif_name'] ?? '');
+        $notifEvent = sanitize($_POST['notif_event'] ?? 'all');
+        
+        if (!filter_var($notifEmail, FILTER_VALIDATE_EMAIL)) {
+            $message = 'El correo electrónico ingresado no es válido';
+            $messageType = 'danger';
+        } else {
+            try {
+                $stmt = $pdo->prepare('INSERT INTO notification_recipients (email, name, event_type, created_by) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$notifEmail, $notifName, $notifEvent, $user['id']]);
+                logActivity($user['id'], 'notification_email_added', 'notification_recipients', $pdo->lastInsertId(), "Correo agregado: $notifEmail ($notifEvent)");
+                $message = "Correo <strong>$notifEmail</strong> agregado correctamente";
+                $messageType = 'success';
+            } catch (PDOException $e) {
+                if ($e->getCode() == 23000) {
+                    $message = 'Este correo ya está registrado para este tipo de evento';
+                    $messageType = 'warning';
+                } else {
+                    $message = 'Error al agregar el correo';
+                    $messageType = 'danger';
+                    error_log("[EPCO] Error insertando destinatario: " . $e->getMessage());
+                }
+            }
+        }
+    }
+    
+    if ($action === 'toggle_notification_email') {
+        $notifId = (int)$_POST['notif_id'];
+        $stmt = $pdo->prepare('UPDATE notification_recipients SET is_active = NOT is_active WHERE id = ?');
+        $stmt->execute([$notifId]);
+        logActivity($user['id'], 'notification_email_toggled', 'notification_recipients', $notifId, "Estado de destinatario cambiado");
+        $message = 'Estado del destinatario actualizado';
+        $messageType = 'success';
+    }
+    
+    if ($action === 'delete_notification_email') {
+        $notifId = (int)$_POST['notif_id'];
+        $stmt = $pdo->prepare('SELECT email FROM notification_recipients WHERE id = ?');
+        $stmt->execute([$notifId]);
+        $delNotif = $stmt->fetch();
+        
+        $pdo->prepare('DELETE FROM notification_recipients WHERE id = ?')->execute([$notifId]);
+        logActivity($user['id'], 'notification_email_deleted', 'notification_recipients', $notifId, "Correo eliminado: " . ($delNotif['email'] ?? 'desconocido'));
+        $message = 'Destinatario eliminado correctamente';
+        $messageType = 'success';
+    }
+    
+    if ($action === 'send_test_email') {
+        $testEmail = sanitize($_POST['test_email'] ?? '');
+        if (filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+            try {
+                require_once __DIR__ . '/../includes/MailService.php';
+                $mailService = new MailService();
+                $testTicket = [
+                    'id' => 0,
+                    'ticket_number' => 'TEST-0000',
+                    'subject' => 'Correo de prueba - Verificación de notificaciones',
+                    'category' => 'soporte_tecnico',
+                    'priority' => 'media',
+                    'user_name' => $user['name'],
+                    'user_email' => $user['email'],
+                    'department' => 'Soporte TI',
+                    'description' => 'Este es un correo de prueba para verificar que las notificaciones funcionan correctamente.',
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+                // Enviar directamente a la dirección de prueba
+                $mailService->sendDirectEmail($testEmail, $testTicket);
+                $message = "Correo de prueba enviado a <strong>$testEmail</strong>";
+                $messageType = 'success';
+            } catch (Exception $e) {
+                $message = 'Error al enviar correo de prueba: ' . htmlspecialchars($e->getMessage());
+                $messageType = 'danger';
+            }
+        } else {
+            $message = 'Correo de prueba no válido';
+            $messageType = 'danger';
+        }
+    }
 }
 
 // Obtener datos según la página
@@ -595,6 +677,27 @@ $tips = [
     ['icon' => 'bi-emoji-smile', 'color' => '#ec4899', 'tip' => 'Un mensaje amable hace la diferencia. El usuario también está estresado.'],
 ];
 $tipOfDay = $tips[date('z') % count($tips)]; // Cambia cada día del año
+
+// ===== DESTINATARIOS DE NOTIFICACIONES =====
+$notificationRecipients = [];
+try {
+    $notificationRecipients = $pdo->query("
+        SELECT nr.*, u.name as created_by_name 
+        FROM notification_recipients nr 
+        LEFT JOIN users u ON nr.created_by = u.id 
+        ORDER BY nr.is_active DESC, nr.created_at DESC
+    ")->fetchAll();
+} catch (PDOException $e) {
+    // La tabla puede no existir aún
+    error_log("[EPCO] Tabla notification_recipients no disponible: " . $e->getMessage());
+}
+
+$notifStats = [
+    'total' => count($notificationRecipients),
+    'active' => count(array_filter($notificationRecipients, fn($r) => $r['is_active'])),
+    'ticket_created' => count(array_filter($notificationRecipients, fn($r) => $r['is_active'] && in_array($r['event_type'], ['ticket_created', 'all']))),
+    'ticket_updated' => count(array_filter($notificationRecipients, fn($r) => $r['is_active'] && in_array($r['event_type'], ['ticket_updated', 'all']))),
+];
 
 // ===== ESTADÍSTICAS SLA MEJORADAS =====
 // Obtener configuración SLA desde la base de datos
@@ -1158,7 +1261,7 @@ $topActions = $pdo->query("
     <main class="main-content">
         <header class="top-header">
             <div class="header-title">
-                <h1><?= $page === 'dashboard' ? 'Dashboard' : ($page === 'tickets' ? 'Gestión de Tickets' : ($page === 'usuarios' ? 'Gestión de Usuarios' : ($page === 'nuevo_ticket' ? 'Nuevo Ticket' : ($page === 'sla' ? 'SLA - Acuerdos de Nivel de Servicio' : ($page === 'auditoria' ? 'Auditoría del Sistema' : 'Soporte TI'))))) ?></h1>
+                <h1><?= $page === 'dashboard' ? 'Dashboard' : ($page === 'tickets' ? 'Gestión de Tickets' : ($page === 'usuarios' ? 'Gestión de Usuarios' : ($page === 'nuevo_ticket' ? 'Nuevo Ticket' : ($page === 'sla' ? 'SLA - Acuerdos de Nivel de Servicio' : ($page === 'auditoria' ? 'Auditoría del Sistema' : ($page === 'notificaciones' ? 'Destinatarios de Notificaciones' : 'Soporte TI')))))) ?></h1>
                 <?php
                 $dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                 $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -2200,6 +2303,255 @@ $topActions = $pdo->query("
             });
             </script>
             
+            });
+            </script>
+            
+            <?php elseif ($page === 'notificaciones'): ?>
+            <!-- ========== GESTIÓN DE DESTINATARIOS DE NOTIFICACIONES ========== -->
+            
+            <!-- Estadísticas rápidas -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                        <div class="stat-number"><?= $notifStats['total'] ?></div>
+                        <div class="stat-label">Total Registrados</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="stat-number"><?= $notifStats['active'] ?></div>
+                        <div class="stat-label">Activos</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="bi bi-ticket-perforated"></i>
+                        </div>
+                        <div class="stat-number"><?= $notifStats['ticket_created'] ?></div>
+                        <div class="stat-label">Reciben "Ticket Creado"</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                        <div class="stat-number"><?= $notifStats['ticket_updated'] ?></div>
+                        <div class="stat-label">Reciben "Ticket Actualizado"</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Formulario para agregar correo -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-primary"></i>Agregar Destinatario</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <form method="POST" id="addNotifForm">
+                                <input type="hidden" name="action" value="add_notification_email">
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small">Correo Electrónico <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" name="notif_email" class="form-control" placeholder="correo@ejemplo.cl" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small">Nombre (opcional)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                        <input type="text" name="notif_name" class="form-control" placeholder="Nombre del destinatario">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small">Tipo de Evento</label>
+                                    <select name="notif_event" class="form-select">
+                                        <option value="all">Todas las notificaciones</option>
+                                        <option value="ticket_created">Solo tickets creados</option>
+                                        <option value="ticket_updated">Solo tickets actualizados</option>
+                                    </select>
+                                    <div class="form-text small">Selecciona qué tipo de notificaciones recibirá</div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-plus-lg me-1"></i> Agregar Correo
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Enviar correo de prueba -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-send me-2 text-info"></i>Enviar Correo de Prueba</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <form method="POST">
+                                <input type="hidden" name="action" value="send_test_email">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small">Enviar prueba a:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-envelope-paper"></i></span>
+                                        <input type="email" name="test_email" class="form-control" placeholder="correo@ejemplo.cl" required>
+                                    </div>
+                                    <div class="form-text small">Se enviará un ticket de prueba para verificar la configuración SMTP</div>
+                                </div>
+                                <button type="submit" class="btn btn-outline-info w-100">
+                                    <i class="bi bi-send me-1"></i> Enviar Prueba
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabla de destinatarios -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Destinatarios Registrados</h5>
+                            <span class="badge bg-primary rounded-pill"><?= count($notificationRecipients) ?> total</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <?php if (empty($notificationRecipients)): ?>
+                            <div class="text-center py-5">
+                                <i class="bi bi-envelope-x text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-3">No hay destinatarios registrados.<br>Agrega correos para recibir notificaciones.</p>
+                            </div>
+                            <?php else: ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="ps-4">Correo</th>
+                                            <th>Nombre</th>
+                                            <th>Evento</th>
+                                            <th>Estado</th>
+                                            <th>Registrado</th>
+                                            <th class="text-end pe-4">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($notificationRecipients as $nr): ?>
+                                        <tr class="<?= !$nr['is_active'] ? 'table-secondary opacity-75' : '' ?>">
+                                            <td class="ps-4">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center <?= $nr['is_active'] ? 'bg-success' : 'bg-secondary' ?> bg-opacity-10" style="width: 36px; height: 36px;">
+                                                        <i class="bi bi-envelope <?= $nr['is_active'] ? 'text-success' : 'text-secondary' ?>"></i>
+                                                    </div>
+                                                    <div>
+                                                        <span class="fw-semibold small"><?= htmlspecialchars($nr['email']) ?></span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="small"><?= htmlspecialchars($nr['name'] ?: '—') ?></td>
+                                            <td>
+                                                <?php
+                                                $eventLabels = ['all' => 'Todas', 'ticket_created' => 'Ticket Creado', 'ticket_updated' => 'Ticket Actualizado'];
+                                                $eventColors = ['all' => 'primary', 'ticket_created' => 'warning', 'ticket_updated' => 'info'];
+                                                ?>
+                                                <span class="badge bg-<?= $eventColors[$nr['event_type']] ?? 'secondary' ?> bg-opacity-10 text-<?= $eventColors[$nr['event_type']] ?? 'secondary' ?>">
+                                                    <?= $eventLabels[$nr['event_type']] ?? $nr['event_type'] ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?php if ($nr['is_active']): ?>
+                                                <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle me-1"></i>Activo</span>
+                                                <?php else: ?>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-pause-circle me-1"></i>Pausado</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="small text-muted"><?= date('d/m/Y', strtotime($nr['created_at'])) ?></td>
+                                            <td class="text-end pe-4">
+                                                <form method="POST" class="d-inline">
+                                                    <input type="hidden" name="action" value="toggle_notification_email">
+                                                    <input type="hidden" name="notif_id" value="<?= $nr['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm <?= $nr['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?>" title="<?= $nr['is_active'] ? 'Pausar' : 'Activar' ?>">
+                                                        <i class="bi <?= $nr['is_active'] ? 'bi-pause' : 'bi-play' ?>"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este destinatario?')">
+                                                    <input type="hidden" name="action" value="delete_notification_email">
+                                                    <input type="hidden" name="notif_id" value="<?= $nr['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="POST" class="d-inline">
+                                                    <input type="hidden" name="action" value="send_test_email">
+                                                    <input type="hidden" name="test_email" value="<?= htmlspecialchars($nr['email']) ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Enviar correo de prueba">
+                                                        <i class="bi bi-send"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Info SMTP actual -->
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2 text-secondary"></i>Configuración SMTP Actual</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <?php 
+                            $smtpEnabled = filter_var(getenv('SMTP_ENABLED') ?: 'false', FILTER_VALIDATE_BOOLEAN);
+                            $smtpHost = getenv('SMTP_HOST') ?: 'No configurado';
+                            $smtpUser = getenv('SMTP_USER') ?: 'No configurado';
+                            $smtpFromName = getenv('SMTP_FROM_NAME') ?: 'Sin nombre';
+                            ?>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-<?= $smtpEnabled ? 'success' : 'danger' ?> bg-opacity-10 rounded">
+                                        <div class="small text-muted mb-1">Estado</div>
+                                        <div class="fw-bold text-<?= $smtpEnabled ? 'success' : 'danger' ?>">
+                                            <i class="bi <?= $smtpEnabled ? 'bi-check-circle' : 'bi-x-circle' ?> me-1"></i>
+                                            <?= $smtpEnabled ? 'ACTIVO' : 'DESACTIVADO' ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded">
+                                        <div class="small text-muted mb-1">Servidor SMTP</div>
+                                        <div class="fw-bold small"><?= htmlspecialchars($smtpHost) ?></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded">
+                                        <div class="small text-muted mb-1">Correo Remitente</div>
+                                        <div class="fw-bold small"><?= htmlspecialchars($smtpUser) ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php if (!$smtpEnabled): ?>
+                            <div class="alert alert-warning mt-3 mb-0 small">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                El envío de correos está <strong>desactivado</strong>. Configure las variables de entorno SMTP en Portainer para activarlo.
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <?php endif; ?>
         </div>
     </main>

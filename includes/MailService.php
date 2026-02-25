@@ -86,9 +86,30 @@ class MailService {
     }
     
     /**
-     * Obtener lista de destinatarios, soporta múltiples separados por coma
+     * Obtener lista de destinatarios desde la base de datos
+     * Fallback a variables de entorno si la tabla no existe
      */
     private function getRecipients($type) {
+        // Intentar obtener desde la base de datos primero
+        try {
+            global $pdo;
+            if ($pdo) {
+                $sql = "SELECT DISTINCT email FROM notification_recipients WHERE is_active = 1 AND (event_type = ? OR event_type = 'all')";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$type]);
+                $dbEmails = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                
+                if (!empty($dbEmails)) {
+                    return array_filter($dbEmails, function($email) {
+                        return filter_var(trim($email), FILTER_VALIDATE_EMAIL) !== false;
+                    });
+                }
+            }
+        } catch (\Exception $e) {
+            error_log("[EPCO Mail] Error leyendo destinatarios de BD: " . $e->getMessage());
+        }
+        
+        // Fallback: leer desde variables de entorno
         $raw = $this->config['notifications'][$type] ?? '';
         if (empty($raw)) return [];
         
@@ -96,6 +117,22 @@ class MailService {
         return array_filter($emails, function($email) {
             return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
         });
+    }
+    
+    /**
+     * Enviar correo de prueba directamente a una dirección específica
+     */
+    public function sendDirectEmail($toEmail, $ticket) {
+        $this->mailer->clearAddresses();
+        $this->mailer->addAddress(trim($toEmail));
+        
+        $this->mailer->Subject = "✉️ Correo de Prueba - Notificaciones EPCO";
+        $this->mailer->Body = $this->getTicketCreatedTemplate($ticket);
+        $this->mailer->AltBody = $this->getTicketCreatedPlainText($ticket);
+        
+        $this->mailer->send();
+        error_log("[EPCO Mail] Correo de prueba enviado a: $toEmail");
+        return true;
     }
     
     /**

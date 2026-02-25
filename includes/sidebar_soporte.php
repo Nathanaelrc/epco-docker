@@ -557,6 +557,12 @@ $soporteStats = $pdo->query("
                         <span>Auditoría</span>
                     </a>
                 </li>
+                <li class="sidebar-nav-item">
+                    <a href="soporte_admin.php?page=notificaciones" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'notificaciones') ? 'active' : '' ?>">
+                        <i class="bi bi-envelope-at"></i>
+                        <span>Notificaciones</span>
+                    </a>
+                </li>
                 <?php if ($isAdmin): ?>
                 <li class="sidebar-nav-item">
                     <a href="soporte_admin.php?page=usuarios" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'usuarios') ? 'active' : '' ?>">

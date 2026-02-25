@@ -49,6 +49,23 @@ epco_ensure_tables() {
         echo "[EPCO] ✓ Permisos configurados para ${MYSQL_USER}"
     else
         echo "[EPCO] ✓ Base de datos ya inicializada (tablas existentes)"
+        
+        # Migraciones: crear tablas nuevas si no existen
+        echo "[EPCO] Verificando migraciones..."
+        mysql -u root -p"${MYSQL_ROOT_PASSWORD}" "${MYSQL_DATABASE}" -e "
+            CREATE TABLE IF NOT EXISTS notification_recipients (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(150) NOT NULL,
+                name VARCHAR(100) DEFAULT NULL,
+                event_type ENUM('ticket_created', 'ticket_updated', 'all') DEFAULT 'all',
+                is_active TINYINT(1) DEFAULT 1,
+                created_by INT DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_email_event (email, event_type),
+                INDEX idx_event_active (event_type, is_active)
+            ) ENGINE=InnoDB;
+        " 2>/dev/null && echo "[EPCO] ✓ Tabla notification_recipients verificada" || true
     fi
 }
 
