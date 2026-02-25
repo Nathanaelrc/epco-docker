@@ -1569,6 +1569,52 @@ $topActions = $pdo->query("
                     </table>
                 </div>
             </div>
+
+            <!-- Guía de Uso del Sistema -->
+            <div class="card-custom mt-4">
+                <div class="card-header-custom">
+                    <h5 class="mb-0"><i class="bi bi-book me-2"></i>Guía de Uso del Sistema de Soporte</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-lg-4 col-md-6">
+                            <div class="text-center p-3 rounded-3" style="background: #f8fafc;">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; font-size: 1.2rem; font-weight: 700;">1</div>
+                                <h6 class="fw-bold mb-2">Crear un Ticket</h6>
+                                <p class="text-muted small mb-0">El usuario hace clic en <strong>"Nuevo Ticket"</strong> y completa categoría, prioridad y descripción. Se genera un código de seguimiento único.</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="text-center p-3 rounded-3" style="background: #f8fafc;">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 1.2rem; font-weight: 700;">2</div>
+                                <h6 class="fw-bold mb-2">Consultar Estado</h6>
+                                <p class="text-muted small mb-0">Con el botón <strong>"Consultar Ticket"</strong> el usuario ingresa su código y ve el estado, comentarios públicos y resolución.</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="text-center p-3 rounded-3" style="background: #f8fafc;">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 1.2rem; font-weight: 700;">3</div>
+                                <h6 class="fw-bold mb-2">Tiempos SLA</h6>
+                                <p class="text-muted small mb-0"><strong>Urgente:</strong> 4h &middot; <strong>Alta:</strong> 8h &middot; <strong>Media:</strong> 24h &middot; <strong>Baja:</strong> 48h. Se envía correo de confirmación al crear el ticket.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 rounded-3" style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1px solid #e2e8f0;">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-lightbulb me-3" style="font-size: 1.5rem; color: #f59e0b;"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1 small">Consejos para el equipo TI</h6>
+                                <ul class="text-muted small mb-0" style="list-style: none; padding: 0;">
+                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Responde los tickets dentro del SLA asignado para mantener el cumplimiento.</li>
+                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Usa comentarios internos para notas del equipo (no visibles para el usuario).</li>
+                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Adjunta evidencia de la solución antes de marcar como resuelto.</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Escala tickets urgentes que superen las 2 horas sin atención.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <?php elseif ($page === 'tickets'): ?>
             <!-- ========== TICKETS ========== -->
