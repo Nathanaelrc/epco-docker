@@ -526,7 +526,7 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=mis_tickets#cumplimiento" class="sidebar-nav-link">
+                    <a href="soporte_admin.php?page=mi_cumplimiento" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'mi_cumplimiento') ? 'active' : '' ?>">
                         <i class="bi bi-speedometer"></i>
                         <span>Mi Cumplimiento SLA</span>
                     </a>

@@ -585,7 +585,7 @@ $stats = $pdo->query("
 
 // Tickets según filtro y página
 $where = '';
-if ($page === 'mis_tickets') {
+if ($page === 'mis_tickets' || $page === 'mi_cumplimiento') {
     $where = "WHERE t.assigned_to = " . (int)$user['id'];
 } elseif ($page === 'tickets' || $page === 'dashboard' || $page === 'sla') {
     if ($filter === 'open') $where = "WHERE t.status IN ('abierto', 'en_proceso', 'pendiente')";
@@ -1536,47 +1536,57 @@ unset($tp);
         .sn-search i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-size: 0.85rem; }
         .sn-stats-strip {
             display: flex;
-            gap: 16px;
-            padding: 12px 16px;
+            gap: 0;
             background: white;
             border: 1px solid var(--gray-200);
             border-radius: 8px;
             margin-bottom: 16px;
             flex-wrap: wrap;
-            align-items: center;
+            align-items: stretch;
+            overflow: hidden;
         }
         .sn-stat-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding-right: 16px;
+            justify-content: center;
+            gap: 2px;
+            padding: 14px 20px;
             border-right: 1px solid var(--gray-200);
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            position: relative;
+            transition: background 0.15s;
         }
-        .sn-stat-item:last-child { border-right: none; padding-right: 0; }
-        .sn-stat-number { font-size: 1.3rem; font-weight: 700; line-height: 1; }
-        .sn-stat-label { font-size: 0.7rem; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+        .sn-stat-item:hover { background: var(--gray-50); }
+        .sn-stat-item:last-child { border-right: none; }
+        .sn-stat-number { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+        .sn-stat-label { font-size: 0.65rem; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+        .sn-stat-trend { font-size: 0.6rem; font-weight: 600; margin-top: 2px; }
         .sn-table th {
-            background: #293e51;
+            background: #1e293b;
             color: #e2e8f0;
             font-weight: 600;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            padding: 10px 14px;
+            padding: 10px 12px;
             border: none;
             white-space: nowrap;
             position: sticky;
             top: 0;
+            z-index: 2;
         }
-        .sn-table td { padding: 10px 14px; vertical-align: middle; border-color: var(--gray-100); font-size: 0.8rem; color: var(--gray-700); }
-        .sn-table tbody tr { transition: background 0.1s; cursor: pointer; }
-        .sn-table tbody tr:hover { background: #e8f4fc !important; }
+        .sn-table td { padding: 9px 12px; vertical-align: middle; border-color: var(--gray-100); font-size: 0.78rem; color: var(--gray-700); }
+        .sn-table tbody tr { transition: background 0.1s; cursor: pointer; border-left: 3px solid transparent; }
+        .sn-table tbody tr:hover { background: #e8f4fc !important; border-left-color: var(--primary-dark); }
         .sn-table tbody tr:nth-child(even) { background: var(--gray-50); }
-        .sn-table .sn-link { color: var(--primary-dark); font-weight: 600; font-family: 'SF Mono', monospace; font-size: 0.78rem; }
+        .sn-table .sn-link { color: var(--primary-dark); font-weight: 600; font-family: 'SF Mono', monospace; font-size: 0.76rem; }
         .sn-table .sn-link:hover { text-decoration: underline; }
         .sn-filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
         .sn-pill {
-            padding: 4px 12px;
+            padding: 5px 14px;
             border-radius: 20px;
             font-size: 0.72rem;
             font-weight: 500;
@@ -1593,6 +1603,73 @@ unset($tp);
         .sn-priority-dot.alta { background: #f59e0b; }
         .sn-priority-dot.media { background: #3b82f6; }
         .sn-priority-dot.baja { background: #94a3b8; }
+        /* SN Overview panels */
+        .sn-overview-card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .sn-overview-header {
+            padding: 12px 16px;
+            background: #1e293b;
+            color: #e2e8f0;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sn-overview-header .sn-badge { background: rgba(255,255,255,0.15); font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; }
+        .sn-overview-body { padding: 0; }
+        .sn-overview-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 0.78rem;
+            transition: background 0.1s;
+        }
+        .sn-overview-row:hover { background: var(--gray-50); }
+        .sn-overview-row:last-child { border-bottom: none; }
+        .sn-count-badge { 
+            min-width: 24px; height: 20px; border-radius: 10px; 
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.68rem; font-weight: 700; 
+        }
+        /* SN Alert bar */
+        .sn-alert-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .sn-alert-bar.danger { background: #fef2f2; border-color: #fecaca; }
+        /* SN Tab nav */
+        .sn-tab-nav {
+            display: flex;
+            border-bottom: 2px solid var(--gray-200);
+            margin-bottom: 16px;
+            gap: 0;
+        }
+        .sn-tab-link {
+            padding: 10px 20px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: var(--gray-500);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.15s;
+        }
+        .sn-tab-link:hover { color: var(--primary-dark); }
+        .sn-tab-link.active { color: var(--primary-dark); border-bottom-color: var(--primary-dark); font-weight: 600; }
         
         /* Personal SLA cards */
         .personal-sla-card {
@@ -1606,6 +1683,7 @@ unset($tp);
         .personal-sla-label { font-size: 0.75rem; color: var(--gray-500); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
         .sla-progress-bar { height: 6px; border-radius: 3px; background: var(--gray-100); overflow: hidden; margin-top: 8px; }
         .sla-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+        .sla-gauge { position: relative; width: 120px; height: 60px; margin: 0 auto; }
     </style>
 </head>
 <body class="has-sidebar">
@@ -1615,7 +1693,20 @@ unset($tp);
     <main class="main-content">
         <header class="top-header">
             <div class="header-title">
-                <h1><?= $page === 'dashboard' ? 'Dashboard' : ($page === 'tickets' ? 'Gestión de Tickets' : ($page === 'mis_tickets' ? 'Mis Tickets' : ($page === 'usuarios' ? 'Gestión de Usuarios' : ($page === 'nuevo_ticket' ? 'Nuevo Ticket' : ($page === 'sla' ? 'Cumplimiento SLA' : ($page === 'auditoria' ? 'Auditoría del Sistema' : ($page === 'notificaciones' ? 'Destinatarios de Notificaciones' : 'Soporte TI'))))))) ?></h1>
+                <?php
+                $pageTitles = [
+                    'dashboard' => 'Dashboard',
+                    'tickets' => 'Gestión de Tickets',
+                    'mis_tickets' => 'Mis Tickets Asignados',
+                    'mi_cumplimiento' => 'Mi Cumplimiento SLA',
+                    'usuarios' => 'Gestión de Usuarios',
+                    'nuevo_ticket' => 'Nuevo Ticket',
+                    'sla' => 'Cumplimiento SLA',
+                    'auditoria' => 'Auditoría del Sistema',
+                    'notificaciones' => 'Destinatarios de Notificaciones',
+                ];
+                ?>
+                <h1><?= $pageTitles[$page] ?? 'Soporte TI' ?></h1>
                 <?php
                 $dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                 $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -1637,74 +1728,53 @@ unset($tp);
             <!-- Stats Strip -->
             <div class="sn-stats-strip">
                 <div class="sn-stat-item">
-                    <div>
-                        <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['total'] ?></div>
-                        <div class="sn-stat-label">Total</div>
-                    </div>
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['total'] ?></div>
+                    <div class="sn-stat-label">Total</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div>
-                        <div class="sn-stat-number" style="color:#3b82f6"><?= $stats['abiertos'] + $stats['en_proceso'] ?></div>
-                        <div class="sn-stat-label">Activos</div>
-                    </div>
+                    <div class="sn-stat-number" style="color:#3b82f6"><?= $stats['abiertos'] + $stats['en_proceso'] ?></div>
+                    <div class="sn-stat-label">Activos</div>
+                    <?php 
+                    $activeTotal = $stats['abiertos'] + $stats['en_proceso'];
+                    $activePct = $stats['total'] > 0 ? round(($activeTotal / $stats['total']) * 100) : 0;
+                    ?>
+                    <div class="sn-stat-trend text-primary"><?= $activePct ?>% del total</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div>
-                        <div class="sn-stat-number" style="color:#dc2626"><?= $stats['urgentes'] ?></div>
-                        <div class="sn-stat-label">Urgentes</div>
-                    </div>
+                    <div class="sn-stat-number" style="color:#dc2626"><?= $stats['urgentes'] ?></div>
+                    <div class="sn-stat-label">Urgentes</div>
+                    <?php if ($stats['urgentes'] > 0): ?>
+                    <div class="sn-stat-trend text-danger"><i class="bi bi-exclamation-circle"></i> Atención</div>
+                    <?php endif; ?>
                 </div>
                 <div class="sn-stat-item">
-                    <div>
-                        <div class="sn-stat-number" style="color:#059669"><?= $weekResolved ?></div>
-                        <div class="sn-stat-label">Resueltos (semana)</div>
-                    </div>
+                    <div class="sn-stat-number" style="color:#059669"><?= $weekResolved ?></div>
+                    <div class="sn-stat-label">Resueltos (semana)</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div>
-                        <div class="sn-stat-number" style="color:#6366f1"><?= $avgResponseHours ?><small style="font-size:0.7rem">h</small></div>
-                        <div class="sn-stat-label">T. Respuesta</div>
-                    </div>
+                    <div class="sn-stat-number" style="color:#6366f1"><?= $avgResponseHours ?><small style="font-size:0.7rem">h</small></div>
+                    <div class="sn-stat-label">T. Respuesta</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div>
-                        <div class="sn-stat-number" style="color:#d97706"><?= $avgResolutionHours ?><small style="font-size:0.7rem">h</small></div>
-                        <div class="sn-stat-label">T. Resolución</div>
-                    </div>
+                    <div class="sn-stat-number" style="color:#d97706"><?= $avgResolutionHours ?><small style="font-size:0.7rem">h</small></div>
+                    <div class="sn-stat-label">T. Resolución</div>
                 </div>
-                <div class="sn-stat-item" style="border-right:none; margin-left: auto;">
+                <div class="sn-stat-item" style="border-right:none;">
+                    <div class="sn-stat-number" style="color:#16a34a"><?= $slaStats['resolution_compliance'] ?? 0 ?>%</div>
+                    <div class="sn-stat-label">SLA Global</div>
+                </div>
+                <div class="sn-stat-item" style="border-right:none;">
                     <a href="?page=nuevo_ticket" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo Ticket</a>
                 </div>
             </div>
             
-            <!-- Toolbar: Breadcrumb + Search + Filters -->
-            <div class="sn-toolbar">
-                <div class="sn-breadcrumb">
-                    <a href="?page=dashboard">Incidents</a>
-                    <span class="separator">&gt;</span>
-                    <span>All</span>
-                    <span class="separator">&gt;</span>
-                    <span style="color: var(--gray-900); font-weight: 600;">Active = true</span>
-                </div>
-                <div class="sn-search">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="dashSearchInput" placeholder="Buscar tickets por número, título, usuario..." onkeyup="filterDashTable()">
-                </div>
-                <div class="sn-filter-pills">
-                    <a href="?page=tickets&filter=all" class="sn-pill active">Todos <small>(<?= $stats['total'] ?>)</small></a>
-                    <a href="?page=tickets&filter=open" class="sn-pill">Abiertos <small>(<?= $stats['abiertos'] + $stats['en_proceso'] ?>)</small></a>
-                    <a href="?page=tickets&filter=urgent" class="sn-pill">Urgentes <small>(<?= $stats['urgentes'] ?>)</small></a>
-                    <a href="?page=tickets&filter=closed" class="sn-pill">Cerrados <small>(<?= $stats['cerrados'] ?>)</small></a>
-                </div>
-            </div>
-            
-            <!-- SLA Alerts (compact) -->
+            <!-- Alerts bar -->
             <?php if (!empty($slaAlerts) || !empty($unassignedAlerts)): ?>
-            <div class="d-flex align-items-center gap-2 mb-3 px-1" style="flex-wrap: wrap;">
-                <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-                <small class="fw-semibold text-muted">Alertas:</small>
-                <?php foreach (array_slice($slaAlerts, 0, 3) as $alert): 
-                    $pct = round(($alert['elapsed_minutes'] / $alert['sla_limit_minutes']) * 100);
+            <div class="sn-alert-bar <?= count($slaAlerts) > 3 ? 'danger' : '' ?>">
+                <i class="bi bi-exclamation-triangle-fill" style="color:#d97706; font-size:1rem;"></i>
+                <small class="fw-semibold">Alertas activas:</small>
+                <?php foreach (array_slice($slaAlerts, 0, 4) as $alert): 
+                    $pct = round(($alert['elapsed_minutes'] / max($alert['sla_limit_minutes'], 1)) * 100);
                 ?>
                 <span class="badge bg-<?= $pct >= 100 ? 'danger' : 'warning text-dark' ?>" style="font-size:0.68rem">
                     <?= $alert['ticket_number'] ?> — <?= $pct >= 100 ? 'SLA vencido' : (100-$pct).'% restante' ?>
@@ -1715,15 +1785,188 @@ unset($tp);
                     <?= $alert['ticket_number'] ?> — Sin asignar <?= $alert['hours_waiting'] ?>h
                 </span>
                 <?php endforeach; ?>
-                <?php if (count($slaAlerts) + count($unassignedAlerts) > 5): ?>
-                <a href="?page=tickets&filter=open" class="small text-primary">+<?= count($slaAlerts) + count($unassignedAlerts) - 5 ?> más</a>
+                <?php if (count($slaAlerts) + count($unassignedAlerts) > 6): ?>
+                <a href="?page=tickets&filter=open" class="small text-dark fw-bold">+<?= count($slaAlerts) + count($unassignedAlerts) - 6 ?> más</a>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
             
+            <!-- Overview Panels Row -->
+            <div class="row g-3 mb-3">
+                <!-- Weekly Trend Chart -->
+                <div class="col-lg-4">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-graph-up me-2"></i>Tendencia Semanal</span>
+                            <span class="sn-badge">7 días</span>
+                        </div>
+                        <div style="padding:12px;">
+                            <canvas id="dashWeeklyChart" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Category Distribution -->
+                <div class="col-lg-4">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-pie-chart me-2"></i>Por Categoría</span>
+                            <span class="sn-badge"><?= $stats['total'] ?></span>
+                        </div>
+                        <div style="padding:12px; display:flex; align-items:center; justify-content:center;">
+                            <canvas id="dashCategoryChart" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Technician Workload / Assignment Group -->
+                <div class="col-lg-4">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-people me-2"></i>Carga por Técnico</span>
+                            <span class="sn-badge"><?= count($ticketsPerTechnician) ?> técnicos</span>
+                        </div>
+                        <div class="sn-overview-body" style="max-height: 200px; overflow-y: auto;">
+                            <?php if (!empty($ticketsPerTechnician)): ?>
+                            <?php 
+                            $maxTechTickets = max(array_column($ticketsPerTechnician, 'total'));
+                            foreach ($ticketsPerTechnician as $tech): 
+                                $pctBar = $maxTechTickets > 0 ? round(($tech['total'] / $maxTechTickets) * 100) : 0;
+                            ?>
+                            <div class="sn-overview-row">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-info-avatar" style="width:24px;height:24px;font-size:0.6rem;"><?= strtoupper(substr($tech['name'], 0, 1)) ?></div>
+                                    <span class="small"><?= htmlspecialchars($tech['name']) ?></span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:60px; height:6px; background:var(--gray-100); border-radius:3px; overflow:hidden;">
+                                        <div style="height:100%; width:<?= $pctBar ?>%; background:var(--primary-dark); border-radius:3px;"></div>
+                                    </div>
+                                    <span class="sn-count-badge bg-primary text-white"><?= $tech['total'] ?></span>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php else: ?>
+                            <div class="text-center py-3 text-muted small">Sin datos</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Second Row: Status Distribution + SLA Compliance + Priority -->
+            <div class="row g-3 mb-3">
+                <!-- Status Distribution -->
+                <div class="col-lg-3">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-bar-chart me-2"></i>Por Estado</span>
+                        </div>
+                        <div class="sn-overview-body">
+                            <?php 
+                            $statusItems = [
+                                ['label' => 'Abiertos', 'count' => $stats['abiertos'], 'color' => '#3b82f6'],
+                                ['label' => 'En Proceso', 'count' => $stats['en_proceso'], 'color' => '#8b5cf6'],
+                                ['label' => 'Pendientes', 'count' => $stats['pendientes'] ?? 0, 'color' => '#f59e0b'],
+                                ['label' => 'Resueltos', 'count' => $stats['resueltos'] ?? 0, 'color' => '#10b981'],
+                                ['label' => 'Cerrados', 'count' => $stats['cerrados'], 'color' => '#6b7280'],
+                            ];
+                            foreach ($statusItems as $si): ?>
+                            <div class="sn-overview-row">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="width:8px;height:8px;border-radius:50%;background:<?= $si['color'] ?>;"></span>
+                                    <span class="small"><?= $si['label'] ?></span>
+                                </div>
+                                <span class="sn-count-badge" style="background:<?= $si['color'] ?>20; color:<?= $si['color'] ?>;"><?= $si['count'] ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+                <!-- SLA Health -->
+                <div class="col-lg-3">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-speedometer2 me-2"></i>Salud SLA</span>
+                            <span class="sn-badge"><?= $slaStats['total'] ?? 0 ?> tickets</span>
+                        </div>
+                        <div class="sn-overview-body">
+                            <?php
+                            $slaItems = [
+                                ['label' => 'Respuesta', 'value' => $slaStats['response_compliance'] ?? 0],
+                                ['label' => 'Asignación', 'value' => $slaStats['assignment_compliance'] ?? 0],
+                                ['label' => 'Resolución', 'value' => $slaStats['resolution_compliance'] ?? 0],
+                            ];
+                            foreach ($slaItems as $sli):
+                                $slaColor = $sli['value'] >= 80 ? '#16a34a' : ($sli['value'] >= 50 ? '#d97706' : '#dc2626');
+                            ?>
+                            <div class="sn-overview-row">
+                                <span class="small"><?= $sli['label'] ?></span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:50px; height:5px; background:var(--gray-100); border-radius:3px; overflow:hidden;">
+                                        <div style="height:100%; width:<?= $sli['value'] ?>%; background:<?= $slaColor ?>; border-radius:3px;"></div>
+                                    </div>
+                                    <span class="small fw-bold" style="color:<?= $slaColor ?>"><?= $sli['value'] ?>%</span>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            <div class="sn-overview-row">
+                                <span class="small">T. Resp. Prom.</span>
+                                <span class="small fw-bold"><?= $slaStats['avg_response'] ?? 0 ?>h</span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">T. Resol. Prom.</span>
+                                <span class="small fw-bold"><?= $slaStats['avg_resolution'] ?? 0 ?>h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Priority Breakdown -->
+                <div class="col-lg-3">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-flag me-2"></i>Por Prioridad</span>
+                        </div>
+                        <div style="padding:12px; display:flex; align-items:center; justify-content:center;">
+                            <canvas id="dashPriorityChart" height="140"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Hourly Activity -->
+                <div class="col-lg-3">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-clock me-2"></i>Actividad por Hora</span>
+                        </div>
+                        <div style="padding:12px;">
+                            <canvas id="dashHourlyChart" height="140"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Toolbar: Breadcrumb + Search + Filters -->
+            <div class="sn-toolbar">
+                <div class="sn-breadcrumb">
+                    <a href="?page=dashboard">Incidents</a>
+                    <span class="separator">&gt;</span>
+                    <span>All</span>
+                    <span class="separator">&gt;</span>
+                    <span style="color: var(--gray-900); font-weight: 600;">Lista de Incidentes</span>
+                </div>
+                <div class="sn-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="dashSearchInput" placeholder="Buscar tickets por número, título, usuario..." onkeyup="filterDashTable()">
+                </div>
+                <div class="sn-filter-pills">
+                    <a href="#" class="sn-pill active" onclick="filterDashByStatus('all');return false;">Todos <small>(<?= $stats['total'] ?>)</small></a>
+                    <a href="#" class="sn-pill" onclick="filterDashByStatus('open');return false;">Abiertos <small>(<?= $stats['abiertos'] + $stats['en_proceso'] ?>)</small></a>
+                    <a href="#" class="sn-pill" onclick="filterDashByStatus('urgent');return false;">Urgentes <small>(<?= $stats['urgentes'] ?>)</small></a>
+                    <a href="#" class="sn-pill" onclick="filterDashByStatus('closed');return false;">Cerrados <small>(<?= $stats['cerrados'] ?>)</small></a>
+                </div>
+            </div>
+            
             <!-- Main Data Table (ServiceNow style) -->
-            <div class="card-custom">
-                <div class="table-responsive" style="max-height: calc(100vh - 320px); overflow-y: auto;">
+            <div class="sn-overview-card">
+                <div class="table-responsive" style="max-height: calc(100vh - 400px); overflow-y: auto;">
                     <table class="table sn-table mb-0" id="dashTicketTable">
                         <thead>
                             <tr>
@@ -1742,10 +1985,8 @@ unset($tp);
                         <?php if (empty($tickets)): ?>
                         <tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
                         <?php else: ?>
-                        <?php 
-                        // For dashboard, show ALL tickets (not just 10)
-                        foreach ($tickets as $t): ?>
-                        <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()">
+                        <?php foreach ($tickets as $t): ?>
+                        <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
                             <td><span class="sn-link"><?= $t['ticket_number'] ?></span></td>
                             <td class="text-nowrap"><?= date('Y-m-d H:i', strtotime($t['created_at'])) ?></td>
                             <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
@@ -1769,7 +2010,7 @@ unset($tp);
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center px-3 py-2" style="border-top:1px solid var(--gray-200); background: var(--gray-50);">
-                    <small class="text-muted"><?= count($tickets) ?> registros</small>
+                    <small class="text-muted" id="dashRecordCount"><?= count($tickets) ?> registros</small>
                     <div class="d-flex gap-2">
                         <a href="?page=mis_tickets" class="btn btn-outline-dark btn-sm"><i class="bi bi-person-badge me-1"></i>Mis Tickets</a>
                         <a href="?page=sla" class="btn btn-outline-dark btn-sm"><i class="bi bi-speedometer2 me-1"></i>SLA</a>
@@ -1778,14 +2019,147 @@ unset($tp);
                 </div>
             </div>
             
+            <!-- Dashboard Charts Script -->
             <script>
             function filterDashTable() {
                 const q = document.getElementById('dashSearchInput').value.toLowerCase();
                 const rows = document.querySelectorAll('#dashTicketTable tbody tr');
+                let visible = 0;
                 rows.forEach(row => {
-                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+                    const show = row.textContent.toLowerCase().includes(q);
+                    row.style.display = show ? '' : 'none';
+                    if (show) visible++;
                 });
+                document.getElementById('dashRecordCount').textContent = visible + ' registros';
             }
+            function filterDashByStatus(status) {
+                document.querySelectorAll('.sn-filter-pills .sn-pill').forEach(p => p.classList.remove('active'));
+                event.target.closest('.sn-pill').classList.add('active');
+                const rows = document.querySelectorAll('#dashTicketTable tbody tr');
+                let visible = 0;
+                rows.forEach(row => {
+                    const st = row.dataset.status;
+                    const pr = row.dataset.priority;
+                    let show = true;
+                    if (status === 'open') show = ['abierto','en_proceso','pendiente','asignado'].includes(st);
+                    else if (status === 'closed') show = ['resuelto','cerrado'].includes(st);
+                    else if (status === 'urgent') show = pr === 'urgente' && !['resuelto','cerrado'].includes(st);
+                    row.style.display = show ? '' : 'none';
+                    if (show) visible++;
+                });
+                document.getElementById('dashRecordCount').textContent = visible + ' registros';
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                // Weekly Trend Chart
+                new Chart(document.getElementById('dashWeeklyChart'), {
+                    type: 'line',
+                    data: {
+                        labels: <?= json_encode($trendLabels) ?>,
+                        datasets: [{
+                            label: 'Creados',
+                            data: <?= json_encode($trendCreados) ?>,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            borderWidth: 2
+                        }, {
+                            label: 'Resueltos',
+                            data: <?= json_encode($trendResueltos) ?>,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16,185,129,0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10 } } } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } }, grid: { color: '#f1f5f9' } },
+                            x: { ticks: { font: { size: 9 } }, grid: { display: false } }
+                        }
+                    }
+                });
+                // Category Doughnut
+                new Chart(document.getElementById('dashCategoryChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: <?= json_encode(array_column($ticketsByCategory ?? [], 'category')) ?>.map(c => ({
+                            'hardware': 'Hardware', 'software': 'Software', 'red': 'Red', 'accesos': 'Accesos',
+                            'correo': 'Correo', 'impresora': 'Impresora', 'telefonia': 'Telefonía', 'otro': 'Otro'
+                        })[c] || c),
+                        datasets: [{
+                            data: <?= json_encode(array_column($ticketsByCategory ?? [], 'total')) ?>,
+                            backgroundColor: ['#3b82f6','#f59e0b','#10b981','#8b5cf6','#ec4899','#6366f1','#14b8a6','#94a3b8'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '55%',
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 }, padding: 8 } } }
+                    }
+                });
+                // Priority Chart
+                <?php
+                $prioData = ['urgente' => 0, 'alta' => 0, 'media' => 0, 'baja' => 0];
+                foreach ($tickets as $t) { if (isset($prioData[$t['priority']])) $prioData[$t['priority']]++; }
+                ?>
+                new Chart(document.getElementById('dashPriorityChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Urgente','Alta','Media','Baja'],
+                        datasets: [{
+                            data: [<?= $prioData['urgente'] ?>, <?= $prioData['alta'] ?>, <?= $prioData['media'] ?>, <?= $prioData['baja'] ?>],
+                            backgroundColor: ['#dc2626','#f59e0b','#3b82f6','#94a3b8'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '55%',
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 }, padding: 8 } } }
+                    }
+                });
+                // Hourly Activity
+                <?php
+                $hourlyData = array_fill(0, 24, 0);
+                if (!empty($ticketsByHour)) { foreach ($ticketsByHour as $h) { $hourlyData[(int)$h['hour']] = (int)$h['total']; } }
+                $hourLabels = [];
+                for ($i = 7; $i <= 20; $i++) $hourLabels[] = str_pad($i, 2, '0', STR_PAD_LEFT) . ':00';
+                $hourValues = array_slice($hourlyData, 7, 14);
+                ?>
+                new Chart(document.getElementById('dashHourlyChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: <?= json_encode($hourLabels) ?>,
+                        datasets: [{
+                            data: <?= json_encode($hourValues) ?>,
+                            backgroundColor: 'rgba(12,90,138,0.6)',
+                            borderRadius: 3,
+                            barPercentage: 0.7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 8 } }, grid: { color: '#f1f5f9' } },
+                            x: { ticks: { font: { size: 7 }, maxRotation: 45 }, grid: { display: false } }
+                        }
+                    }
+                });
+            });
             </script>
             
             <?php elseif ($page === 'tickets'): ?>
@@ -1838,212 +2212,534 @@ unset($tp);
             </div>
             
             <?php elseif ($page === 'mis_tickets'): ?>
-            <!-- ========== MIS TICKETS ========== -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Mis Tickets Asignados</h5>
-                <a href="?page=nuevo_ticket" class="btn btn-dark"><i class="bi bi-plus-lg me-2"></i>Nuevo Ticket</a>
-            </div>
-            
+            <!-- ========== MIS TICKETS - Solo listado ========== -->
             <?php
             $misTicketsAbiertos = array_filter($tickets, function($t) { return in_array($t['status'], ['abierto', 'en_proceso', 'pendiente', 'asignado']); });
             $misTicketsResueltos = array_filter($tickets, function($t) { return in_array($t['status'], ['resuelto', 'cerrado']); });
+            $misUrgentes = array_filter($tickets, function($t) { return $t['priority'] === 'urgente' && !in_array($t['status'], ['resuelto', 'cerrado']); });
             ?>
             
-            <!-- Resumen rápido -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="d-flex justify-content-between"><div><div class="stat-value"><?= count($tickets) ?></div><div class="stat-label">Total asignados</div></div><div class="stat-icon"><i class="bi bi-ticket-detailed"></i></div></div>
-                    </div>
+            <!-- Stats Strip estilo SN -->
+            <div class="sn-stats-strip mb-3">
+                <div class="sn-stat-item">
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= count($tickets) ?></div>
+                    <div class="sn-stat-label">Total Asignados</div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card" style="border-left: 3px solid #3b82f6;">
-                        <div class="d-flex justify-content-between"><div><div class="stat-value" style="color:#3b82f6"><?= count($misTicketsAbiertos) ?></div><div class="stat-label">En curso</div></div><i class="bi bi-inbox" style="font-size: 1.8rem; color: #3b82f630;"></i></div>
-                    </div>
+                <div class="sn-stat-item">
+                    <div class="sn-stat-number" style="color:#3b82f6"><?= count($misTicketsAbiertos) ?></div>
+                    <div class="sn-stat-label">En Curso</div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card" style="border-left: 3px solid #059669;">
-                        <div class="d-flex justify-content-between"><div><div class="stat-value" style="color:#059669"><?= count($misTicketsResueltos) ?></div><div class="stat-label">Resueltos</div></div><i class="bi bi-check-circle" style="font-size: 1.8rem; color: #05966930;"></i></div>
-                    </div>
+                <div class="sn-stat-item">
+                    <div class="sn-stat-number" style="color:#059669"><?= count($misTicketsResueltos) ?></div>
+                    <div class="sn-stat-label">Resueltos</div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card" style="border-left: 3px solid #dc2626;">
-                        <div class="d-flex justify-content-between"><div><div class="stat-value" style="color:#dc2626"><?= count(array_filter($tickets, function($t) { return $t['priority'] === 'urgente' && !in_array($t['status'], ['resuelto', 'cerrado']); })) ?></div><div class="stat-label">Urgentes</div></div><i class="bi bi-exclamation-triangle" style="font-size: 1.8rem; color: #dc262630;"></i></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- ===== CUMPLIMIENTO PERSONAL SLA ===== -->
-            <div class="card-custom mb-4" id="cumplimiento">
-                <div class="card-header-custom">
-                    <h5 class="card-title-custom"><i class="bi bi-speedometer2 me-2"></i>Mi Cumplimiento SLA Personal <small class="text-muted">(últimos 30 días)</small></h5>
-                </div>
-                <div class="p-4">
-                    <?php if ($personalSla['total'] > 0): ?>
-                    <div class="row g-4 mb-4">
-                        <!-- Tasa resolución personal -->
-                        <div class="col-lg-3 col-md-6">
-                            <div class="personal-sla-card">
-                                <div class="personal-sla-value" style="color: <?= $personalSla['tasa_resolucion'] >= 80 ? '#16a34a' : ($personalSla['tasa_resolucion'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['tasa_resolucion'] ?>%</div>
-                                <div class="personal-sla-label">Tasa de Resolución</div>
-                                <div class="sla-progress-bar">
-                                    <div class="sla-progress-fill" style="width:<?= $personalSla['tasa_resolucion'] ?>%; background:<?= $personalSla['tasa_resolucion'] >= 80 ? '#16a34a' : ($personalSla['tasa_resolucion'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
-                                </div>
-                                <small class="text-muted d-block mt-1"><?= $personalSla['resueltos'] ?> de <?= $personalSla['total'] ?> tickets</small>
-                            </div>
-                        </div>
-                        <!-- SLA Respuesta -->
-                        <div class="col-lg-3 col-md-6">
-                            <div class="personal-sla-card">
-                                <div class="personal-sla-value" style="color: <?= $personalSla['response_compliance'] >= 80 ? '#16a34a' : ($personalSla['response_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['response_compliance'] ?>%</div>
-                                <div class="personal-sla-label">SLA Respuesta</div>
-                                <div class="sla-progress-bar">
-                                    <div class="sla-progress-fill" style="width:<?= $personalSla['response_compliance'] ?>%; background:<?= $personalSla['response_compliance'] >= 80 ? '#16a34a' : ($personalSla['response_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
-                                </div>
-                                <small class="text-muted d-block mt-1">Prom: <?= $personalSla['avg_response'] ?>h · Equipo: <?= $slaStats['avg_response'] ?>h</small>
-                            </div>
-                        </div>
-                        <!-- SLA Asignación -->
-                        <div class="col-lg-3 col-md-6">
-                            <div class="personal-sla-card">
-                                <div class="personal-sla-value" style="color: <?= $personalSla['assignment_compliance'] >= 80 ? '#16a34a' : ($personalSla['assignment_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['assignment_compliance'] ?>%</div>
-                                <div class="personal-sla-label">SLA Asignación</div>
-                                <div class="sla-progress-bar">
-                                    <div class="sla-progress-fill" style="width:<?= $personalSla['assignment_compliance'] ?>%; background:<?= $personalSla['assignment_compliance'] >= 80 ? '#16a34a' : ($personalSla['assignment_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
-                                </div>
-                                <small class="text-muted d-block mt-1"><?= $personalSla['within_assignment'] ?> ok · <?= $personalSla['breached_assignment'] ?> incumplidos</small>
-                            </div>
-                        </div>
-                        <!-- SLA Resolución -->
-                        <div class="col-lg-3 col-md-6">
-                            <div class="personal-sla-card">
-                                <div class="personal-sla-value" style="color: <?= $personalSla['resolution_compliance'] >= 80 ? '#16a34a' : ($personalSla['resolution_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['resolution_compliance'] ?>%</div>
-                                <div class="personal-sla-label">SLA Resolución</div>
-                                <div class="sla-progress-bar">
-                                    <div class="sla-progress-fill" style="width:<?= $personalSla['resolution_compliance'] ?>%; background:<?= $personalSla['resolution_compliance'] >= 80 ? '#16a34a' : ($personalSla['resolution_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
-                                </div>
-                                <small class="text-muted d-block mt-1">Prom: <?= $personalSla['avg_resolution'] ?>h · Equipo: <?= $slaStats['avg_resolution'] ?>h</small>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Comparativa con el equipo -->
-                    <div class="row g-3">
-                        <div class="col-lg-6">
-                            <div style="background:var(--gray-50); border-radius:8px; padding:16px; border:1px solid var(--gray-200);">
-                                <h6 class="small fw-bold mb-3"><i class="bi bi-bar-chart me-1"></i> Mi rendimiento vs Equipo</h6>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small text-muted">Respuesta SLA</span>
-                                    <div>
-                                        <span class="badge bg-<?= $personalSla['response_compliance'] >= $slaStats['response_compliance'] ? 'success' : 'warning' ?>"><?= $personalSla['response_compliance'] ?>% yo</span>
-                                        <span class="badge bg-secondary"><?= $slaStats['response_compliance'] ?>% equipo</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small text-muted">Resolución SLA</span>
-                                    <div>
-                                        <span class="badge bg-<?= $personalSla['resolution_compliance'] >= $slaStats['resolution_compliance'] ? 'success' : 'warning' ?>"><?= $personalSla['resolution_compliance'] ?>% yo</span>
-                                        <span class="badge bg-secondary"><?= $slaStats['resolution_compliance'] ?>% equipo</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small text-muted">Tasa Resolución</span>
-                                    <div>
-                                        <span class="badge bg-<?= $personalSla['tasa_resolucion'] >= ($ticketMetrics['tasa_resolucion'] ?? 0) ? 'success' : 'warning' ?>"><?= $personalSla['tasa_resolucion'] ?>% yo</span>
-                                        <span class="badge bg-secondary"><?= $ticketMetrics['tasa_resolucion'] ?>% equipo</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div style="background:var(--gray-50); border-radius:8px; padding:16px; border:1px solid var(--gray-200);">
-                                <h6 class="small fw-bold mb-3"><i class="bi bi-clock-history me-1"></i> Tiempos promedio</h6>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small text-muted">Primera respuesta</span>
-                                    <span class="fw-bold small"><?= $personalSla['avg_response'] ?>h <small class="text-muted">(equipo: <?= $slaStats['avg_response'] ?>h)</small></span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small text-muted">Resolución total</span>
-                                    <span class="fw-bold small"><?= $personalSla['avg_resolution'] ?>h <small class="text-muted">(equipo: <?= $slaStats['avg_resolution'] ?>h)</small></span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small text-muted">Tickets procesados (30d)</span>
-                                    <span class="fw-bold small"><?= $personalSla['total'] ?></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php else: ?>
-                    <div class="text-center py-4 text-muted">
-                        <i class="bi bi-speedometer2" style="font-size:2rem; opacity:0.3;"></i>
-                        <p class="mt-2 small">No hay datos SLA personales en los últimos 30 días</p>
-                    </div>
+                <div class="sn-stat-item">
+                    <div class="sn-stat-number" style="color:#dc2626"><?= count($misUrgentes) ?></div>
+                    <div class="sn-stat-label">Urgentes</div>
+                    <?php if (count($misUrgentes) > 0): ?>
+                    <div class="sn-stat-trend text-danger"><i class="bi bi-exclamation-circle"></i></div>
                     <?php endif; ?>
                 </div>
+                <div class="sn-stat-item" style="border-right:none;">
+                    <a href="?page=mi_cumplimiento" class="btn btn-outline-dark btn-sm"><i class="bi bi-speedometer2 me-1"></i>Mi Cumplimiento SLA</a>
+                </div>
+                <div class="sn-stat-item" style="border-right:none;">
+                    <a href="?page=nuevo_ticket" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo Ticket</a>
+                </div>
             </div>
             
-            <!-- Tickets en curso -->
-            <?php if (!empty($misTicketsAbiertos)): ?>
-            <div class="card-custom mb-4">
-                <div class="card-header-custom">
-                    <h5 class="card-title-custom"><i class="bi bi-inbox me-2"></i>Tickets en Curso</h5>
-                    <span class="badge bg-primary"><?= count($misTicketsAbiertos) ?></span>
+            <!-- Toolbar con búsqueda y filtros -->
+            <div class="sn-toolbar">
+                <div class="sn-breadcrumb">
+                    <a href="?page=dashboard">Dashboard</a>
+                    <span class="separator">&gt;</span>
+                    <span>Mis Tickets</span>
+                    <span class="separator">&gt;</span>
+                    <span style="color: var(--gray-900); font-weight: 600;"><?= htmlspecialchars($user['name']) ?></span>
                 </div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+                <div class="sn-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="myTicketsSearch" placeholder="Buscar en mis tickets..." onkeyup="filterMyTickets()">
+                </div>
+                <div class="sn-filter-pills">
+                    <a href="#" class="sn-pill active" onclick="filterMyByStatus('all');return false;">Todos <small>(<?= count($tickets) ?>)</small></a>
+                    <a href="#" class="sn-pill" onclick="filterMyByStatus('open');return false;">En Curso <small>(<?= count($misTicketsAbiertos) ?>)</small></a>
+                    <a href="#" class="sn-pill" onclick="filterMyByStatus('closed');return false;">Resueltos <small>(<?= count($misTicketsResueltos) ?>)</small></a>
+                    <a href="#" class="sn-pill" onclick="filterMyByStatus('urgent');return false;">Urgentes <small>(<?= count($misUrgentes) ?>)</small></a>
+                </div>
+            </div>
+            
+            <!-- Tabla unificada de tickets -->
+            <?php if (!empty($tickets)): ?>
+            <div class="sn-overview-card">
+                <div class="table-responsive" style="max-height: calc(100vh - 340px); overflow-y: auto;">
+                    <table class="table sn-table mb-0" id="myTicketsTable">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Creado</th>
+                                <th>Descripción</th>
+                                <th>Solicitante</th>
+                                <th>Categoría</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Evidencia</th>
+                                <th>Actualizado</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                        <?php foreach ($misTicketsAbiertos as $t): ?>
-                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover">
-                            <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
-                            <td><?= htmlspecialchars(substr($t['title'], 0, 40)) ?><?= strlen($t['title']) > 40 ? '...' : '' ?></td>
-                            <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
-                            <td><span class="badge bg-light text-dark"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></td>
-                            <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
+                        <?php foreach ($tickets as $t): ?>
+                        <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
+                            <td><span class="sn-link"><?= $t['ticket_number'] ?></span></td>
+                            <td class="text-nowrap"><?= date('Y-m-d H:i', strtotime($t['created_at'])) ?></td>
+                            <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-info-avatar" style="width:26px;height:26px;font-size:0.65rem;"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
+                                    <span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
+                                </div>
+                            </td>
+                            <td><span class="small"><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></span></td>
+                            <td>
+                                <span class="sn-priority-dot <?= $t['priority'] ?>"></span>
+                                <span class="small"><?= ucfirst($t['priority']) ?></span>
+                            </td>
                             <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
-                            <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
+                            <td class="text-center">
+                                <?php 
+                                $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
+                                ?>
+                                <?php if ($hasEvidence): ?>
+                                <span class="badge bg-success"><i class="bi bi-paperclip"></i></span>
+                                <?php else: ?>
+                                <span class="badge bg-light text-muted">—</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-nowrap small text-muted"><?= date('Y-m-d H:i', strtotime($t['updated_at'] ?? $t['created_at'])) ?></td>
                         </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-            </div>
-            <?php endif; ?>
-            
-            <!-- Tickets resueltos/cerrados -->
-            <?php if (!empty($misTicketsResueltos)): ?>
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h5 class="card-title-custom"><i class="bi bi-check-circle me-2"></i>Tickets Resueltos / Cerrados</h5>
-                    <span class="badge bg-success"><?= count($misTicketsResueltos) ?></span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
-                        <tbody>
-                        <?php foreach ($misTicketsResueltos as $t): ?>
-                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover">
-                            <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
-                            <td><?= htmlspecialchars(substr($t['title'], 0, 40)) ?><?= strlen($t['title']) > 40 ? '...' : '' ?></td>
-                            <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
-                            <td><span class="badge bg-light text-dark"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></td>
-                            <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
-                            <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
-                            <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2" style="border-top:1px solid var(--gray-200); background: var(--gray-50);">
+                    <small class="text-muted" id="myTicketsCount"><?= count($tickets) ?> registros</small>
+                    <a href="?page=mi_cumplimiento" class="btn btn-outline-primary btn-sm"><i class="bi bi-speedometer2 me-1"></i>Ver Mi Cumplimiento SLA</a>
                 </div>
             </div>
-            <?php endif; ?>
             
-            <?php if (empty($tickets)): ?>
-            <div class="card-custom p-5 text-center">
+            <script>
+            function filterMyTickets() {
+                const q = document.getElementById('myTicketsSearch').value.toLowerCase();
+                const rows = document.querySelectorAll('#myTicketsTable tbody tr');
+                let vis = 0;
+                rows.forEach(r => { const s = r.textContent.toLowerCase().includes(q); r.style.display = s ? '' : 'none'; if(s) vis++; });
+                document.getElementById('myTicketsCount').textContent = vis + ' registros';
+            }
+            function filterMyByStatus(status) {
+                document.querySelectorAll('.sn-filter-pills .sn-pill').forEach(p => p.classList.remove('active'));
+                event.target.closest('.sn-pill').classList.add('active');
+                const rows = document.querySelectorAll('#myTicketsTable tbody tr');
+                let vis = 0;
+                rows.forEach(row => {
+                    const st = row.dataset.status, pr = row.dataset.priority;
+                    let show = true;
+                    if (status === 'open') show = ['abierto','en_proceso','pendiente','asignado'].includes(st);
+                    else if (status === 'closed') show = ['resuelto','cerrado'].includes(st);
+                    else if (status === 'urgent') show = pr === 'urgente' && !['resuelto','cerrado'].includes(st);
+                    row.style.display = show ? '' : 'none';
+                    if(show) vis++;
+                });
+                document.getElementById('myTicketsCount').textContent = vis + ' registros';
+            }
+            </script>
+            <?php else: ?>
+            <div class="sn-overview-card p-5 text-center">
                 <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-300);"></i>
                 <p class="text-muted mt-3">No tienes tickets asignados</p>
                 <a href="?page=tickets&filter=all" class="btn btn-outline-dark btn-sm">Ver todos los tickets</a>
             </div>
             <?php endif; ?>
+            
+            <?php elseif ($page === 'mi_cumplimiento'): ?>
+            <!-- ========== MI CUMPLIMIENTO SLA - Página separada ========== -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="sn-breadcrumb">
+                    <a href="?page=dashboard">Dashboard</a>
+                    <span class="separator">&gt;</span>
+                    <a href="?page=mis_tickets">Mis Tickets</a>
+                    <span class="separator">&gt;</span>
+                    <span style="color: var(--gray-900); font-weight: 600;">Mi Cumplimiento SLA</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-dark btn-sm" onclick="downloadPersonalReport()"><i class="bi bi-download me-1"></i>Descargar Reporte</button>
+                    <a href="?page=mis_tickets" class="btn btn-outline-dark btn-sm"><i class="bi bi-arrow-left me-1"></i>Mis Tickets</a>
+                </div>
+            </div>
+            
+            <?php if ($personalSla['total'] > 0): ?>
+            <!-- KPI Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="personal-sla-card">
+                        <div class="personal-sla-value" style="color: <?= $personalSla['tasa_resolucion'] >= 80 ? '#16a34a' : ($personalSla['tasa_resolucion'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['tasa_resolucion'] ?>%</div>
+                        <div class="personal-sla-label">Tasa de Resolución</div>
+                        <div class="sla-progress-bar">
+                            <div class="sla-progress-fill" style="width:<?= $personalSla['tasa_resolucion'] ?>%; background:<?= $personalSla['tasa_resolucion'] >= 80 ? '#16a34a' : ($personalSla['tasa_resolucion'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2"><?= $personalSla['resueltos'] ?> de <?= $personalSla['total'] ?> tickets</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="personal-sla-card">
+                        <div class="personal-sla-value" style="color: <?= $personalSla['response_compliance'] >= 80 ? '#16a34a' : ($personalSla['response_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['response_compliance'] ?>%</div>
+                        <div class="personal-sla-label">SLA Respuesta</div>
+                        <div class="sla-progress-bar">
+                            <div class="sla-progress-fill" style="width:<?= $personalSla['response_compliance'] ?>%; background:<?= $personalSla['response_compliance'] >= 80 ? '#16a34a' : ($personalSla['response_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Prom: <?= $personalSla['avg_response'] ?>h · Equipo: <?= $slaStats['avg_response'] ?>h</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="personal-sla-card">
+                        <div class="personal-sla-value" style="color: <?= $personalSla['assignment_compliance'] >= 80 ? '#16a34a' : ($personalSla['assignment_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['assignment_compliance'] ?>%</div>
+                        <div class="personal-sla-label">SLA Asignación</div>
+                        <div class="sla-progress-bar">
+                            <div class="sla-progress-fill" style="width:<?= $personalSla['assignment_compliance'] ?>%; background:<?= $personalSla['assignment_compliance'] >= 80 ? '#16a34a' : ($personalSla['assignment_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2"><?= $personalSla['within_assignment'] ?> ok · <?= $personalSla['breached_assignment'] ?> incumplidos</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="personal-sla-card">
+                        <div class="personal-sla-value" style="color: <?= $personalSla['resolution_compliance'] >= 80 ? '#16a34a' : ($personalSla['resolution_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"><?= $personalSla['resolution_compliance'] ?>%</div>
+                        <div class="personal-sla-label">SLA Resolución</div>
+                        <div class="sla-progress-bar">
+                            <div class="sla-progress-fill" style="width:<?= $personalSla['resolution_compliance'] ?>%; background:<?= $personalSla['resolution_compliance'] >= 80 ? '#16a34a' : ($personalSla['resolution_compliance'] >= 50 ? '#d97706' : '#dc2626') ?>"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Prom: <?= $personalSla['avg_resolution'] ?>h · Equipo: <?= $slaStats['avg_resolution'] ?>h</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Second row: Comparativa + Tiempos + Resumen personal -->
+            <div class="row g-3 mb-4">
+                <!-- Comparativa vs Equipo -->
+                <div class="col-lg-4">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-bar-chart me-2"></i>Mi rendimiento vs Equipo</span>
+                        </div>
+                        <div class="sn-overview-body">
+                            <div class="sn-overview-row">
+                                <span class="small">Respuesta SLA</span>
+                                <div class="d-flex gap-1">
+                                    <span class="badge bg-<?= $personalSla['response_compliance'] >= $slaStats['response_compliance'] ? 'success' : 'warning' ?>"><?= $personalSla['response_compliance'] ?>% yo</span>
+                                    <span class="badge bg-secondary"><?= $slaStats['response_compliance'] ?>% equipo</span>
+                                </div>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">Resolución SLA</span>
+                                <div class="d-flex gap-1">
+                                    <span class="badge bg-<?= $personalSla['resolution_compliance'] >= $slaStats['resolution_compliance'] ? 'success' : 'warning' ?>"><?= $personalSla['resolution_compliance'] ?>% yo</span>
+                                    <span class="badge bg-secondary"><?= $slaStats['resolution_compliance'] ?>% equipo</span>
+                                </div>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">Tasa Resolución</span>
+                                <div class="d-flex gap-1">
+                                    <span class="badge bg-<?= $personalSla['tasa_resolucion'] >= ($ticketMetrics['tasa_resolucion'] ?? 0) ? 'success' : 'warning' ?>"><?= $personalSla['tasa_resolucion'] ?>% yo</span>
+                                    <span class="badge bg-secondary"><?= $ticketMetrics['tasa_resolucion'] ?? 0 ?>% equipo</span>
+                                </div>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">Asignación SLA</span>
+                                <div class="d-flex gap-1">
+                                    <span class="badge bg-<?= $personalSla['assignment_compliance'] >= ($slaStats['assignment_compliance'] ?? 0) ? 'success' : 'warning' ?>"><?= $personalSla['assignment_compliance'] ?>% yo</span>
+                                    <span class="badge bg-secondary"><?= $slaStats['assignment_compliance'] ?? 0 ?>% equipo</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tiempos Promedio -->
+                <div class="col-lg-4">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-clock-history me-2"></i>Tiempos Promedio</span>
+                        </div>
+                        <div class="sn-overview-body">
+                            <div class="sn-overview-row">
+                                <span class="small">Primera respuesta</span>
+                                <span class="fw-bold small"><?= $personalSla['avg_response'] ?>h</span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">vs Equipo</span>
+                                <span class="small text-muted"><?= $slaStats['avg_response'] ?>h</span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">Resolución total</span>
+                                <span class="fw-bold small"><?= $personalSla['avg_resolution'] ?>h</span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">vs Equipo</span>
+                                <span class="small text-muted"><?= $slaStats['avg_resolution'] ?>h</span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small">Tickets procesados (30d)</span>
+                                <span class="fw-bold small"><?= $personalSla['total'] ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Info Personal Resumen -->
+                <div class="col-lg-4">
+                    <div class="sn-overview-card" style="height:100%">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-person-badge me-2"></i>Información del Analista</span>
+                        </div>
+                        <div class="sn-overview-body">
+                            <div class="sn-overview-row">
+                                <span class="small text-muted">Nombre</span>
+                                <span class="small fw-bold"><?= htmlspecialchars($user['name']) ?></span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small text-muted">Correo</span>
+                                <span class="small"><?= htmlspecialchars($user['email']) ?></span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small text-muted">Rol</span>
+                                <span class="badge bg-dark"><?= ucfirst($user['role']) ?></span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small text-muted">Tickets actuales</span>
+                                <span class="small fw-bold"><?= count($tickets) ?></span>
+                            </div>
+                            <div class="sn-overview-row">
+                                <span class="small text-muted">Período</span>
+                                <span class="small">Últimos 30 días</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráfico de cumplimiento personal -->
+            <div class="row g-3 mb-4">
+                <div class="col-lg-6">
+                    <div class="sn-overview-card">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-bullseye me-2"></i>Mi Cumplimiento vs Objetivo</span>
+                        </div>
+                        <div style="padding:16px;">
+                            <canvas id="personalSlaRadar" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="sn-overview-card">
+                        <div class="sn-overview-header">
+                            <span><i class="bi bi-graph-up me-2"></i>Distribución de Tickets Personales</span>
+                        </div>
+                        <div style="padding:16px;">
+                            <canvas id="personalTicketDistChart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <?php else: ?>
+            <div class="sn-overview-card p-5 text-center">
+                <i class="bi bi-speedometer2" style="font-size: 3rem; color: var(--gray-300);"></i>
+                <p class="text-muted mt-3">No hay datos SLA personales en los últimos 30 días</p>
+                <a href="?page=mis_tickets" class="btn btn-outline-dark btn-sm">Ver Mis Tickets</a>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Script para gráficos y descarga -->
+            <script>
+            <?php if ($personalSla['total'] > 0): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Radar Chart: Mi cumplimiento vs objetivo
+                new Chart(document.getElementById('personalSlaRadar'), {
+                    type: 'radar',
+                    data: {
+                        labels: ['Tasa Resolución', 'SLA Respuesta', 'SLA Asignación', 'SLA Resolución'],
+                        datasets: [{
+                            label: 'Mi Cumplimiento',
+                            data: [<?= $personalSla['tasa_resolucion'] ?>, <?= $personalSla['response_compliance'] ?>, <?= $personalSla['assignment_compliance'] ?>, <?= $personalSla['resolution_compliance'] ?>],
+                            backgroundColor: 'rgba(12,90,138,0.15)',
+                            borderColor: '#0c5a8a',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#0c5a8a'
+                        }, {
+                            label: 'Equipo',
+                            data: [<?= $ticketMetrics['tasa_resolucion'] ?? 0 ?>, <?= $slaStats['response_compliance'] ?? 0 ?>, <?= $slaStats['assignment_compliance'] ?? 0 ?>, <?= $slaStats['resolution_compliance'] ?? 0 ?>],
+                            backgroundColor: 'rgba(107,114,128,0.1)',
+                            borderColor: '#6b7280',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            pointBackgroundColor: '#6b7280'
+                        }, {
+                            label: 'Objetivo (80%)',
+                            data: [80, 80, 80, 80],
+                            backgroundColor: 'transparent',
+                            borderColor: '#dc2626',
+                            borderWidth: 1,
+                            borderDash: [2, 2],
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { r: { beginAtZero: true, max: 100, ticks: { stepSize: 20, font: { size: 9 } }, pointLabels: { font: { size: 10 } } } },
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+                    }
+                });
+                // Ticket distribution chart
+                <?php
+                $myByStatus = ['abierto' => 0, 'en_proceso' => 0, 'pendiente' => 0, 'resuelto' => 0, 'cerrado' => 0];
+                foreach ($tickets as $t) { if (isset($myByStatus[$t['status']])) $myByStatus[$t['status']]++; }
+                $myByPrio = ['urgente' => 0, 'alta' => 0, 'media' => 0, 'baja' => 0];
+                foreach ($tickets as $t) { if (isset($myByPrio[$t['priority']])) $myByPrio[$t['priority']]++; }
+                ?>
+                new Chart(document.getElementById('personalTicketDistChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Abierto','En Proceso','Pendiente','Resuelto','Cerrado'],
+                        datasets: [{
+                            label: 'Mis Tickets por Estado',
+                            data: [<?= $myByStatus['abierto'] ?>, <?= $myByStatus['en_proceso'] ?>, <?= $myByStatus['pendiente'] ?>, <?= $myByStatus['resuelto'] ?>, <?= $myByStatus['cerrado'] ?>],
+                            backgroundColor: ['#3b82f6','#8b5cf6','#f59e0b','#10b981','#6b7280'],
+                            borderRadius: 4,
+                            barPercentage: 0.6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                        }
+                    }
+                });
+            });
+            <?php endif; ?>
+            
+            function downloadPersonalReport() {
+                const reportData = {
+                    analista: <?= json_encode($user['name']) ?>,
+                    correo: <?= json_encode($user['email']) ?>,
+                    rol: <?= json_encode(ucfirst($user['role'])) ?>,
+                    periodo: 'Últimos 30 días',
+                    fecha_generacion: new Date().toLocaleString('es-CO'),
+                    total_tickets: <?= count($tickets) ?>,
+                    sla: {
+                        tasa_resolucion: '<?= $personalSla['tasa_resolucion'] ?>%',
+                        sla_respuesta: '<?= $personalSla['response_compliance'] ?>%',
+                        sla_asignacion: '<?= $personalSla['assignment_compliance'] ?>%',
+                        sla_resolucion: '<?= $personalSla['resolution_compliance'] ?>%',
+                        tiempo_respuesta_promedio: '<?= $personalSla['avg_response'] ?>h',
+                        tiempo_resolucion_promedio: '<?= $personalSla['avg_resolution'] ?>h',
+                        tickets_resueltos: <?= $personalSla['resueltos'] ?? 0 ?>,
+                        tickets_total: <?= $personalSla['total'] ?? 0 ?>
+                    },
+                    equipo: {
+                        sla_respuesta: '<?= $slaStats['response_compliance'] ?? 0 ?>%',
+                        sla_resolucion: '<?= $slaStats['resolution_compliance'] ?? 0 ?>%',
+                        tiempo_respuesta_promedio: '<?= $slaStats['avg_response'] ?? 0 ?>h',
+                        tiempo_resolucion_promedio: '<?= $slaStats['avg_resolution'] ?? 0 ?>h'
+                    }
+                };
+                
+                const tickets = <?= json_encode(array_map(function($t) use ($statusLabels, $categoryLabels) {
+                    return [
+                        'numero' => $t['ticket_number'],
+                        'titulo' => $t['title'],
+                        'estado' => $statusLabels[$t['status']] ?? $t['status'],
+                        'prioridad' => ucfirst($t['priority']),
+                        'categoria' => $categoryLabels[$t['category']] ?? $t['category'],
+                        'creado' => $t['created_at'],
+                        'solicitante' => $t['user_name'] ?? '-'
+                    ];
+                }, $tickets)) ?>;
+                
+                let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Personal - ${reportData.analista}</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px; font-size: 12px; }
+                    .header { background: #0c5a8a; color: white; padding: 24px; border-radius: 8px; margin-bottom: 24px; }
+                    .header h1 { font-size: 20px; margin-bottom: 4px; }
+                    .header p { opacity: 0.85; font-size: 12px; }
+                    .section { margin-bottom: 20px; }
+                    .section h2 { font-size: 14px; color: #0c5a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 12px; }
+                    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+                    .kpi { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; }
+                    .kpi .value { font-size: 24px; font-weight: 800; }
+                    .kpi .label { font-size: 10px; color: #64748b; text-transform: uppercase; margin-top: 4px; }
+                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+                    .info-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+                    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                    th { background: #1e293b; color: #e2e8f0; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
+                    td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; }
+                    tr:nth-child(even) { background: #f8fafc; }
+                    .footer { text-align: center; color: #94a3b8; font-size: 10px; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+                    .green { color: #16a34a; } .yellow { color: #d97706; } .red { color: #dc2626; }
+                    @media print { body { padding: 15px; } .header { padding: 16px; } }
+                </style></head><body>
+                <div class="header">
+                    <h1>Reporte de Cumplimiento SLA Personal</h1>
+                    <p>${reportData.analista} · ${reportData.correo} · ${reportData.rol} · Generado: ${reportData.fecha_generacion}</p>
+                </div>
+                <div class="section">
+                    <h2>Indicadores Clave de Rendimiento (KPIs)</h2>
+                    <div class="grid">
+                        <div class="kpi"><div class="value ${parseFloat(reportData.sla.tasa_resolucion) >= 80 ? 'green' : parseFloat(reportData.sla.tasa_resolucion) >= 50 ? 'yellow' : 'red'}">${reportData.sla.tasa_resolucion}</div><div class="label">Tasa Resolución</div></div>
+                        <div class="kpi"><div class="value ${parseFloat(reportData.sla.sla_respuesta) >= 80 ? 'green' : parseFloat(reportData.sla.sla_respuesta) >= 50 ? 'yellow' : 'red'}">${reportData.sla.sla_respuesta}</div><div class="label">SLA Respuesta</div></div>
+                        <div class="kpi"><div class="value ${parseFloat(reportData.sla.sla_asignacion) >= 80 ? 'green' : parseFloat(reportData.sla.sla_asignacion) >= 50 ? 'yellow' : 'red'}">${reportData.sla.sla_asignacion}</div><div class="label">SLA Asignación</div></div>
+                        <div class="kpi"><div class="value ${parseFloat(reportData.sla.sla_resolucion) >= 80 ? 'green' : parseFloat(reportData.sla.sla_resolucion) >= 50 ? 'yellow' : 'red'}">${reportData.sla.sla_resolucion}</div><div class="label">SLA Resolución</div></div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Comparativa Personal vs Equipo</h2>
+                    <div class="info-grid">
+                        <div>
+                            <div class="info-item"><span>T. Respuesta (yo)</span><strong>${reportData.sla.tiempo_respuesta_promedio}</strong></div>
+                            <div class="info-item"><span>T. Respuesta (equipo)</span><strong>${reportData.equipo.tiempo_respuesta_promedio}</strong></div>
+                            <div class="info-item"><span>SLA Respuesta (yo)</span><strong>${reportData.sla.sla_respuesta}</strong></div>
+                            <div class="info-item"><span>SLA Respuesta (equipo)</span><strong>${reportData.equipo.sla_respuesta}</strong></div>
+                        </div>
+                        <div>
+                            <div class="info-item"><span>T. Resolución (yo)</span><strong>${reportData.sla.tiempo_resolucion_promedio}</strong></div>
+                            <div class="info-item"><span>T. Resolución (equipo)</span><strong>${reportData.equipo.tiempo_resolucion_promedio}</strong></div>
+                            <div class="info-item"><span>SLA Resolución (yo)</span><strong>${reportData.sla.sla_resolucion}</strong></div>
+                            <div class="info-item"><span>SLA Resolución (equipo)</span><strong>${reportData.equipo.sla_resolucion}</strong></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Listado de Tickets Asignados (${tickets.length})</h2>
+                    <table>
+                        <thead><tr><th>Número</th><th>Título</th><th>Estado</th><th>Prioridad</th><th>Categoría</th><th>Solicitante</th><th>Creado</th></tr></thead>
+                        <tbody>`;
+                tickets.forEach(t => {
+                    html += `<tr><td>${t.numero}</td><td>${t.titulo}</td><td>${t.estado}</td><td>${t.prioridad}</td><td>${t.categoria}</td><td>${t.solicitante}</td><td>${t.creado}</td></tr>`;
+                });
+                html += `</tbody></table></div>
+                <div class="footer">EPCO - Sistema de Soporte TI · Reporte generado automáticamente · ${reportData.fecha_generacion}</div>
+                </body></html>`;
+                
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Reporte_SLA_Personal_' + reportData.analista.replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0,10) + '.html';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+            </script>
             
             <?php elseif ($page === 'nuevo_ticket'): ?>
             <!-- ========== NUEVO TICKET ========== -->
