@@ -3083,8 +3083,8 @@ $topActions = $pdo->query("
         $comments = $ticketComments->fetchAll();
     ?>
     <div class="modal fade" id="ticketModal<?= $t['id'] ?>" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content" style="max-height: 90vh;">
                 <!-- Header con tema azul -->
                 <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); color: #fff;">
                     <div class="d-flex align-items-center gap-3">
@@ -3113,95 +3113,180 @@ $topActions = $pdo->query("
                     
                     <div class="tab-content">
                         <!-- TAB: Detalles -->
-                        <div class="tab-pane fade show active p-4" id="details<?= $t['id'] ?>">
-                            <div class="row g-4">
-                                <div class="col-lg-8">
-                                    <h5 class="fw-bold mb-2"><?= htmlspecialchars($t['title']) ?></h5>
-                                    <div class="p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                                        <p class="mb-0"><?= nl2br(htmlspecialchars($t['description'])) ?></p>
+                        <div class="tab-pane fade show active" id="details<?= $t['id'] ?>">
+                            <?php
+                            // ===== EVIDENCIA ADJUNTA (pre-procesar) =====
+                            $ticketNum = $t['ticket_number'];
+                            $evidenceDir = __DIR__ . '/uploads/tickets/' . $ticketNum;
+                            $evidenceFiles = [];
+                            $evidenceImages = [];
+                            $evidenceDocs = [];
+                            if (is_dir($evidenceDir)) {
+                                $scan = array_diff(scandir($evidenceDir), ['.', '..', '.gitkeep']);
+                                foreach ($scan as $f) { $evidenceFiles[$f] = 'uploads/tickets/' . $ticketNum . '/' . $f; }
+                            }
+                            foreach ($comments as $c) {
+                                if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $m)) {
+                                    $names = array_map('trim', explode(',', $m[1]));
+                                    foreach ($names as $fname) {
+                                        $fname = trim($fname);
+                                        if ($fname && !isset($evidenceFiles[$fname])) { $evidenceFiles[$fname] = 'uploads/tickets/' . $ticketNum . '/' . $fname; }
+                                    }
+                                }
+                            }
+                            foreach ($evidenceFiles as $fn => $fu) {
+                                $ext = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
+                                if (in_array($ext, ['jpg','jpeg','png','gif','webp'])) { $evidenceImages[$fn] = $fu; } else { $evidenceDocs[$fn] = $fu; }
+                            }
+                            $totalEvidence = count($evidenceFiles);
+                            
+                            // Calcular antigüedad
+                            $createdDate = new DateTime($t['created_at']);
+                            $now = new DateTime();
+                            $diffDays = $createdDate->diff($now)->days;
+                            $updatedAt = $t['updated_at'] ?? $t['created_at'];
+                            ?>
+                            <!-- Barra de resumen rápido -->
+                            <div class="d-flex flex-wrap align-items-center gap-2 px-4 py-3" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <span class="badge bg-<?= $statusColors[$t['status']] ?> py-1 px-2"><?= $statusLabels[$t['status']] ?></span>
+                                <span class="badge bg-<?= $priorityColors[$t['priority']] ?> py-1 px-2"><?= ucfirst($t['priority']) ?></span>
+                                <span class="badge bg-light text-dark border py-1 px-2"><i class="bi bi-folder me-1"></i><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span>
+                                <span class="text-muted small ms-auto"><i class="bi bi-clock me-1"></i>Creado hace <?= $diffDays === 0 ? 'hoy' : $diffDays . ' día' . ($diffDays > 1 ? 's' : '') ?></span>
+                                <?php if ($t['assigned_name']): ?>
+                                <span class="badge bg-primary-subtle text-primary border py-1 px-2"><i class="bi bi-person me-1"></i><?= htmlspecialchars($t['assigned_name']) ?></span>
+                                <?php else: ?>
+                                <span class="badge bg-warning-subtle text-warning-emphasis border py-1 px-2"><i class="bi bi-person-exclamation me-1"></i>Sin asignar</span>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div class="row g-0">
+                                <!-- Columna principal (contenido) -->
+                                <div class="col-lg-8 p-4" style="border-right: 1px solid #e2e8f0;">
+                                    <!-- Título -->
+                                    <h5 class="fw-bold mb-3" style="line-height: 1.4;"><?= htmlspecialchars($t['title']) ?></h5>
+                                    
+                                    <!-- Descripción (adaptable al contenido) -->
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="bi bi-text-left text-muted"></i>
+                                            <span class="small fw-semibold text-muted text-uppercase" style="letter-spacing: 0.5px;">Descripción</span>
+                                        </div>
+                                        <div class="rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px;">
+                                            <p class="mb-0" style="line-height: 1.6; white-space: pre-line;"><?= htmlspecialchars($t['description']) ?></p>
+                                        </div>
                                     </div>
                                     
                                     <?php if ($t['resolution']): ?>
-                                    <div class="alert alert-success"><strong><i class="bi bi-check-circle me-1"></i>Resolución:</strong><br><?= nl2br(htmlspecialchars($t['resolution'])) ?></div>
+                                    <!-- Resolución -->
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="bi bi-check-circle text-success"></i>
+                                            <span class="small fw-semibold text-success text-uppercase" style="letter-spacing: 0.5px;">Resolución</span>
+                                        </div>
+                                        <div class="rounded-3" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px;">
+                                            <p class="mb-0" style="line-height: 1.6; white-space: pre-line;"><?= htmlspecialchars($t['resolution']) ?></p>
+                                        </div>
+                                    </div>
                                     <?php endif; ?>
                                     
-                                    <?php
-                                    // ===== EVIDENCIA ADJUNTA =====
-                                    $ticketNum = $t['ticket_number'];
-                                    $evidenceDir = __DIR__ . '/uploads/tickets/' . $ticketNum;
-                                    $evidenceFiles = [];
-                                    if (is_dir($evidenceDir)) {
-                                        $scan = array_diff(scandir($evidenceDir), ['.', '..', '.gitkeep']);
-                                        foreach ($scan as $f) { $evidenceFiles[$f] = 'uploads/tickets/' . $ticketNum . '/' . $f; }
-                                    }
-                                    foreach ($comments as $c) {
-                                        if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $m)) {
-                                            $names = array_map('trim', explode(',', $m[1]));
-                                            foreach ($names as $fname) {
-                                                $fname = trim($fname);
-                                                if ($fname && !isset($evidenceFiles[$fname])) { $evidenceFiles[$fname] = 'uploads/tickets/' . $ticketNum . '/' . $fname; }
-                                            }
-                                        }
-                                    }
-                                    $totalEvidence = count($evidenceFiles);
-                                    ?>
+                                    <!-- Evidencia / Archivos adjuntos -->
                                     <?php if ($totalEvidence > 0): ?>
-                                    <div class="mb-3">
-                                        <h6 class="fw-bold mb-2"><i class="bi bi-paperclip me-1"></i>Evidencia Adjunta (<?= $totalEvidence ?>)</h6>
-                                        <div class="row g-2">
-                                            <?php foreach ($evidenceFiles as $fname => $furl):
-                                                $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
-                                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                    <div class="mb-2">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="bi bi-paperclip text-muted"></i>
+                                            <span class="small fw-semibold text-muted text-uppercase" style="letter-spacing: 0.5px;">Evidencia (<?= $totalEvidence ?>)</span>
+                                        </div>
+                                        
+                                        <?php if (count($evidenceImages) > 0): ?>
+                                        <!-- Galería de imágenes -->
+                                        <div class="d-flex flex-wrap gap-2 mb-2">
+                                            <?php foreach ($evidenceImages as $fname => $furl):
                                                 $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
                                                 $fullDiskPath = __DIR__ . '/' . $furl;
                                                 $fileExists = file_exists($fullDiskPath);
                                             ?>
-                                            <div class="col-md-6">
-                                                <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc;">
-                                                    <?php if ($isImage && $fileExists): ?>
-                                                    <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" style="flex-shrink:0;">
-                                                        <img src="<?= htmlspecialchars($furl) ?>" alt="<?= htmlspecialchars($displayName) ?>" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; cursor: zoom-in;">
-                                                    </a>
-                                                    <?php else: ?>
-                                                    <div class="d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #e2e8f0; border-radius: 6px; flex-shrink:0;">
-                                                        <i class="bi bi-file-earmark-<?= $ext === 'pdf' ? 'pdf' : 'text' ?>" style="font-size: 1.2rem; color: #64748b;"></i>
-                                                    </div>
-                                                    <?php endif; ?>
-                                                    <div class="flex-grow-1 overflow-hidden">
-                                                        <p class="mb-0 small fw-semibold text-truncate"><?= htmlspecialchars($displayName) ?></p>
-                                                        <p class="mb-0 text-muted" style="font-size: 0.7rem;">
-                                                            <?= strtoupper($ext) ?>
-                                                            <?php if ($fileExists): ?> · <?= round(filesize($fullDiskPath) / 1024) ?> KB<?php endif; ?>
-                                                        </p>
-                                                    </div>
-                                                    <?php if ($fileExists): ?>
-                                                    <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-primary" style="flex-shrink:0;"><i class="bi bi-download"></i></a>
-                                                    <?php endif; ?>
+                                            <?php if ($fileExists): ?>
+                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" 
+                                               class="position-relative d-block rounded-3 overflow-hidden shadow-sm" 
+                                               style="width: 100px; height: 100px; border: 2px solid #e2e8f0; transition: all 0.2s;"
+                                               onmouseover="this.style.borderColor='var(--primary-dark)';this.style.transform='scale(1.05)'" 
+                                               onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='scale(1)'"
+                                               title="<?= htmlspecialchars($displayName) ?>">
+                                                <img src="<?= htmlspecialchars($furl) ?>" alt="<?= htmlspecialchars($displayName) ?>" 
+                                                     style="width: 100%; height: 100%; object-fit: cover;">
+                                                <div class="position-absolute bottom-0 start-0 end-0 d-flex align-items-center justify-content-center" 
+                                                     style="background: rgba(0,0,0,0.5); padding: 2px;">
+                                                    <i class="bi bi-zoom-in text-white" style="font-size: 0.7rem;"></i>
                                                 </div>
+                                            </a>
+                                            <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (count($evidenceDocs) > 0): ?>
+                                        <!-- Documentos adjuntos -->
+                                        <div class="d-flex flex-column gap-1">
+                                            <?php foreach ($evidenceDocs as $fname => $furl):
+                                                $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
+                                                $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
+                                                $fullDiskPath = __DIR__ . '/' . $furl;
+                                                $fileExists = file_exists($fullDiskPath);
+                                                $iconMap = ['pdf' => 'file-earmark-pdf text-danger', 'doc' => 'file-earmark-word text-primary', 'docx' => 'file-earmark-word text-primary', 'xls' => 'file-earmark-excel text-success', 'xlsx' => 'file-earmark-excel text-success', 'zip' => 'file-earmark-zip text-warning', 'rar' => 'file-earmark-zip text-warning'];
+                                                $icon = $iconMap[$ext] ?? 'file-earmark text-muted';
+                                            ?>
+                                            <div class="d-flex align-items-center gap-2 rounded-2 px-3 py-2" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                                <i class="bi bi-<?= $icon ?>" style="font-size: 1.1rem;"></i>
+                                                <span class="small fw-semibold flex-grow-1 text-truncate"><?= htmlspecialchars($displayName) ?></span>
+                                                <span class="text-muted" style="font-size: 0.7rem;"><?= strtoupper($ext) ?><?php if ($fileExists): ?> · <?= round(filesize($fullDiskPath) / 1024) ?> KB<?php endif; ?></span>
+                                                <?php if ($fileExists): ?>
+                                                <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;"><i class="bi bi-download"></i></a>
+                                                <?php endif; ?>
                                             </div>
                                             <?php endforeach; ?>
                                         </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php else: ?>
+                                    <div class="text-center py-3 rounded-3 mb-2" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="bi bi-paperclip text-muted" style="font-size: 1.3rem;"></i>
+                                        <p class="mb-0 small text-muted mt-1">Sin archivos adjuntos</p>
                                     </div>
                                     <?php endif; ?>
                                 </div>
                                 
-                                <!-- Panel lateral con info + acciones rápidas -->
-                                <div class="col-lg-4">
-                                    <div class="p-3 rounded-3 mb-3" style="background: var(--primary-soft); border: 1px solid #c4ddf0;">
-                                        <h6 class="fw-bold mb-3" style="color: var(--primary-dark);"><i class="bi bi-info-circle me-1"></i>Información</h6>
-                                        <div class="mb-2"><small class="text-muted d-block">Estado</small><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></div>
-                                        <div class="mb-2"><small class="text-muted d-block">Prioridad</small><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></div>
-                                        <div class="mb-2"><small class="text-muted d-block">Categoría</small><span class="fw-semibold"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></div>
-                                        <hr>
-                                        <div class="mb-2"><small class="text-muted d-block">Solicitante</small><span class="fw-semibold"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div>
-                                        <div class="mb-2"><small class="text-muted d-block">Email</small><span class="small"><?= htmlspecialchars($t['user_email'] ?? '-') ?></span></div>
-                                        <div class="mb-2"><small class="text-muted d-block">Asignado a</small><span class="fw-semibold"><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></span></div>
-                                        <div class="mb-0"><small class="text-muted d-block">Creado</small><span class="small"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></span></div>
+                                <!-- Panel lateral compacto -->
+                                <div class="col-lg-4 p-0" style="background: #fafbfc;">
+                                    <!-- Info del ticket -->
+                                    <div class="px-3 py-3" style="border-bottom: 1px solid #e2e8f0;">
+                                        <h6 class="fw-bold mb-2 small text-uppercase" style="color: var(--primary-dark); letter-spacing: 0.5px;"><i class="bi bi-info-circle me-1"></i>Información</h6>
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Solicitante</small>
+                                                <span class="small fw-semibold"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Email</small>
+                                                <span class="small text-truncate ms-2" style="max-width: 160px;"><?= htmlspecialchars($t['user_email'] ?? '-') ?></span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Asignado</small>
+                                                <span class="small fw-semibold"><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Creado</small>
+                                                <span class="small"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">Actualizado</small>
+                                                <span class="small"><?= date('d/m/Y H:i', strtotime($updatedAt)) ?></span>
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Cambiar Estado -->
-                                    <div class="p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                                        <h6 class="fw-bold mb-2"><i class="bi bi-arrow-repeat me-1"></i>Cambiar Estado</h6>
+                                    <div class="px-3 py-3" style="border-bottom: 1px solid #e2e8f0;">
+                                        <h6 class="fw-bold mb-2 small text-uppercase" style="letter-spacing: 0.5px;"><i class="bi bi-arrow-repeat me-1"></i>Cambiar Estado</h6>
                                         <form method="POST">
                                             <input type="hidden" name="action" value="change_status">
                                             <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
@@ -3213,13 +3298,13 @@ $topActions = $pdo->query("
                                                 <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
                                             </select>
                                             <textarea name="resolution" class="form-control form-control-sm mb-2" rows="2" placeholder="Resolución (opcional)"><?= htmlspecialchars($t['resolution'] ?? '') ?></textarea>
-                                            <button type="submit" class="btn btn-sm btn-dark w-100"><i class="bi bi-check-lg me-1"></i>Actualizar Estado</button>
+                                            <button type="submit" class="btn btn-sm btn-dark w-100"><i class="bi bi-check-lg me-1"></i>Actualizar</button>
                                         </form>
                                     </div>
                                     
                                     <!-- Asignar -->
-                                    <div class="p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                                        <h6 class="fw-bold mb-2"><i class="bi bi-person-check me-1"></i>Asignación</h6>
+                                    <div class="px-3 py-3" style="border-bottom: 1px solid #e2e8f0;">
+                                        <h6 class="fw-bold mb-2 small text-uppercase" style="letter-spacing: 0.5px;"><i class="bi bi-person-check me-1"></i>Asignación</h6>
                                         <form method="POST">
                                             <input type="hidden" name="action" value="assign_ticket">
                                             <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
@@ -3241,11 +3326,13 @@ $topActions = $pdo->query("
                                     </div>
                                     
                                     <!-- Eliminar -->
-                                    <form method="POST" onsubmit="return confirm('¿Eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
-                                        <input type="hidden" name="action" value="delete_ticket">
-                                        <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash me-1"></i>Eliminar Ticket</button>
-                                    </form>
+                                    <div class="px-3 py-3">
+                                        <form method="POST" onsubmit="return confirm('¿Eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
+                                            <input type="hidden" name="action" value="delete_ticket">
+                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash me-1"></i>Eliminar Ticket</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
