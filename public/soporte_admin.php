@@ -151,6 +151,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$newStatus, $resolution, $ticketId]);
         logActivity($user['id'], 'ticket_updated', 'tickets', $ticketId, "Estado cambiado a: $newStatus");
         
+        // Enviar correo al usuario cuando el ticket se cierra o resuelve
+        if (in_array($newStatus, ['resuelto', 'cerrado'])) {
+            try {
+                $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+                $ticketStmt->execute([$ticketId]);
+                $ticketData = $ticketStmt->fetch();
+                if ($ticketData && !empty($ticketData['user_email'])) {
+                    require_once __DIR__ . '/../includes/MailService.php';
+                    $mailService = new MailService();
+                    $ticketData['subject'] = $ticketData['title'];
+                    $ticketData['resolution'] = $resolution;
+                    $ticketData['status'] = $newStatus;
+                    $mailService->sendTicketClosedNotification($ticketData, $user['name']);
+                }
+            } catch (Exception $e) {
+                error_log('[EPCO] Error enviando email de cierre: ' . $e->getMessage());
+            }
+        }
+        
         $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=status_updated';
         header("Location: $redirectUrl");
         exit;

@@ -997,6 +997,326 @@ HTML;
     }
 
     /**
+     * Enviar notificación al usuario cuando su ticket es cerrado/resuelto
+     * Incluye la resolución del ticket
+     */
+    public function sendTicketClosedNotification($ticket, $resolvedByName = 'Equipo de Soporte') {
+        $userEmail = $ticket['user_email'] ?? '';
+        if (empty($userEmail) || !filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
+            error_log("[EPCO Mail] No se puede enviar notificación de cierre: email del usuario inválido o vacío");
+            return false;
+        }
+
+        try {
+            $this->mailer->clearAddresses();
+            $this->mailer->addAddress(trim($userEmail));
+
+            $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+            $status = $ticket['status'] ?? 'cerrado';
+            $statusLabel = $status === 'resuelto' ? 'Resuelto' : 'Cerrado';
+            $this->mailer->Subject = "Ticket #{$ticketNumber} {$statusLabel} - Soporte TI EPCO";
+            $this->mailer->Body = $this->getTicketClosedTemplate($ticket, $resolvedByName);
+            $this->mailer->AltBody = $this->getTicketClosedPlainText($ticket, $resolvedByName);
+
+            $this->mailer->send();
+            error_log("[EPCO Mail] Notificación de cierre enviada a: $userEmail para ticket #{$ticketNumber}");
+            return true;
+        } catch (Exception $e) {
+            error_log("[EPCO Mail] Error enviando notificación de cierre a $userEmail: " . $this->mailer->ErrorInfo);
+            return false;
+        }
+    }
+
+    /**
+     * Template HTML de notificación de ticket cerrado/resuelto
+     */
+    private function getTicketClosedTemplate($ticket, $resolvedByName) {
+        $priority = $ticket['priority'] ?? 'media';
+        $category = $ticket['category'] ?? 'otro';
+        $status = $ticket['status'] ?? 'cerrado';
+
+        $priorityLabels = [
+            'urgente' => 'URGENTE', 'alta' => 'ALTA', 'media' => 'MEDIA', 'baja' => 'BAJA'
+        ];
+        $categoryLabels = [
+            'hardware' => 'Hardware', 'software' => 'Software', 'red' => 'Red / Conectividad',
+            'acceso' => 'Accesos / Permisos', 'otro' => 'Otro'
+        ];
+        $statusLabels = [
+            'resuelto' => 'Resuelto', 'cerrado' => 'Cerrado'
+        ];
+
+        $priorityLabel = $priorityLabels[$priority] ?? ucfirst($priority);
+        $categoryLabel = $categoryLabels[$category] ?? ucfirst($category);
+        $statusLabel = $statusLabels[$status] ?? ucfirst($status);
+        $statusColor = $status === 'resuelto' ? '#16a34a' : '#6b7280';
+        $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
+        $closedAt = date('d/m/Y H:i');
+        $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "TK-{$ticket['id']}", ENT_QUOTES, 'UTF-8');
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+
+        $safe = array_map(function($v) {
+            return is_string($v) ? htmlspecialchars($v, ENT_QUOTES, 'UTF-8') : $v;
+        }, $ticket);
+
+        $subject = $safe['subject'] ?? $safe['title'] ?? 'Sin asunto';
+        $userName = $safe['user_name'] ?? 'Usuario';
+        $description = $safe['description'] ?? 'Sin descripci&oacute;n';
+        $resolution = $safe['resolution'] ?? 'Sin detalle de resoluci&oacute;n';
+        $safeResolvedBy = htmlspecialchars($resolvedByName, ENT_QUOTES, 'UTF-8');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <style>
+        :root { color-scheme: light dark; }
+        @media (prefers-color-scheme: dark) {
+            body, .body-wrap { background-color: #1a1a2e !important; }
+            .email-box { background-color: #16213e !important; }
+            .header-bg { background-color: #065f46 !important; }
+            .label-cell { background-color: #1a1a2e !important; color: #c4cdd5 !important; }
+            .value-cell { background-color: #16213e !important; color: #e4e7ec !important; }
+            .section-head { color: #e4e7ec !important; border-bottom-color: #10b981 !important; }
+            .desc-box { background-color: #1a1a2e !important; border-left-color: #10b981 !important; }
+            .desc-box p { color: #c4cdd5 !important; }
+            .resolution-box { background-color: #1a1a2e !important; border-left-color: #16a34a !important; }
+            .resolution-box p { color: #c4cdd5 !important; }
+            .footer-box { background-color: #0f1a30 !important; }
+            .footer-main { color: #c4cdd5 !important; }
+            .footer-sub { color: #667085 !important; }
+            .greeting { color: #e4e7ec !important; }
+            .info-text { color: #c4cdd5 !important; }
+            .ticket-ref { color: #7cb9e8 !important; }
+            .survey-box { background-color: #1a1a2e !important; border-color: #2c3e6b !important; }
+            .survey-text { color: #c4cdd5 !important; }
+        }
+    </style>
+</head>
+<body class="body-wrap" style="margin: 0; padding: 0; font-family: 'Arial Nova', Arial, Helvetica, sans-serif; background-color: #f0f2f5;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="body-wrap" style="background-color: #f0f2f5; padding: 30px 15px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="620" cellspacing="0" cellpadding="0" class="email-box" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+
+                    <!-- HEADER -->
+                    <tr>
+                        <td class="header-bg" style="background-color: #065f46; padding: 28px 40px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">
+                                Ticket {$statusLabel}
+                            </h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;">
+                                Empresa Portuaria Coquimbo &mdash; Mesa de Ayuda TI
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- SALUDO -->
+                    <tr>
+                        <td style="padding: 30px 40px 10px;">
+                            <p class="greeting" style="margin: 0 0 10px; color: #1d2939; font-size: 16px; font-weight: 600;">
+                                Estimado/a {$userName},
+                            </p>
+                            <p class="info-text" style="margin: 0; color: #475467; font-size: 14px; line-height: 1.6;">
+                                Le informamos que su ticket de soporte ha sido <strong style="color: {$statusColor};">{$statusLabel}</strong>. A continuaci&oacute;n encontrar&aacute; los detalles y la resoluci&oacute;n aplicada.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- DATOS DEL TICKET -->
+                    <tr>
+                        <td style="padding: 20px 40px 10px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">N&ordm; de Ticket</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span class="ticket-ref" style="color: #0c5a8a; font-size: 16px; font-weight: 700;">{$ticketNumber}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Asunto</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px; font-weight: 600;">{$subject}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Categor&iacute;a</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$categoryLabel}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Estado</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="display: inline-block; background-color: {$statusColor}; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">{$statusLabel}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Atendido por</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$safeResolvedBy}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Fecha creaci&oacute;n</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$createdAt}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Fecha cierre</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$closedAt}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- RESOLUCIÓN -->
+                    <tr>
+                        <td style="padding: 15px 40px 10px;">
+                            <h2 class="section-head" style="margin: 0 0 10px; color: #1d2939; font-size: 14px; font-weight: 600; border-bottom: 2px solid #16a34a; padding-bottom: 6px; display: inline-block;">
+                                Resoluci&oacute;n
+                            </h2>
+                            <div class="resolution-box" style="background-color: #f0fdf4; border-radius: 8px; padding: 15px; border-left: 4px solid #16a34a;">
+                                <p style="margin: 0; color: #344054; font-size: 13px; line-height: 1.7; white-space: pre-wrap;">{$resolution}</p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- DESCRIPCIÓN ORIGINAL -->
+                    <tr>
+                        <td style="padding: 15px 40px 10px;">
+                            <h2 class="section-head" style="margin: 0 0 10px; color: #1d2939; font-size: 14px; font-weight: 600; border-bottom: 2px solid #0c5a8a; padding-bottom: 6px; display: inline-block;">
+                                Descripci&oacute;n original
+                            </h2>
+                            <div class="desc-box" style="background-color: #f9fafb; border-radius: 8px; padding: 15px; border-left: 4px solid #0c5a8a;">
+                                <p style="margin: 0; color: #344054; font-size: 13px; line-height: 1.7; white-space: pre-wrap;">{$description}</p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- ENCUESTA -->
+                    <tr>
+                        <td style="padding: 15px 40px 10px;">
+                            <div class="survey-box" style="background-color: #fffbeb; border-radius: 8px; padding: 15px; border: 1px solid #fde68a;">
+                                <p class="survey-text" style="margin: 0; color: #344054; font-size: 13px; line-height: 1.6;">
+                                    <strong>&#191;C&oacute;mo fue tu experiencia?</strong><br>
+                                    Tu opini&oacute;n nos ayuda a mejorar. Puedes calificar la atenci&oacute;n recibida ingresando a la plataforma con tu n&uacute;mero de ticket <strong>{$ticketNumber}</strong>.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- BOTÓN -->
+                    <tr>
+                        <td style="padding: 20px 40px 30px;" align="center">
+                            <a href="{$appUrl}/ticket_seguimiento.php" style="display: inline-block; background-color: #065f46; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                                Ver Detalles del Ticket
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td class="footer-box" style="background-color: #f2f4f7; padding: 20px 40px; text-align: center; border-top: 1px solid #d0d5dd;">
+                            <p class="footer-main" style="margin: 0 0 4px; color: #344054; font-size: 13px; font-weight: 600;">
+                                Empresa Portuaria Coquimbo
+                            </p>
+                            <p class="footer-sub" style="margin: 0; color: #667085; font-size: 11px;">
+                                Correo autom&aacute;tico del Sistema de Soporte TI &middot; No responder a este mensaje
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * Versión texto plano de la notificación de ticket cerrado
+     */
+    private function getTicketClosedPlainText($ticket, $resolvedByName) {
+        $priority = $ticket['priority'] ?? 'media';
+        $category = $ticket['category'] ?? 'otro';
+        $status = $ticket['status'] ?? 'cerrado';
+        $statusLabel = $status === 'resuelto' ? 'Resuelto' : 'Cerrado';
+        $createdAt = date('d/m/Y H:i', strtotime($ticket['created_at']));
+        $closedAt = date('d/m/Y H:i');
+        $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+        $resolution = $ticket['resolution'] ?? 'Sin detalle de resolución';
+        $userName = $ticket['user_name'] ?? 'Usuario';
+        $subject = $ticket['subject'] ?? $ticket['title'] ?? 'Sin asunto';
+
+        return <<<TEXT
+═══════════════════════════════════════════════
+  TICKET {$statusLabel}
+  Empresa Portuaria Coquimbo - Mesa de Ayuda TI
+═══════════════════════════════════════════════
+
+Estimado/a {$userName},
+
+Le informamos que su ticket de soporte ha sido {$statusLabel}.
+
+───────────────────────────────────────────────
+DATOS DEL TICKET
+───────────────────────────────────────────────
+- N° de Ticket: {$ticketNumber}
+- Asunto: {$subject}
+- Categoría: {$category}
+- Prioridad: {$priority}
+- Atendido por: {$resolvedByName}
+- Fecha creación: {$createdAt}
+- Fecha cierre: {$closedAt}
+
+───────────────────────────────────────────────
+RESOLUCIÓN
+───────────────────────────────────────────────
+{$resolution}
+
+───────────────────────────────────────────────
+DESCRIPCIÓN ORIGINAL
+───────────────────────────────────────────────
+{$ticket['description']}
+
+───────────────────────────────────────────────
+¿Cómo fue tu experiencia?
+Tu opinión nos ayuda a mejorar. Ingresa a la plataforma
+con tu número de ticket {$ticketNumber}.
+
+Ver detalles del ticket:
+{$appUrl}/ticket_seguimiento.php
+
+Correo automático · No responder a este mensaje
+TEXT;
+    }
+
+    /**
      * Versión texto plano de la notificación de asignación
      */
     private function getTicketAssignedPlainText($ticket, $assigneeName) {

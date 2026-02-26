@@ -33,11 +33,11 @@ services:
       - TZ=America/Santiago
       # SMTP - Configuración de correo
       - SMTP_ENABLED=true
-      - SMTP_MODE=relay
+      - SMTP_MODE=direct
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=587
       - SMTP_USER=soporteepco@gmail.com
-      - SMTP_PASS=uonfzgkcsfzqxgbc
+      - SMTP_PASS=uonf zgkc sfzq xgbc
       - SMTP_ENCRYPTION=tls
       - SMTP_FROM_EMAIL=soporteepco@gmail.com
       - SMTP_FROM_NAME=Soporte TI - EPCO
