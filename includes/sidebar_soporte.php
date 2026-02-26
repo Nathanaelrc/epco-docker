@@ -525,6 +525,12 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
                         <?php endif; ?>
                     </a>
                 </li>
+                <li class="sidebar-nav-item">
+                    <a href="soporte_admin.php?page=mis_tickets#cumplimiento" class="sidebar-nav-link">
+                        <i class="bi bi-speedometer"></i>
+                        <span>Mi Cumplimiento SLA</span>
+                    </a>
+                </li>
             </ul>
         </div>
         
