@@ -23,9 +23,13 @@ $soporteStats = $pdo->query("
         COUNT(*) as total,
         SUM(CASE WHEN status = 'abierto' THEN 1 ELSE 0 END) as abiertos,
         SUM(CASE WHEN status = 'en_proceso' THEN 1 ELSE 0 END) as en_proceso,
+        SUM(CASE WHEN status IN ('resuelto', 'cerrado') THEN 1 ELSE 0 END) as cerrados,
         SUM(CASE WHEN priority = 'urgente' AND status NOT IN ('resuelto', 'cerrado') THEN 1 ELSE 0 END) as urgentes
     FROM tickets
 ")->fetch();
+$misTicketsCount = $pdo->prepare("SELECT COUNT(*) as total FROM tickets WHERE assigned_to = ?");
+$misTicketsCount->execute([$user['id']]);
+$soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
 ?>
 
 <!-- Sidebar Soporte TI Styles -->
@@ -491,7 +495,13 @@ $soporteStats = $pdo->query("
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=tickets&filter=urgent" class="sidebar-nav-link <?= (isset($_GET['filter']) && $_GET['filter'] === 'urgent') ? 'active' : '' ?>">
+                    <a href="soporte_admin.php?page=nuevo_ticket" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'nuevo_ticket') ? 'active' : '' ?>">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Nuevo Ticket</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="soporte_admin.php?page=tickets&filter=urgent" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && isset($_GET['filter']) && $_GET['filter'] === 'urgent') ? 'active' : '' ?>">
                         <i class="bi bi-exclamation-triangle"></i>
                         <span>Urgentes</span>
                         <?php if ($soporteStats['urgentes'] > 0): ?>
@@ -499,10 +509,20 @@ $soporteStats = $pdo->query("
                         <?php endif; ?>
                     </a>
                 </li>
+            </ul>
+        </div>
+        
+        <!-- Mis Tickets -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Mis Tickets</div>
+            <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=tickets&filter=mine" class="sidebar-nav-link <?= (isset($_GET['filter']) && $_GET['filter'] === 'mine') ? 'active' : '' ?>">
+                    <a href="soporte_admin.php?page=mis_tickets" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'mis_tickets') ? 'active' : '' ?>">
                         <i class="bi bi-person-badge"></i>
-                        <span>Mis Tickets</span>
+                        <span>Asignados a mí</span>
+                        <?php if ($soporteStats['mis_tickets'] > 0): ?>
+                        <span class="badge info"><?= $soporteStats['mis_tickets'] ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
             </ul>
@@ -510,38 +530,40 @@ $soporteStats = $pdo->query("
         
         <!-- Gestión de Tickets -->
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Tickets</div>
+            <div class="sidebar-section-title">Gestión de Tickets</div>
             <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=tickets&filter=all" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && isset($_GET['filter']) && $_GET['filter'] === 'all') ? 'active' : '' ?>">
+                    <a href="soporte_admin.php?page=tickets&filter=all" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && (!isset($_GET['filter']) || $_GET['filter'] === 'all')) ? 'active' : '' ?>">
                         <i class="bi bi-ticket-detailed"></i>
                         <span>Todos los Tickets</span>
                         <span class="badge"><?= $soporteStats['total'] ?></span>
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=tickets&filter=open" class="sidebar-nav-link <?= (isset($_GET['filter']) && $_GET['filter'] === 'open') ? 'active' : '' ?>">
+                    <a href="soporte_admin.php?page=tickets&filter=open" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && isset($_GET['filter']) && $_GET['filter'] === 'open') ? 'active' : '' ?>">
                         <i class="bi bi-inbox"></i>
                         <span>Abiertos</span>
                         <span class="badge info"><?= $soporteStats['abiertos'] + $soporteStats['en_proceso'] ?></span>
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=tickets&filter=closed" class="sidebar-nav-link <?= (isset($_GET['filter']) && $_GET['filter'] === 'closed') ? 'active' : '' ?>">
+                    <a href="soporte_admin.php?page=tickets&filter=closed" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && isset($_GET['filter']) && $_GET['filter'] === 'closed') ? 'active' : '' ?>">
                         <i class="bi bi-check-circle"></i>
                         <span>Cerrados</span>
+                        <span class="badge"><?= $soporteStats['cerrados'] ?></span>
                     </a>
                 </li>
+            </ul>
+        </div>
+        
+        <!-- Cumplimiento -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Cumplimiento</div>
+            <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
                     <a href="soporte_admin.php?page=sla" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'sla') ? 'active' : '' ?>">
-                        <i class="bi bi-clock-history"></i>
-                        <span>SLA</span>
-                    </a>
-                </li>
-                <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=nuevo_ticket" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'nuevo_ticket') ? 'active' : '' ?>">
-                        <i class="bi bi-plus-circle"></i>
-                        <span>Nuevo Ticket</span>
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>Cumplimiento SLA</span>
                     </a>
                 </li>
             </ul>
@@ -574,18 +596,10 @@ $soporteStats = $pdo->query("
             </ul>
         </div>
         
-        <!-- Enlaces Rápidos -->
+        <!-- Navegación -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">Navegación</div>
             <ul class="sidebar-nav">
-                <!-- Intranet oculta temporalmente
-                <li class="sidebar-nav-item">
-                    <a href="intranet_dashboard.php" class="sidebar-nav-link">
-                        <i class="bi bi-house"></i>
-                        <span>Intranet</span>
-                    </a>
-                </li>
-                -->
                 <li class="sidebar-nav-item">
                     <a href="index.php" class="sidebar-nav-link">
                         <i class="bi bi-box-arrow-up-right"></i>

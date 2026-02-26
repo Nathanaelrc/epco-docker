@@ -585,11 +585,13 @@ $stats = $pdo->query("
 
 // Tickets según filtro y página
 $where = '';
-if ($page === 'tickets' || $page === 'dashboard' || $page === 'sla') {
+if ($page === 'mis_tickets') {
+    $where = "WHERE t.assigned_to = " . (int)$user['id'];
+} elseif ($page === 'tickets' || $page === 'dashboard' || $page === 'sla') {
     if ($filter === 'open') $where = "WHERE t.status IN ('abierto', 'en_proceso', 'pendiente')";
     elseif ($filter === 'closed') $where = "WHERE t.status IN ('resuelto', 'cerrado')";
     elseif ($filter === 'urgent') $where = "WHERE t.priority = 'urgente' AND t.status NOT IN ('resuelto', 'cerrado')";
-    elseif ($filter === 'mine') $where = "WHERE t.assigned_to = " . $user['id'];
+    elseif ($filter === 'mine') $where = "WHERE t.assigned_to = " . (int)$user['id'];
 }
 
 $tickets = $pdo->query("
@@ -1319,7 +1321,7 @@ $topActions = $pdo->query("
     <main class="main-content">
         <header class="top-header">
             <div class="header-title">
-                <h1><?= $page === 'dashboard' ? 'Dashboard' : ($page === 'tickets' ? 'Gestión de Tickets' : ($page === 'usuarios' ? 'Gestión de Usuarios' : ($page === 'nuevo_ticket' ? 'Nuevo Ticket' : ($page === 'sla' ? 'SLA - Acuerdos de Nivel de Servicio' : ($page === 'auditoria' ? 'Auditoría del Sistema' : ($page === 'notificaciones' ? 'Destinatarios de Notificaciones' : 'Soporte TI')))))) ?></h1>
+                <h1><?= $page === 'dashboard' ? 'Dashboard' : ($page === 'tickets' ? 'Gestión de Tickets' : ($page === 'mis_tickets' ? 'Mis Tickets' : ($page === 'usuarios' ? 'Gestión de Usuarios' : ($page === 'nuevo_ticket' ? 'Nuevo Ticket' : ($page === 'sla' ? 'Cumplimiento SLA' : ($page === 'auditoria' ? 'Auditoría del Sistema' : ($page === 'notificaciones' ? 'Destinatarios de Notificaciones' : 'Soporte TI'))))))) ?></h1>
                 <?php
                 $dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                 $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -1478,7 +1480,7 @@ $topActions = $pdo->query("
                                 </a>
                             </div>
                             <div class="col-lg-3 col-md-6">
-                                <a href="?page=tickets&filter=mine" class="quick-action">
+                                <a href="?page=mis_tickets" class="quick-action">
                                     <div class="quick-action-icon"><i class="bi bi-person-badge" style="color:var(--primary-dark)"></i></div>
                                     <div><div class="fw-semibold">Mis Tickets</div><small class="text-muted">Asignados a mí</small></div>
                                 </a>
@@ -1486,7 +1488,7 @@ $topActions = $pdo->query("
                             <div class="col-lg-3 col-md-6">
                                 <a href="?page=sla" class="quick-action">
                                     <div class="quick-action-icon"><i class="bi bi-speedometer2" style="color:var(--primary-dark)"></i></div>
-                                    <div><div class="fw-semibold">Métricas SLA</div><small class="text-muted">Rendimiento</small></div>
+                                    <div><div class="fw-semibold">Cumplimiento SLA</div><small class="text-muted">Rendimiento</small></div>
                                 </a>
                             </div>
                         </div>
@@ -1545,7 +1547,6 @@ $topActions = $pdo->query("
                         <a href="?page=tickets&filter=all" class="filter-tab <?= $filter === 'all' ? 'active' : '' ?>">Todos</a>
                         <a href="?page=tickets&filter=open" class="filter-tab <?= $filter === 'open' ? 'active' : '' ?>">Abiertos</a>
                         <a href="?page=tickets&filter=urgent" class="filter-tab <?= $filter === 'urgent' ? 'active' : '' ?>">Urgentes</a>
-                        <a href="?page=tickets&filter=mine" class="filter-tab <?= $filter === 'mine' ? 'active' : '' ?>">Míos</a>
                         <a href="?page=tickets&filter=closed" class="filter-tab <?= $filter === 'closed' ? 'active' : '' ?>">Cerrados</a>
                     </div>
                 </div>
@@ -1581,6 +1582,107 @@ $topActions = $pdo->query("
                     </table>
                 </div>
             </div>
+            
+            <?php elseif ($page === 'mis_tickets'): ?>
+            <!-- ========== MIS TICKETS ========== -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Mis Tickets Asignados</h5>
+                <a href="?page=nuevo_ticket" class="btn btn-dark"><i class="bi bi-plus-lg me-2"></i>Nuevo Ticket</a>
+            </div>
+            
+            <?php
+            // Separar los tickets propios por estado
+            $misTicketsAbiertos = array_filter($tickets, function($t) { return in_array($t['status'], ['abierto', 'en_proceso', 'pendiente', 'asignado']); });
+            $misTicketsResueltos = array_filter($tickets, function($t) { return in_array($t['status'], ['resuelto', 'cerrado']); });
+            ?>
+            
+            <!-- Resumen rápido -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between"><div><div class="stat-value"><?= count($tickets) ?></div><div class="stat-label">Total asignados</div></div><div class="stat-icon"><i class="bi bi-ticket-detailed"></i></div></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card" style="border-left: 3px solid #3b82f6;">
+                        <div class="d-flex justify-content-between"><div><div class="stat-value" style="color:#3b82f6"><?= count($misTicketsAbiertos) ?></div><div class="stat-label">En curso</div></div><i class="bi bi-inbox" style="font-size: 1.8rem; color: #3b82f630;"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card" style="border-left: 3px solid #059669;">
+                        <div class="d-flex justify-content-between"><div><div class="stat-value" style="color:#059669"><?= count($misTicketsResueltos) ?></div><div class="stat-label">Resueltos</div></div><i class="bi bi-check-circle" style="font-size: 1.8rem; color: #05966930;"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card" style="border-left: 3px solid #dc2626;">
+                        <div class="d-flex justify-content-between"><div><div class="stat-value" style="color:#dc2626"><?= count(array_filter($tickets, function($t) { return $t['priority'] === 'urgente' && !in_array($t['status'], ['resuelto', 'cerrado']); })) ?></div><div class="stat-label">Urgentes</div></div><i class="bi bi-exclamation-triangle" style="font-size: 1.8rem; color: #dc262630;"></i></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tickets en curso -->
+            <?php if (!empty($misTicketsAbiertos)): ?>
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">
+                    <h5 class="card-title-custom"><i class="bi bi-inbox me-2"></i>Tickets en Curso</h5>
+                    <span class="badge bg-primary"><?= count($misTicketsAbiertos) ?></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($misTicketsAbiertos as $t): ?>
+                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover">
+                            <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
+                            <td><?= htmlspecialchars(substr($t['title'], 0, 40)) ?><?= strlen($t['title']) > 40 ? '...' : '' ?></td>
+                            <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
+                            <td><span class="badge bg-light text-dark"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></td>
+                            <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
+                            <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
+                            <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Tickets resueltos/cerrados -->
+            <?php if (!empty($misTicketsResueltos)): ?>
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h5 class="card-title-custom"><i class="bi bi-check-circle me-2"></i>Tickets Resueltos / Cerrados</h5>
+                    <span class="badge bg-success"><?= count($misTicketsResueltos) ?></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($misTicketsResueltos as $t): ?>
+                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover">
+                            <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
+                            <td><?= htmlspecialchars(substr($t['title'], 0, 40)) ?><?= strlen($t['title']) > 40 ? '...' : '' ?></td>
+                            <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
+                            <td><span class="badge bg-light text-dark"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></td>
+                            <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
+                            <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
+                            <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (empty($tickets)): ?>
+            <div class="card-custom p-5 text-center">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-300);"></i>
+                <p class="text-muted mt-3">No tienes tickets asignados</p>
+                <a href="?page=tickets&filter=all" class="btn btn-outline-dark btn-sm">Ver todos los tickets</a>
+            </div>
+            <?php endif; ?>
             
             <?php elseif ($page === 'nuevo_ticket'): ?>
             <!-- ========== NUEVO TICKET ========== -->
@@ -1737,7 +1839,7 @@ $topActions = $pdo->query("
             </div>
             
             <?php elseif ($page === 'sla'): ?>
-            <!-- ========== SLA - ACUERDOS DE NIVEL DE SERVICIO ========== -->
+            <!-- ========== CUMPLIMIENTO SLA ========== -->
             <div class="row g-4 mb-4">
                 <!-- Tarjetas de métricas SLA -->
                 <div class="col-lg-3 col-md-6">
