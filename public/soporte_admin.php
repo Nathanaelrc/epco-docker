@@ -2152,6 +2152,21 @@ $topActions = $pdo->query("
             <?php elseif ($page === 'auditoria'): ?>
             <!-- ========== AUDITORÍA DEL SISTEMA ========== -->
             
+            <!-- Barra de acciones -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <span class="text-muted">Período: últimos 30 días &middot; <?= number_format($auditStats['total']) ?> registros totales</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="downloadAuditCSV()">
+                        <i class="bi bi-filetype-csv me-1"></i>Exportar CSV
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="downloadAuditReport()">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Descargar Informe
+                    </button>
+                </div>
+            </div>
+
             <!-- Estadísticas -->
             <div class="row g-4 mb-4">
                 <div class="col-lg-3 col-md-6">
@@ -2195,6 +2210,60 @@ $topActions = $pdo->query("
                                 <div class="stat-label">Usuarios Activos</div>
                             </div>
                             <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);"><i class="bi bi-people text-white"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos de Cumplimiento SLA -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-speedometer2 me-2"></i>Cumplimiento SLA General</h5>
+                        </div>
+                        <div class="p-3 text-center">
+                            <div class="chart-container" style="height: 220px; position: relative;">
+                                <canvas id="slaComplianceChart"></canvas>
+                            </div>
+                            <div class="row mt-3 text-center small">
+                                <div class="col-4">
+                                    <div class="fw-bold text-success"><?= $slaStats['response_compliance'] ?>%</div>
+                                    <div class="text-muted">Respuesta</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold text-primary"><?= $slaStats['assignment_compliance'] ?>%</div>
+                                    <div class="text-muted">Asignación</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold text-info"><?= $slaStats['resolution_compliance'] ?>%</div>
+                                    <div class="text-muted">Resolución</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-bar-chart me-2"></i>SLA por Prioridad</h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="chart-container" style="height: 260px;">
+                                <canvas id="slaPriorityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-clock-history me-2"></i>Tiempos Promedio</h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="chart-container" style="height: 260px;">
+                                <canvas id="avgTimesChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2254,7 +2323,7 @@ $topActions = $pdo->query("
                             <span class="badge bg-primary"><?= number_format($totalAuditLogs) ?> registros</span>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="auditTable">
                                 <thead>
                                     <tr>
                                         <th>Fecha/Hora</th>
@@ -2385,7 +2454,7 @@ $topActions = $pdo->query("
                     </div>
                     
                     <!-- Gráfico de actividad -->
-                    <div class="card-custom">
+                    <div class="card-custom mb-4">
                         <div class="card-header-custom">
                             <h5 class="card-title-custom"><i class="bi bi-graph-up me-2"></i>Actividad (7 días)</h5>
                         </div>
@@ -2395,14 +2464,57 @@ $topActions = $pdo->query("
                             </div>
                         </div>
                     </div>
+
+                    <!-- Resumen de cumplimiento -->
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-clipboard-check me-2"></i>Resumen SLA</h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Primera Respuesta</span>
+                                    <span class="fw-bold <?= $slaStats['response_compliance'] >= 80 ? 'text-success' : ($slaStats['response_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['response_compliance'] ?>%</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar <?= $slaStats['response_compliance'] >= 80 ? 'bg-success' : ($slaStats['response_compliance'] >= 50 ? 'bg-warning' : 'bg-danger') ?>" style="width: <?= $slaStats['response_compliance'] ?>%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Asignación</span>
+                                    <span class="fw-bold <?= $slaStats['assignment_compliance'] >= 80 ? 'text-success' : ($slaStats['assignment_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['assignment_compliance'] ?>%</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar <?= $slaStats['assignment_compliance'] >= 80 ? 'bg-success' : ($slaStats['assignment_compliance'] >= 50 ? 'bg-warning' : 'bg-danger') ?>" style="width: <?= $slaStats['assignment_compliance'] ?>%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Resolución</span>
+                                    <span class="fw-bold <?= $slaStats['resolution_compliance'] >= 80 ? 'text-success' : ($slaStats['resolution_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['resolution_compliance'] ?>%</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar <?= $slaStats['resolution_compliance'] >= 80 ? 'bg-success' : ($slaStats['resolution_compliance'] >= 50 ? 'bg-warning' : 'bg-danger') ?>" style="width: <?= $slaStats['resolution_compliance'] ?>%"></div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="small text-muted">
+                                <div class="d-flex justify-content-between mb-1"><span>Prom. respuesta:</span><strong><?= $slaStats['avg_response'] ?>h</strong></div>
+                                <div class="d-flex justify-content-between mb-1"><span>Prom. asignación:</span><strong><?= $slaStats['avg_assignment'] ?>h</strong></div>
+                                <div class="d-flex justify-content-between"><span>Prom. resolución:</span><strong><?= $slaStats['avg_resolution'] ?>h</strong></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const ctx = document.getElementById('auditChart');
-                if (ctx) {
-                    new Chart(ctx, {
+                // Gráfico de actividad 7 días
+                const auditCtx = document.getElementById('auditChart');
+                if (auditCtx) {
+                    new Chart(auditCtx, {
                         type: 'line',
                         data: {
                             labels: [<?php foreach($auditChartData as $d) echo '"' . date('d/m', strtotime($d['date'])) . '",'; ?>],
@@ -2425,10 +2537,264 @@ $topActions = $pdo->query("
                         }
                     });
                 }
+
+                // Gráfico Doughnut - Cumplimiento SLA General
+                const slaCtx = document.getElementById('slaComplianceChart');
+                if (slaCtx) {
+                    new Chart(slaCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Respuesta OK', 'Respuesta Incumplida', 'Asignación OK', 'Asignación Incumplida', 'Resolución OK', 'Resolución Incumplida'],
+                            datasets: [{
+                                data: [
+                                    <?= $slaStats['within_response'] ?>,
+                                    <?= $slaStats['breached_response'] ?>,
+                                    <?= $slaStats['within_assignment'] ?>,
+                                    <?= $slaStats['breached_assignment'] ?>,
+                                    <?= $slaStats['within_resolution'] ?>,
+                                    <?= $slaStats['breached_resolution'] ?>
+                                ],
+                                backgroundColor: ['#10b981', '#f87171', '#3b82f6', '#fb923c', '#06b6d4', '#a78bfa'],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '60%',
+                            plugins: {
+                                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+                            }
+                        }
+                    });
+                }
+
+                // Gráfico Barras - SLA por Prioridad
+                const priCtx = document.getElementById('slaPriorityChart');
+                if (priCtx) {
+                    <?php
+                    $priLabels = [];
+                    $priResponseOk = [];
+                    $priResponseFail = [];
+                    $priResolutionOk = [];
+                    $priResolutionFail = [];
+                    $priorityOrder = ['urgente', 'alta', 'media', 'baja'];
+                    $priLabelNames = ['urgente' => 'Urgente', 'alta' => 'Alta', 'media' => 'Media', 'baja' => 'Baja'];
+                    foreach ($priorityOrder as $p) {
+                        if (isset($slaStats['by_priority'][$p])) {
+                            $priLabels[] = $priLabelNames[$p];
+                            $d = $slaStats['by_priority'][$p];
+                            $priResponseOk[] = $d['response_ok'];
+                            $priResponseFail[] = $d['response_breached'];
+                            $priResolutionOk[] = $d['resolution_ok'];
+                            $priResolutionFail[] = $d['resolution_breached'];
+                        }
+                    }
+                    ?>
+                    new Chart(priCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: <?= json_encode($priLabels) ?>,
+                            datasets: [
+                                { label: 'Resp. OK', data: <?= json_encode($priResponseOk) ?>, backgroundColor: '#10b981' },
+                                { label: 'Resp. Incumplida', data: <?= json_encode($priResponseFail) ?>, backgroundColor: '#f87171' },
+                                { label: 'Resol. OK', data: <?= json_encode($priResolutionOk) ?>, backgroundColor: '#3b82f6' },
+                                { label: 'Resol. Incumplida', data: <?= json_encode($priResolutionFail) ?>, backgroundColor: '#fb923c' }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                            scales: {
+                                x: { stacked: false },
+                                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                            }
+                        }
+                    });
+                }
+
+                // Gráfico Barras Horizontales - Tiempos Promedio
+                const avgCtx = document.getElementById('avgTimesChart');
+                if (avgCtx) {
+                    new Chart(avgCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Respuesta', 'Asignación', 'Resolución', 'Trabajo'],
+                            datasets: [{
+                                label: 'Horas promedio',
+                                data: [<?= $slaStats['avg_response'] ?>, <?= $slaStats['avg_assignment'] ?>, <?= $slaStats['avg_resolution'] ?>, <?= $slaStats['avg_work'] ?>],
+                                backgroundColor: ['#10b981', '#3b82f6', '#06b6d4', '#8b5cf6'],
+                                borderRadius: 6,
+                                barThickness: 28
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            indexAxis: 'y',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.x + ' horas'; } } }
+                            },
+                            scales: {
+                                x: { beginAtZero: true, title: { display: true, text: 'Horas', font: { size: 11 } } }
+                            }
+                        }
+                    });
+                }
             });
-            </script>
-            
-            });
+
+            // ===== DESCARGA CSV =====
+            function downloadAuditCSV() {
+                const table = document.getElementById('auditTable');
+                if (!table) return;
+                let csv = 'Fecha,Hora,Usuario,Acción,Entidad,Detalles\n';
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 5) {
+                        const fecha = cells[0].textContent.trim().replace(/\s+/g, ' ');
+                        const partes = fecha.split(' ');
+                        const usuario = cells[1].textContent.trim().replace(/\s+/g, ' ');
+                        const accion = cells[2].textContent.trim();
+                        const entidad = cells[3].textContent.trim();
+                        const detalles = cells[4].textContent.trim().replace(/"/g, '""');
+                        csv += `"${partes[0] || ''}","${partes[1] || ''}","${usuario}","${accion}","${entidad}","${detalles}"\n`;
+                    }
+                });
+                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'auditoria_epco_' + new Date().toISOString().slice(0,10) + '.csv';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
+
+            // ===== DESCARGA INFORME COMPLETO (HTML → Print/PDF) =====
+            function downloadAuditReport() {
+                const reportDate = new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                // Capturar gráficos como imagen
+                const charts = ['slaComplianceChart', 'slaPriorityChart', 'avgTimesChart', 'auditChart'];
+                const chartImages = {};
+                charts.forEach(id => {
+                    const c = document.getElementById(id);
+                    if (c) chartImages[id] = c.toDataURL('image/png');
+                });
+
+                // Construir tabla de registros
+                let tableRows = '';
+                const rows = document.querySelectorAll('#auditTable tbody tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 5) {
+                        const fecha = cells[0].textContent.trim().replace(/\s+/g, ' ');
+                        const usuario = cells[1].textContent.trim().replace(/\s+/g, ' ');
+                        const accion = cells[2].textContent.trim();
+                        const entidad = cells[3].textContent.trim();
+                        const detalles = cells[4].textContent.trim();
+                        tableRows += `<tr><td>${fecha}</td><td>${usuario}</td><td>${accion}</td><td>${entidad}</td><td>${detalles}</td></tr>`;
+                    }
+                });
+
+                const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Informe de Auditoría - EPCO</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #1d2939; font-size: 12px; }
+    h1 { color: #0c5a8a; font-size: 22px; border-bottom: 3px solid #0c5a8a; padding-bottom: 10px; }
+    h2 { color: #334155; font-size: 16px; margin-top: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+    .header-info { display: flex; justify-content: space-between; margin-bottom: 20px; color: #64748b; font-size: 11px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center; }
+    .stat-box .number { font-size: 24px; font-weight: 700; color: #0c5a8a; }
+    .stat-box .label { font-size: 11px; color: #64748b; margin-top: 4px; }
+    .sla-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0; }
+    .sla-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; text-align: center; }
+    .sla-box.warn { background: #fffbeb; border-color: #fde68a; }
+    .sla-box.danger { background: #fef2f2; border-color: #fecaca; }
+    .sla-box .pct { font-size: 28px; font-weight: 700; }
+    .sla-box .pct.ok { color: #16a34a; }
+    .sla-box .pct.warn { color: #d97706; }
+    .sla-box .pct.danger { color: #dc2626; }
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 20px 0; }
+    .charts-grid img { width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+    th { background: #0c5a8a; color: white; padding: 8px 10px; text-align: left; }
+    td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) { background: #f8fafc; }
+    .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+    @media print { body { margin: 20px; } .no-print { display: none; } }
+</style>
+</head>
+<body>
+<div class="no-print" style="text-align:right;margin-bottom:15px;">
+    <button onclick="window.print()" style="background:#0c5a8a;color:white;border:none;padding:10px 25px;border-radius:6px;cursor:pointer;font-size:13px;">
+        Imprimir / Guardar como PDF
+    </button>
+</div>
+<h1>Informe de Auditoría del Sistema</h1>
+<div class="header-info">
+    <span>Empresa Portuaria Coquimbo — Soporte TI</span>
+    <span>Generado el ${reportDate}</span>
+</div>
+
+<h2>Estadísticas Generales</h2>
+<div class="stats-grid">
+    <div class="stat-box"><div class="number"><?= number_format($auditStats['total']) ?></div><div class="label">Total Registros</div></div>
+    <div class="stat-box"><div class="number"><?= $auditStats['today'] ?></div><div class="label">Registros Hoy</div></div>
+    <div class="stat-box"><div class="number"><?= $auditStats['week'] ?></div><div class="label">Últimos 7 Días</div></div>
+    <div class="stat-box"><div class="number"><?= $auditStats['unique_users'] ?></div><div class="label">Usuarios Activos</div></div>
+</div>
+
+<h2>Cumplimiento SLA (últimos 30 días)</h2>
+<div class="sla-grid">
+    <div class="sla-box <?= $slaStats['response_compliance'] >= 80 ? '' : ($slaStats['response_compliance'] >= 50 ? 'warn' : 'danger') ?>">
+        <div class="pct <?= $slaStats['response_compliance'] >= 80 ? 'ok' : ($slaStats['response_compliance'] >= 50 ? 'warn' : 'danger') ?>"><?= $slaStats['response_compliance'] ?>%</div>
+        <div class="label">Primera Respuesta</div>
+        <div style="font-size:10px;color:#64748b;margin-top:4px;"><?= $slaStats['within_response'] ?> ok / <?= $slaStats['breached_response'] ?> incumplidos</div>
+    </div>
+    <div class="sla-box <?= $slaStats['assignment_compliance'] >= 80 ? '' : ($slaStats['assignment_compliance'] >= 50 ? 'warn' : 'danger') ?>">
+        <div class="pct <?= $slaStats['assignment_compliance'] >= 80 ? 'ok' : ($slaStats['assignment_compliance'] >= 50 ? 'warn' : 'danger') ?>"><?= $slaStats['assignment_compliance'] ?>%</div>
+        <div class="label">Asignación</div>
+        <div style="font-size:10px;color:#64748b;margin-top:4px;"><?= $slaStats['within_assignment'] ?> ok / <?= $slaStats['breached_assignment'] ?> incumplidos</div>
+    </div>
+    <div class="sla-box <?= $slaStats['resolution_compliance'] >= 80 ? '' : ($slaStats['resolution_compliance'] >= 50 ? 'warn' : 'danger') ?>">
+        <div class="pct <?= $slaStats['resolution_compliance'] >= 80 ? 'ok' : ($slaStats['resolution_compliance'] >= 50 ? 'warn' : 'danger') ?>"><?= $slaStats['resolution_compliance'] ?>%</div>
+        <div class="label">Resolución</div>
+        <div style="font-size:10px;color:#64748b;margin-top:4px;"><?= $slaStats['within_resolution'] ?> ok / <?= $slaStats['breached_resolution'] ?> incumplidos</div>
+    </div>
+</div>
+<p style="color:#64748b;font-size:11px;">Tiempos promedio: Respuesta <strong><?= $slaStats['avg_response'] ?>h</strong> · Asignación <strong><?= $slaStats['avg_assignment'] ?>h</strong> · Resolución <strong><?= $slaStats['avg_resolution'] ?>h</strong> · Trabajo <strong><?= $slaStats['avg_work'] ?>h</strong></p>
+
+<h2>Gráficos</h2>
+<div class="charts-grid">
+    ${chartImages['slaComplianceChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Cumplimiento SLA General</h3><img src="' + chartImages['slaComplianceChart'] + '"></div>' : ''}
+    ${chartImages['slaPriorityChart'] ? '<div><h3 style="font-size:12px;color:#475467;">SLA por Prioridad</h3><img src="' + chartImages['slaPriorityChart'] + '"></div>' : ''}
+    ${chartImages['avgTimesChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Tiempos Promedio</h3><img src="' + chartImages['avgTimesChart'] + '"></div>' : ''}
+    ${chartImages['auditChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Actividad Reciente</h3><img src="' + chartImages['auditChart'] + '"></div>' : ''}
+</div>
+
+<h2>Registros de Actividad (página actual)</h2>
+<table>
+<thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Detalles</th></tr></thead>
+<tbody>${tableRows || '<tr><td colspan="5" style="text-align:center;padding:20px;">Sin registros</td></tr>'}</tbody>
+</table>
+
+<div class="footer">
+    <p>Empresa Portuaria Coquimbo — Sistema de Soporte TI</p>
+    <p>Informe generado automáticamente · ${reportDate}</p>
+</div>
+</body></html>`;
+
+                const w = window.open('', '_blank');
+                w.document.write(html);
+                w.document.close();
+            }
             </script>
             
             <?php elseif ($page === 'notificaciones'): ?>
