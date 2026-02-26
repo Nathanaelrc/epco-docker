@@ -1151,6 +1151,7 @@ $topActions = $pdo->query("
         .table td { padding: 16px 20px; vertical-align: middle; border-color: var(--gray-100); font-size: 0.875rem; color: var(--gray-700); }
         .table tbody tr:hover { background: var(--gray-50); }
         .ticket-number { font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace; font-size: 0.8rem; color: var(--primary-dark); font-weight: 600; }
+        .ticket-row-hover:hover { background-color: var(--primary-soft) !important; transition: background-color 0.15s ease; }
         
         .btn-action { 
             width: 34px; 
@@ -1440,27 +1441,17 @@ $topActions = $pdo->query("
                 </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Fecha</th><th></th></tr></thead>
+                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Prioridad</th><th>Estado</th><th>Asignado</th><th>Fecha</th></tr></thead>
                         <tbody>
                         <?php foreach (array_slice($tickets, 0, 10) as $t): ?>
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover">
                             <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
                             <td><?= htmlspecialchars(substr($t['title'], 0, 40)) ?><?= strlen($t['title']) > 40 ? '...' : '' ?></td>
                             <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><?= htmlspecialchars($t['user_name'] ?? '-') ?></div></td>
                             <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
                             <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
-                            <td class="text-center">
-                                <?php 
-                                    $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
-                                ?>
-                                <?php if ($hasEvidence): ?>
-                                    <a href="#" class="badge bg-success text-decoration-none" title="Ver evidencia adjunta" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-paperclip me-1"></i>Ver</a>
-                                <?php else: ?>
-                                    <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
-                                <?php endif; ?>
-                            </td>
+                            <td><span class="small text-muted"><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></span></td>
                             <td class="text-muted small"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
-                            <td><button class="btn-action btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-eye"></i></button></td>
                         </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -1503,173 +1494,43 @@ $topActions = $pdo->query("
                 </div>
             </div>
 
-            <!-- Gráficos y Alertas -->
-            <div class="row g-3 mb-4">
-                <!-- Tendencia Semanal -->
-                <div class="col-lg-8">
-                    <div class="chart-card">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="chart-title mb-0"><i class="bi bi-graph-up me-2"></i>Tendencia Semanal</h5>
-                            <span class="badge bg-light text-dark">Últimos 7 días</span>
-                        </div>
-                        <div class="chart-container-lg">
-                            <canvas id="weeklyTrendChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Panel de Alertas SLA -->
-                <div class="col-lg-4">
-                    <div class="chart-card" style="height: 100%;">
-                        <h5 class="chart-title"><i class="bi bi-clock-history me-2"></i>Alertas de Tiempo</h5>
-                        <?php if (empty($slaAlerts) && empty($unassignedAlerts)): ?>
-                            <div class="text-center py-4">
-                                <div class="sla-alert-icon mx-auto mb-3" style="width:56px;height:56px;background:var(--primary-soft);color:var(--primary-dark);">
-                                    <i class="bi bi-check-lg" style="font-size:1.5rem"></i>
-                                </div>
-                                <p class="text-muted mb-0" style="font-size:0.85rem">Todo en orden<br><small>No hay alertas pendientes</small></p>
-                            </div>
-                        <?php else: ?>
-                            <div class="alert-list" style="max-height: 250px; overflow-y: auto;">
-                                <?php foreach ($slaAlerts as $alert): 
-                                    $percentage = round(($alert['elapsed_minutes'] / $alert['sla_limit_minutes']) * 100);
-                                    $isOverdue = $percentage >= 100;
-                                ?>
-                                <div class="sla-alert-item <?= $isOverdue ? 'overdue' : 'warning' ?>">
-                                    <div class="sla-alert-icon">
-                                        <i class="bi bi-<?= $isOverdue ? 'exclamation-circle' : 'clock' ?>"></i>
-                                    </div>
-                                    <div class="sla-alert-content">
-                                        <div class="sla-alert-title"><?= $alert['ticket_number'] ?></div>
-                                        <div class="sla-alert-desc"><?= htmlspecialchars(substr($alert['title'] ?? '', 0, 30)) ?>...</div>
-                                        <div class="sla-alert-status">
-                                            <?= $isOverdue ? 'SLA vencido' : (100 - $percentage) . '% tiempo restante' ?>
-                                        </div>
-                                    </div>
-                                    <a href="?page=tickets&filter=all" class="sla-alert-btn">Ver</a>
-                                </div>
-                                <?php endforeach; ?>
-                                
-                                <?php foreach ($unassignedAlerts as $alert): ?>
-                                <div class="sla-alert-item unassigned">
-                                    <div class="sla-alert-icon">
-                                        <i class="bi bi-person-dash"></i>
-                                    </div>
-                                    <div class="sla-alert-content">
-                                        <div class="sla-alert-title"><?= $alert['ticket_number'] ?></div>
-                                        <div class="sla-alert-desc">Sin asignar hace <?= $alert['hours_waiting'] ?>h</div>
-                                    </div>
-                                    <a href="?page=tickets&filter=open" class="sla-alert-btn">Asignar</a>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row g-3 mb-4">
-                <!-- Gráfico Estado -->
-                <div class="col-lg-4">
-                    <div class="chart-card">
-                        <h5 class="chart-title">Estado de Tickets</h5>
-                        <div class="chart-container">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <!-- Gráfico Categoría -->
-                <div class="col-lg-4">
-                    <div class="chart-card">
-                        <h5 class="chart-title">Por Categoría</h5>
-                        <div class="chart-container">
-                            <canvas id="categoryChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <!-- Tickets Asignados por Técnico -->
-                <div class="col-lg-4">
-                    <div class="chart-card">
-                        <h5 class="chart-title"><i class="bi bi-person-badge me-2"></i>Tickets por Técnico</h5>
-                        <?php if (empty($ticketsPerTechnician) || array_sum(array_column($ticketsPerTechnician, 'tickets_asignados')) == 0): ?>
-                            <div class="text-center py-4 text-muted">
-                                <i class="bi bi-people" style="font-size: 2rem;"></i>
-                                <p class="mt-2 mb-0">Sin tickets asignados</p>
-                            </div>
-                        <?php else: ?>
-                            <div class="list-group list-group-flush">
-                            <?php foreach ($ticketsPerTechnician as $tech): 
-                                $pendientes = $tech['abiertos'] + $tech['en_progreso'];
-                            ?>
-                            <div class="list-group-item px-0 border-0">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="fw-semibold"><i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($tech['name']) ?></span>
-                                    <span class="badge bg-primary rounded-pill"><?= $tech['tickets_asignados'] ?></span>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <?php if ($tech['abiertos'] > 0): ?>
-                                    <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Abiertos: <?= $tech['abiertos'] ?></span>
-                                    <?php endif; ?>
-                                    <?php if ($tech['en_progreso'] > 0): ?>
-                                    <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>En progreso: <?= $tech['en_progreso'] ?></span>
-                                    <?php endif; ?>
-                                    <?php if ($tech['resueltos'] > 0): ?>
-                                    <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Resueltos: <?= $tech['resueltos'] ?></span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Guía de Uso del Sistema -->
-            <div class="card-custom mt-4">
+            <!-- Panel de Alertas SLA -->
+            <?php if (!empty($slaAlerts) || !empty($unassignedAlerts)): ?>
+            <div class="card-custom mb-4">
                 <div class="card-header-custom">
-                    <h5 class="mb-0"><i class="bi bi-book me-2"></i>Guía de Uso del Sistema de Soporte</h5>
+                    <h5 class="card-title-custom"><i class="bi bi-exclamation-triangle me-2"></i>Alertas de Tiempo</h5>
+                    <span class="badge bg-danger"><?= count($slaAlerts) + count($unassignedAlerts) ?></span>
                 </div>
-                <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-lg-4 col-md-6">
-                            <div class="text-center p-3 rounded-3" style="background: #f8fafc;">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; font-size: 1.2rem; font-weight: 700;">1</div>
-                                <h6 class="fw-bold mb-2">Crear un Ticket</h6>
-                                <p class="text-muted small mb-0">El usuario hace clic en <strong>"Nuevo Ticket"</strong> y completa categoría, prioridad y descripción. Se genera un código de seguimiento único.</p>
+                <div class="p-3">
+                    <div class="alert-list" style="max-height: 200px; overflow-y: auto;">
+                        <?php foreach ($slaAlerts as $alert): 
+                            $percentage = round(($alert['elapsed_minutes'] / $alert['sla_limit_minutes']) * 100);
+                            $isOverdue = $percentage >= 100;
+                        ?>
+                        <div class="sla-alert-item <?= $isOverdue ? 'overdue' : 'warning' ?>">
+                            <div class="sla-alert-icon"><i class="bi bi-<?= $isOverdue ? 'exclamation-circle' : 'clock' ?>"></i></div>
+                            <div class="sla-alert-content">
+                                <div class="sla-alert-title"><?= $alert['ticket_number'] ?></div>
+                                <div class="sla-alert-desc"><?= htmlspecialchars(substr($alert['title'] ?? '', 0, 30)) ?>...</div>
+                                <div class="sla-alert-status"><?= $isOverdue ? 'SLA vencido' : (100 - $percentage) . '% tiempo restante' ?></div>
                             </div>
+                            <a href="?page=tickets&filter=all" class="sla-alert-btn">Ver</a>
                         </div>
-                        <div class="col-lg-4 col-md-6">
-                            <div class="text-center p-3 rounded-3" style="background: #f8fafc;">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 1.2rem; font-weight: 700;">2</div>
-                                <h6 class="fw-bold mb-2">Consultar Estado</h6>
-                                <p class="text-muted small mb-0">Con el botón <strong>"Consultar Ticket"</strong> el usuario ingresa su código y ve el estado, comentarios públicos y resolución.</p>
+                        <?php endforeach; ?>
+                        <?php foreach ($unassignedAlerts as $alert): ?>
+                        <div class="sla-alert-item unassigned">
+                            <div class="sla-alert-icon"><i class="bi bi-person-dash"></i></div>
+                            <div class="sla-alert-content">
+                                <div class="sla-alert-title"><?= $alert['ticket_number'] ?></div>
+                                <div class="sla-alert-desc">Sin asignar hace <?= $alert['hours_waiting'] ?>h</div>
                             </div>
+                            <a href="?page=tickets&filter=open" class="sla-alert-btn">Asignar</a>
                         </div>
-                        <div class="col-lg-4 col-md-6">
-                            <div class="text-center p-3 rounded-3" style="background: #f8fafc;">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 1.2rem; font-weight: 700;">3</div>
-                                <h6 class="fw-bold mb-2">Tiempos SLA</h6>
-                                <p class="text-muted small mb-0"><strong>Urgente:</strong> 4h &middot; <strong>Alta:</strong> 8h &middot; <strong>Media:</strong> 24h &middot; <strong>Baja:</strong> 48h. Se envía correo de confirmación al crear el ticket.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 p-3 rounded-3" style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1px solid #e2e8f0;">
-                        <div class="d-flex align-items-start">
-                            <i class="bi bi-lightbulb me-3" style="font-size: 1.5rem; color: #f59e0b;"></i>
-                            <div>
-                                <h6 class="fw-bold mb-1 small">Consejos para el equipo TI</h6>
-                                <ul class="text-muted small mb-0" style="list-style: none; padding: 0;">
-                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Responde los tickets dentro del SLA asignado para mantener el cumplimiento.</li>
-                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Usa comentarios internos para notas del equipo (no visibles para el usuario).</li>
-                                    <li class="mb-1"><i class="bi bi-check-circle text-success me-2"></i>Adjunta evidencia de la solución antes de marcar como resuelto.</li>
-                                    <li><i class="bi bi-check-circle text-success me-2"></i>Escala tickets urgentes que superen las 2 horas sin atención.</li>
-                                </ul>
-                            </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
             
             <?php elseif ($page === 'tickets'): ?>
             <!-- ========== TICKETS ========== -->
@@ -1690,12 +1551,12 @@ $topActions = $pdo->query("
                 </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Asignado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Asignado</th><th>Fecha</th></tr></thead>
                         <tbody>
                         <?php if (empty($tickets)): ?>
-                        <tr><td colspan="10" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
+                        <tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
                         <?php else: foreach ($tickets as $t): ?>
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover">
                             <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
                             <td><?= htmlspecialchars(substr($t['title'], 0, 35)) ?><?= strlen($t['title']) > 35 ? '...' : '' ?></td>
                             <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
@@ -1707,25 +1568,13 @@ $topActions = $pdo->query("
                                     $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
                                 ?>
                                 <?php if ($hasEvidence): ?>
-                                    <a href="#" class="badge bg-success text-decoration-none" title="Ver evidencia adjunta" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>"><i class="bi bi-paperclip me-1"></i>Ver</a>
+                                    <span class="badge bg-success"><i class="bi bi-paperclip me-1"></i>Sí</span>
                                 <?php else: ?>
-                                    <span class="badge bg-light text-muted" title="Sin evidencia"><i class="bi bi-x-circle me-1"></i>No</span>
+                                    <span class="badge bg-light text-muted">No</span>
                                 <?php endif; ?>
                             </td>
                             <td><span class="small text-muted"><?= $t['assigned_name'] ?? '-' ?></span></td>
                             <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
-                            <td class="text-nowrap">
-                                <button class="btn-action btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#ticketModal<?= $t['id'] ?>" title="Ver"><i class="bi bi-eye"></i></button>
-                                <button class="btn-action btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editTicketModal<?= $t['id'] ?>" title="Editar"><i class="bi bi-pencil"></i></button>
-                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
-                                    <input type="hidden" name="action" value="delete_ticket">
-                                    <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                    <button type="submit" class="btn-action btn btn-outline-danger btn-sm" title="Eliminar"><i class="bi bi-trash"></i></button>
-                                </form>
-                                <?php if (!$t['assigned_to'] && !$isAdmin): ?>
-                                <form method="POST" class="d-inline"><input type="hidden" name="action" value="self_assign"><input type="hidden" name="ticket_id" value="<?= $t['id'] ?>"><button type="submit" class="btn-action btn btn-outline-success btn-sm" title="Asignarme"><i class="bi bi-person-plus"></i></button></form>
-                                <?php endif; ?>
-                            </td>
                         </tr>
                         <?php endforeach; endif; ?>
                         </tbody>
@@ -2042,6 +1891,77 @@ $topActions = $pdo->query("
                         <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart me-2"></i>Cumplimiento General SLA</h6>
                         <div class="chart-container">
                             <canvas id="slaChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráficos de Rendimiento -->
+            <div class="row g-3 mb-4">
+                <!-- Tendencia Semanal -->
+                <div class="col-lg-8">
+                    <div class="chart-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="chart-title mb-0"><i class="bi bi-graph-up me-2"></i>Tendencia Semanal</h5>
+                            <span class="badge bg-light text-dark">Últimos 7 días</span>
+                        </div>
+                        <div class="chart-container-lg">
+                            <canvas id="weeklyTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tickets por Técnico -->
+                <div class="col-lg-4">
+                    <div class="chart-card" style="height: 100%;">
+                        <h5 class="chart-title"><i class="bi bi-person-badge me-2"></i>Tickets por Técnico</h5>
+                        <?php if (empty($ticketsPerTechnician) || array_sum(array_column($ticketsPerTechnician, 'tickets_asignados')) == 0): ?>
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0">Sin tickets asignados</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="list-group list-group-flush">
+                            <?php foreach ($ticketsPerTechnician as $tech): ?>
+                            <div class="list-group-item px-0 border-0">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold"><i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($tech['name']) ?></span>
+                                    <span class="badge bg-primary rounded-pill"><?= $tech['tickets_asignados'] ?></span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <?php if ($tech['abiertos'] > 0): ?>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Abiertos: <?= $tech['abiertos'] ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($tech['en_progreso'] > 0): ?>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>En progreso: <?= $tech['en_progreso'] ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($tech['resueltos'] > 0): ?>
+                                    <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Resueltos: <?= $tech['resueltos'] ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <!-- Gráfico Estado -->
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h5 class="chart-title">Estado de Tickets</h5>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Gráfico Categoría -->
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <h5 class="chart-title">Por Categoría</h5>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -3054,308 +2974,287 @@ $topActions = $pdo->query("
     if (!empty($slaTickets)) { foreach ($slaTickets as $t) { if (!isset($allModalTickets[$t['id']])) $allModalTickets[$t['id']] = $t; } }
     ?>
 
-    <!-- Modales de Edición de Tickets -->
-    <?php foreach ($allModalTickets as $t): ?>
-    <div class="modal fade" id="editTicketModal<?= $t['id'] ?>" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-warning bg-opacity-10">
-                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar <?= $t['ticket_number'] ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="POST">
-                    <div class="modal-body">
-                        <input type="hidden" name="action" value="update_ticket">
-                        <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Nombre del solicitante</label>
-                                <input type="text" name="user_name" class="form-control" value="<?= htmlspecialchars($t['user_name'] ?? '') ?>">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Email del solicitante</label>
-                                <input type="email" name="user_email" class="form-control" value="<?= htmlspecialchars($t['user_email'] ?? '') ?>">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Categoría *</label>
-                                <select name="category" class="form-select" required>
-                                    <option value="hardware" <?= $t['category'] === 'hardware' ? 'selected' : '' ?>>Hardware</option>
-                                    <option value="software" <?= $t['category'] === 'software' ? 'selected' : '' ?>>Software</option>
-                                    <option value="red" <?= $t['category'] === 'red' ? 'selected' : '' ?>>Red</option>
-                                    <option value="acceso" <?= $t['category'] === 'acceso' ? 'selected' : '' ?>>Acceso</option>
-                                    <option value="otro" <?= $t['category'] === 'otro' ? 'selected' : '' ?>>Otro</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Prioridad *</label>
-                                <select name="priority" class="form-select" required>
-                                    <option value="baja" <?= $t['priority'] === 'baja' ? 'selected' : '' ?>>Baja</option>
-                                    <option value="media" <?= $t['priority'] === 'media' ? 'selected' : '' ?>>Media</option>
-                                    <option value="alta" <?= $t['priority'] === 'alta' ? 'selected' : '' ?>>Alta</option>
-                                    <option value="urgente" <?= $t['priority'] === 'urgente' ? 'selected' : '' ?>>Urgente</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Título *</label>
-                                <input type="text" name="title" class="form-control" required value="<?= htmlspecialchars($t['title']) ?>">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Descripción *</label>
-                                <textarea name="description" class="form-control" rows="5" required><?= htmlspecialchars($t['description']) ?></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Guardar Cambios</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <?php endforeach; ?>
-
-    <!-- Modales de Tickets (Ver detalles) -->
+    <!-- Modal Unificado de Tickets (estilo ServiceNow) -->
     <?php foreach ($allModalTickets as $t): 
         $ticketComments = $pdo->prepare('SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at ASC');
         $ticketComments->execute([$t['id']]);
         $comments = $ticketComments->fetchAll();
     ?>
     <div class="modal fade" id="ticketModal<?= $t['id'] ?>" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-ticket-detailed me-2"></i><?= $t['ticket_number'] ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <!-- Header con tema azul -->
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); color: #fff;">
+                    <div class="d-flex align-items-center gap-3">
+                        <h5 class="modal-title mb-0"><i class="bi bi-ticket-detailed me-2"></i><?= $t['ticket_number'] ?></h5>
+                        <span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span>
+                        <span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="opacity-75"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></small>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <h5 class="fw-bold"><?= htmlspecialchars($t['title']) ?></h5>
-                            <p class="text-muted"><?= nl2br(htmlspecialchars($t['description'])) ?></p>
-                            
-                            <?php if ($t['resolution']): ?>
-                            <div class="alert alert-success"><strong>Resolución:</strong><br><?= nl2br(htmlspecialchars($t['resolution'])) ?></div>
-                            <?php endif; ?>
-                            
-                            <?php
-                            // ===== EVIDENCIA ADJUNTA =====
-                            $ticketNum = $t['ticket_number'];
-                            $evidenceDir = __DIR__ . '/uploads/tickets/' . $ticketNum;
-                            $evidenceFiles = [];
-                            
-                            // 1) Archivos en el filesystem
-                            if (is_dir($evidenceDir)) {
-                                $scan = array_diff(scandir($evidenceDir), ['.', '..', '.gitkeep']);
-                                foreach ($scan as $f) {
-                                    $evidenceFiles[$f] = 'uploads/tickets/' . $ticketNum . '/' . $f;
-                                }
-                            }
-                            
-                            // 2) Archivos referenciados en comentarios (fallback si scandir no encuentra)
-                            $commentFiles = [];
-                            foreach ($comments as $c) {
-                                if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $m)) {
-                                    $names = array_map('trim', explode(',', $m[1]));
-                                    foreach ($names as $fname) {
-                                        $fname = trim($fname);
-                                        if ($fname && !isset($evidenceFiles[$fname])) {
-                                            $commentFiles[$fname] = 'uploads/tickets/' . $ticketNum . '/' . $fname;
-                                            $evidenceFiles[$fname] = $commentFiles[$fname];
-                                        }
+                <div class="modal-body p-0">
+                    <!-- Tabs de navegación -->
+                    <ul class="nav nav-tabs px-3 pt-2" id="ticketTabs<?= $t['id'] ?>" role="tablist" style="border-bottom: 2px solid #e2e8f0;">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details<?= $t['id'] ?>" type="button"><i class="bi bi-info-circle me-1"></i>Detalles</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#editTab<?= $t['id'] ?>" type="button"><i class="bi bi-pencil-square me-1"></i>Editar</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity<?= $t['id'] ?>" type="button"><i class="bi bi-chat-dots me-1"></i>Actividad <span class="badge bg-secondary ms-1"><?= count($comments) ?></span></button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <!-- TAB: Detalles -->
+                        <div class="tab-pane fade show active p-4" id="details<?= $t['id'] ?>">
+                            <div class="row g-4">
+                                <div class="col-lg-8">
+                                    <h5 class="fw-bold mb-2"><?= htmlspecialchars($t['title']) ?></h5>
+                                    <div class="p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                        <p class="mb-0"><?= nl2br(htmlspecialchars($t['description'])) ?></p>
+                                    </div>
+                                    
+                                    <?php if ($t['resolution']): ?>
+                                    <div class="alert alert-success"><strong><i class="bi bi-check-circle me-1"></i>Resolución:</strong><br><?= nl2br(htmlspecialchars($t['resolution'])) ?></div>
+                                    <?php endif; ?>
+                                    
+                                    <?php
+                                    // ===== EVIDENCIA ADJUNTA =====
+                                    $ticketNum = $t['ticket_number'];
+                                    $evidenceDir = __DIR__ . '/uploads/tickets/' . $ticketNum;
+                                    $evidenceFiles = [];
+                                    if (is_dir($evidenceDir)) {
+                                        $scan = array_diff(scandir($evidenceDir), ['.', '..', '.gitkeep']);
+                                        foreach ($scan as $f) { $evidenceFiles[$f] = 'uploads/tickets/' . $ticketNum . '/' . $f; }
                                     }
-                                }
-                            }
-                            
-                            $totalEvidence = count($evidenceFiles);
-                            ?>
-                            <?php if ($totalEvidence > 0): ?>
-                            <div class="mb-3">
-                                <h6 class="fw-bold mb-2"><i class="bi bi-paperclip me-1"></i>Evidencia Adjunta (<?= $totalEvidence ?>)</h6>
-                                <div class="row g-2">
-                                    <?php foreach ($evidenceFiles as $fname => $furl):
-                                        $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
-                                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                        $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
-                                        $fullDiskPath = __DIR__ . '/' . $furl;
-                                        $fileExists = file_exists($fullDiskPath);
-                                    ?>
-                                    <div class="col-md-6">
-                                        <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc;">
-                                            <?php if ($isImage && $fileExists): ?>
-                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" title="Ver imagen" style="flex-shrink:0;">
-                                                <img src="<?= htmlspecialchars($furl) ?>" alt="<?= htmlspecialchars($displayName) ?>" style="width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; cursor: zoom-in;">
-                                            </a>
-                                            <?php elseif ($isImage): ?>
-                                            <div class="d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background: #dbeafe; border-radius: 6px; flex-shrink:0;">
-                                                <i class="bi bi-image" style="font-size: 1.3rem; color: #3b82f6;"></i>
-                                            </div>
-                                            <?php else: ?>
-                                            <div class="d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background: #e2e8f0; border-radius: 6px; flex-shrink:0;">
-                                                <i class="bi bi-file-earmark-<?= $ext === 'pdf' ? 'pdf' : ($ext === 'doc' || $ext === 'docx' ? 'word' : 'text') ?>" style="font-size: 1.3rem; color: #64748b;"></i>
-                                            </div>
-                                            <?php endif; ?>
-                                            <div class="flex-grow-1 overflow-hidden">
-                                                <p class="mb-0 small fw-semibold text-truncate" title="<?= htmlspecialchars($displayName) ?>"><?= htmlspecialchars($displayName) ?></p>
-                                                <p class="mb-0 text-muted" style="font-size: 0.7rem;">
-                                                    <?= strtoupper($ext) ?>
-                                                    <?php if ($fileExists): ?>
-                                                        · <?= round(filesize($fullDiskPath) / 1024) ?> KB
-                                                    <?php else: ?>
-                                                        · <span class="text-warning">Archivo en servidor</span>
-                                                    <?php endif; ?>
-                                                </p>
-                                            </div>
-                                            <?php if ($isImage && $fileExists): ?>
-                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" class="btn btn-sm btn-outline-primary" title="Ver imagen" style="flex-shrink:0;"><i class="bi bi-eye"></i></a>
-                                            <?php elseif ($fileExists): ?>
-                                            <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-primary" title="Descargar archivo" style="flex-shrink:0;"><i class="bi bi-download"></i></a>
-                                            <?php endif; ?>
-                                            <?php if ($fileExists): ?>
-                                            <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-secondary" title="Descargar" style="flex-shrink:0;"><i class="bi bi-download"></i></a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <?php if (!empty($evidenceFiles)): ?>
-                                <?php 
-                                    // Mostrar preview grande de imágenes
-                                    $imageFiles = array_filter($evidenceFiles, function($fname) {
-                                        return in_array(strtolower(pathinfo($fname, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                    }, ARRAY_FILTER_USE_KEY);
-                                ?>
-                                <?php if (!empty($imageFiles)): ?>
-                                <div class="mt-2">
-                                    <div class="row g-2">
-                                        <?php foreach ($imageFiles as $fname => $furl): 
-                                            if (!file_exists(__DIR__ . '/' . $furl)) continue;
-                                            $imgDisplayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
-                                        ?>
-                                        <div class="col-md-4">
-                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($imgDisplayName, ENT_QUOTES) ?>')">
-                                                <img src="<?= htmlspecialchars($furl) ?>" class="img-fluid rounded-3 border" alt="<?= htmlspecialchars($imgDisplayName) ?>" style="max-height: 180px; width: 100%; object-fit: cover; cursor: zoom-in;">
-                                            </a>
-                                        </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                                <?php endif; ?>
-                            </div>
-                            <?php endif; ?>
-                            
-                            <hr>
-                            <h6 class="fw-bold mb-3">Comentarios</h6>
-                            <?php if (empty($comments)): ?>
-                            <p class="text-muted small">Sin comentarios</p>
-                            <?php else: foreach ($comments as $c): ?>
-                            <div class="bg-light rounded p-3 mb-2">
-                                <div class="d-flex justify-content-between"><strong><?= htmlspecialchars($c['user_name'] ?? 'Sistema') ?></strong><small class="text-muted"><?= date('d/m H:i', strtotime($c['created_at'])) ?></small></div>
-                                <p class="mb-0 mt-1"><?php
-                                    $commentText = htmlspecialchars($c['comment']);
-                                    // Convertir nombres de archivo en links clickeables
-                                    if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $cm)) {
-                                        $fileNames = array_map('trim', explode(',', $cm[1]));
-                                        $linkedNames = [];
-                                        foreach ($fileNames as $fn) {
-                                            $fn = trim($fn);
-                                            if (!$fn) continue;
-                                            $fileUrl = 'uploads/tickets/' . $ticketNum . '/' . $fn;
-                                            $cleanName = preg_replace('/^[a-f0-9]+_/', '', $fn);
-                                            $fExt = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
-                                            $fIsImg = in_array($fExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                            if ($fIsImg) {
-                                                $linkedNames[] = '<a href="javascript:void(0)" onclick="openLightbox(\'' . htmlspecialchars($fileUrl, ENT_QUOTES) . '\', \'' . htmlspecialchars($cleanName, ENT_QUOTES) . '\')" class="text-primary" style="cursor:pointer"><i class="bi bi-image me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
-                                            } else {
-                                                $linkedNames[] = '<a href="' . htmlspecialchars($fileUrl) . '" download class="text-primary"><i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                    foreach ($comments as $c) {
+                                        if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $m)) {
+                                            $names = array_map('trim', explode(',', $m[1]));
+                                            foreach ($names as $fname) {
+                                                $fname = trim($fname);
+                                                if ($fname && !isset($evidenceFiles[$fname])) { $evidenceFiles[$fname] = 'uploads/tickets/' . $ticketNum . '/' . $fname; }
                                             }
                                         }
-                                        $commentText = str_replace(htmlspecialchars($cm[0]), 'Archivos adjuntos: ' . implode(', ', $linkedNames), $commentText);
                                     }
-                                    echo nl2br($commentText);
-                                ?></p>
-                                <?php if ($c['is_internal']): ?><span class="badge bg-warning text-dark">Interno</span><?php endif; ?>
+                                    $totalEvidence = count($evidenceFiles);
+                                    ?>
+                                    <?php if ($totalEvidence > 0): ?>
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold mb-2"><i class="bi bi-paperclip me-1"></i>Evidencia Adjunta (<?= $totalEvidence ?>)</h6>
+                                        <div class="row g-2">
+                                            <?php foreach ($evidenceFiles as $fname => $furl):
+                                                $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
+                                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                                $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
+                                                $fullDiskPath = __DIR__ . '/' . $furl;
+                                                $fileExists = file_exists($fullDiskPath);
+                                            ?>
+                                            <div class="col-md-6">
+                                                <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc;">
+                                                    <?php if ($isImage && $fileExists): ?>
+                                                    <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" style="flex-shrink:0;">
+                                                        <img src="<?= htmlspecialchars($furl) ?>" alt="<?= htmlspecialchars($displayName) ?>" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; cursor: zoom-in;">
+                                                    </a>
+                                                    <?php else: ?>
+                                                    <div class="d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #e2e8f0; border-radius: 6px; flex-shrink:0;">
+                                                        <i class="bi bi-file-earmark-<?= $ext === 'pdf' ? 'pdf' : 'text' ?>" style="font-size: 1.2rem; color: #64748b;"></i>
+                                                    </div>
+                                                    <?php endif; ?>
+                                                    <div class="flex-grow-1 overflow-hidden">
+                                                        <p class="mb-0 small fw-semibold text-truncate"><?= htmlspecialchars($displayName) ?></p>
+                                                        <p class="mb-0 text-muted" style="font-size: 0.7rem;">
+                                                            <?= strtoupper($ext) ?>
+                                                            <?php if ($fileExists): ?> · <?= round(filesize($fullDiskPath) / 1024) ?> KB<?php endif; ?>
+                                                        </p>
+                                                    </div>
+                                                    <?php if ($fileExists): ?>
+                                                    <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-primary" style="flex-shrink:0;"><i class="bi bi-download"></i></a>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Panel lateral con info + acciones rápidas -->
+                                <div class="col-lg-4">
+                                    <div class="p-3 rounded-3 mb-3" style="background: var(--primary-soft); border: 1px solid #c4ddf0;">
+                                        <h6 class="fw-bold mb-3" style="color: var(--primary-dark);"><i class="bi bi-info-circle me-1"></i>Información</h6>
+                                        <div class="mb-2"><small class="text-muted d-block">Estado</small><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></div>
+                                        <div class="mb-2"><small class="text-muted d-block">Prioridad</small><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></div>
+                                        <div class="mb-2"><small class="text-muted d-block">Categoría</small><span class="fw-semibold"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></div>
+                                        <hr>
+                                        <div class="mb-2"><small class="text-muted d-block">Solicitante</small><span class="fw-semibold"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div>
+                                        <div class="mb-2"><small class="text-muted d-block">Email</small><span class="small"><?= htmlspecialchars($t['user_email'] ?? '-') ?></span></div>
+                                        <div class="mb-2"><small class="text-muted d-block">Asignado a</small><span class="fw-semibold"><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></span></div>
+                                        <div class="mb-0"><small class="text-muted d-block">Creado</small><span class="small"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></span></div>
+                                    </div>
+                                    
+                                    <!-- Cambiar Estado -->
+                                    <div class="p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                        <h6 class="fw-bold mb-2"><i class="bi bi-arrow-repeat me-1"></i>Cambiar Estado</h6>
+                                        <form method="POST">
+                                            <input type="hidden" name="action" value="change_status">
+                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                            <select name="new_status" class="form-select form-select-sm mb-2">
+                                                <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>Abierto</option>
+                                                <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
+                                                <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                                                <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>Resuelto</option>
+                                                <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
+                                            </select>
+                                            <textarea name="resolution" class="form-control form-control-sm mb-2" rows="2" placeholder="Resolución (opcional)"><?= htmlspecialchars($t['resolution'] ?? '') ?></textarea>
+                                            <button type="submit" class="btn btn-sm btn-dark w-100"><i class="bi bi-check-lg me-1"></i>Actualizar Estado</button>
+                                        </form>
+                                    </div>
+                                    
+                                    <!-- Asignar -->
+                                    <div class="p-3 rounded-3 mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                        <h6 class="fw-bold mb-2"><i class="bi bi-person-check me-1"></i>Asignación</h6>
+                                        <form method="POST">
+                                            <input type="hidden" name="action" value="assign_ticket">
+                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                            <select name="assign_to" class="form-select form-select-sm mb-2">
+                                                <option value="">Sin asignar</option>
+                                                <?php foreach ($technicians as $tech): ?>
+                                                <option value="<?= $tech['id'] ?>" <?= $t['assigned_to'] == $tech['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tech['name']) ?> (<?= $tech['role'] ?>)</option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-dark w-100"><i class="bi bi-person-plus me-1"></i>Asignar</button>
+                                        </form>
+                                        <?php if ($t['assigned_to']): ?>
+                                        <form method="POST" class="mt-2">
+                                            <input type="hidden" name="action" value="unassign_ticket">
+                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('¿Desasignar este ticket?')"><i class="bi bi-person-dash me-1"></i>Desasignar</button>
+                                        </form>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <!-- Eliminar -->
+                                    <form method="POST" onsubmit="return confirm('¿Eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
+                                        <input type="hidden" name="action" value="delete_ticket">
+                                        <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash me-1"></i>Eliminar Ticket</button>
+                                    </form>
+                                </div>
                             </div>
-                            <?php endforeach; endif; ?>
-                            
-                            <form method="POST" class="mt-3">
-                                <input type="hidden" name="action" value="add_comment">
+                        </div>
+                        
+                        <!-- TAB: Editar -->
+                        <div class="tab-pane fade p-4" id="editTab<?= $t['id'] ?>">
+                            <form method="POST">
+                                <input type="hidden" name="action" value="update_ticket">
                                 <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                <textarea name="comment" class="form-control mb-2" rows="2" placeholder="Agregar comentario..." required></textarea>
-                                <div class="d-flex justify-content-between">
-                                    <div class="form-check"><input type="checkbox" name="is_internal" class="form-check-input" id="internal<?= $t['id'] ?>"><label class="form-check-label small" for="internal<?= $t['id'] ?>">Nota interna</label></div>
-                                    <button type="submit" class="btn btn-sm btn-dark">Enviar</button>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Nombre del solicitante</label>
+                                        <input type="text" name="user_name" class="form-control" value="<?= htmlspecialchars($t['user_name'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Email del solicitante</label>
+                                        <input type="email" name="user_email" class="form-control" value="<?= htmlspecialchars($t['user_email'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Categoría *</label>
+                                        <select name="category" class="form-select" required>
+                                            <option value="hardware" <?= $t['category'] === 'hardware' ? 'selected' : '' ?>>Hardware</option>
+                                            <option value="software" <?= $t['category'] === 'software' ? 'selected' : '' ?>>Software</option>
+                                            <option value="red" <?= $t['category'] === 'red' ? 'selected' : '' ?>>Red</option>
+                                            <option value="acceso" <?= $t['category'] === 'acceso' ? 'selected' : '' ?>>Acceso</option>
+                                            <option value="otro" <?= $t['category'] === 'otro' ? 'selected' : '' ?>>Otro</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Prioridad *</label>
+                                        <select name="priority" class="form-select" required>
+                                            <option value="baja" <?= $t['priority'] === 'baja' ? 'selected' : '' ?>>Baja</option>
+                                            <option value="media" <?= $t['priority'] === 'media' ? 'selected' : '' ?>>Media</option>
+                                            <option value="alta" <?= $t['priority'] === 'alta' ? 'selected' : '' ?>>Alta</option>
+                                            <option value="urgente" <?= $t['priority'] === 'urgente' ? 'selected' : '' ?>>Urgente</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Título *</label>
+                                        <input type="text" name="title" class="form-control" required value="<?= htmlspecialchars($t['title']) ?>">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Descripción *</label>
+                                        <textarea name="description" class="form-control" rows="5" required><?= htmlspecialchars($t['description']) ?></textarea>
+                                    </div>
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Guardar Cambios</button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
-                        <div class="col-md-4">
-                            <div class="bg-light rounded p-3">
-                                <p class="mb-2"><strong>Estado:</strong> <span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></p>
-                                <p class="mb-2"><strong>Prioridad:</strong> <span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></p>
-                                <p class="mb-2"><strong>Categoría:</strong> <?= $categoryLabels[$t['category']] ?? $t['category'] ?></p>
-                                <p class="mb-2"><strong>Usuario:</strong> <?= htmlspecialchars($t['user_name'] ?? '-') ?></p>
-                                <p class="mb-2"><strong>Asignado:</strong> <?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></p>
-                                <p class="mb-0"><strong>Fecha:</strong> <?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></p>
+                        
+                        <!-- TAB: Actividad (Comentarios) -->
+                        <div class="tab-pane fade p-4" id="activity<?= $t['id'] ?>">
+                            <?php if (empty($comments)): ?>
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-chat-left-text" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0">Sin comentarios aún</p>
                             </div>
+                            <?php else: foreach ($comments as $c): ?>
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:var(--primary-soft);color:var(--primary-dark);font-weight:600;font-size:0.85rem;">
+                                        <?= strtoupper(substr($c['user_name'] ?? 'S', 0, 1)) ?>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong class="small"><?= htmlspecialchars($c['user_name'] ?? 'Sistema') ?></strong>
+                                        <small class="text-muted"><?= date('d/m H:i', strtotime($c['created_at'])) ?></small>
+                                    </div>
+                                    <div class="p-2 rounded-3" style="background: #f1f5f9;">
+                                        <p class="mb-0 small"><?php
+                                            $ticketNum = $t['ticket_number'];
+                                            $commentText = htmlspecialchars($c['comment']);
+                                            if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $cm)) {
+                                                $fileNames = array_map('trim', explode(',', $cm[1]));
+                                                $linkedNames = [];
+                                                foreach ($fileNames as $fn) {
+                                                    $fn = trim($fn);
+                                                    if (!$fn) continue;
+                                                    $fileUrl = 'uploads/tickets/' . $ticketNum . '/' . $fn;
+                                                    $cleanName = preg_replace('/^[a-f0-9]+_/', '', $fn);
+                                                    $fExt = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
+                                                    $fIsImg = in_array($fExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                                    if ($fIsImg) {
+                                                        $linkedNames[] = '<a href="javascript:void(0)" onclick="openLightbox(\'' . htmlspecialchars($fileUrl, ENT_QUOTES) . '\', \'' . htmlspecialchars($cleanName, ENT_QUOTES) . '\')" class="text-primary" style="cursor:pointer"><i class="bi bi-image me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                                    } else {
+                                                        $linkedNames[] = '<a href="' . htmlspecialchars($fileUrl) . '" download class="text-primary"><i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                                    }
+                                                }
+                                                $commentText = str_replace(htmlspecialchars($cm[0]), 'Archivos adjuntos: ' . implode(', ', $linkedNames), $commentText);
+                                            }
+                                            echo nl2br($commentText);
+                                        ?></p>
+                                    </div>
+                                    <?php if ($c['is_internal']): ?><span class="badge bg-warning text-dark mt-1"><i class="bi bi-lock me-1"></i>Nota interna</span><?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endforeach; endif; ?>
                             
                             <hr>
-                            
-                            <!-- Asignar/Desasignar Ticket (admin y soporte) -->
-                            <form method="POST" class="mb-3">
-                                <input type="hidden" name="action" value="assign_ticket">
-                                <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                <label class="form-label fw-semibold small">Asignar a:</label>
-                                <select name="assign_to" class="form-select form-select-sm mb-2">
-                                    <option value="">Sin asignar</option>
-                                    <?php foreach ($technicians as $tech): ?>
-                                    <option value="<?= $tech['id'] ?>" <?= $t['assigned_to'] == $tech['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tech['name']) ?> (<?= $tech['role'] ?>)</option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="submit" class="btn btn-sm btn-outline-dark w-100">Asignar</button>
-                            </form>
-                            
-                            <?php if ($t['assigned_to']): ?>
-                            <form method="POST" class="mb-3">
-                                <input type="hidden" name="action" value="unassign_ticket">
-                                <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('¿Desasignar este ticket?')">
-                                    <i class="bi bi-person-dash me-1"></i>Desasignar
-                                </button>
-                            </form>
-                            <?php endif; ?>
-                            
-                            <!-- Cambiar Estado -->
                             <form method="POST">
-                                <input type="hidden" name="action" value="change_status">
+                                <input type="hidden" name="action" value="add_comment">
                                 <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                <label class="form-label fw-semibold small">Cambiar estado:</label>
-                                <select name="new_status" class="form-select form-select-sm mb-2">
-                                    <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>Abierto</option>
-                                    <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
-                                    <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                                    <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>Resuelto</option>
-                                    <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
-                                </select>
-                                <textarea name="resolution" class="form-control form-control-sm mb-2" rows="2" placeholder="Resolución (opcional)"><?= htmlspecialchars($t['resolution'] ?? '') ?></textarea>
-                                <button type="submit" class="btn btn-sm btn-dark w-100">Actualizar Estado</button>
+                                <textarea name="comment" class="form-control mb-2" rows="3" placeholder="Escribir comentario..." required></textarea>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="form-check"><input type="checkbox" name="is_internal" class="form-check-input" id="internalUnified<?= $t['id'] ?>"><label class="form-check-label small" for="internalUnified<?= $t['id'] ?>">Nota interna (no visible para el usuario)</label></div>
+                                    <button type="submit" class="btn btn-sm btn-dark"><i class="bi bi-send me-1"></i>Enviar</button>
+                                </div>
                             </form>
-                            
-                            <hr>
-                            
-                            <!-- Acciones rápidas -->
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-sm btn-outline-warning w-100" data-bs-dismiss="modal" onclick="setTimeout(function(){ new bootstrap.Modal(document.getElementById('editTicketModal<?= $t['id'] ?>')).show(); }, 300)">
-                                    <i class="bi bi-pencil me-1"></i>Editar Ticket
-                                </button>
-                                <form method="POST" onsubmit="return confirm('¿Eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
-                                    <input type="hidden" name="action" value="delete_ticket">
-                                    <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
-                                        <i class="bi bi-trash me-1"></i>Eliminar Ticket
-                                    </button>
-                                </form>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -3365,7 +3264,7 @@ $topActions = $pdo->query("
     <?php endforeach; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <?php if ($page === 'dashboard'): ?>
+    <?php if ($page === 'sla'): ?>
     <script>
         new Chart(document.getElementById('statusChart'), {
             type: 'doughnut',
@@ -3420,44 +3319,19 @@ $topActions = $pdo->query("
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    },
+                    interaction: { intersect: false, mode: 'index' },
                     plugins: {
-                        legend: {
-                            position: 'top',
-                            align: 'end',
-                            labels: { 
-                                usePointStyle: true, 
-                                padding: 15,
-                                font: { size: 11 }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(10, 37, 64, 0.9)',
-                            padding: 12,
-                            cornerRadius: 8
-                        }
+                        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, padding: 15, font: { size: 11 } } },
+                        tooltip: { backgroundColor: 'rgba(10, 37, 64, 0.9)', padding: 12, cornerRadius: 8 }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 },
-                            grid: { color: 'rgba(0,0,0,0.05)' }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
         }
-    </script>
-    <?php endif; ?>
-    
-    <?php if ($page === 'sla'): ?>
-    <script>
+
         new Chart(document.getElementById('slaChart'), {
             type: 'doughnut',
             data: {
