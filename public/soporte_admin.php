@@ -1025,6 +1025,108 @@ $topActions = $pdo->query("
     ORDER BY count DESC 
     LIMIT 5
 ")->fetchAll();
+
+// ===== MÉTRICAS DE TICKETS PARA AUDITORÍA =====
+
+// Tickets creados y resueltos por mes (últimos 6 meses)
+$monthlyTickets = $pdo->query("
+    SELECT 
+        DATE_FORMAT(created_at, '%Y-%m') as mes,
+        DATE_FORMAT(created_at, '%b %Y') as mes_label,
+        COUNT(*) as creados,
+        COUNT(CASE WHEN status IN ('resuelto', 'cerrado') THEN 1 END) as resueltos,
+        COUNT(CASE WHEN status IN ('resuelto', 'cerrado') AND resolved_at IS NOT NULL 
+              AND TIMESTAMPDIFF(HOUR, created_at, resolved_at) <= 24 THEN 1 END) as resueltos_24h
+    FROM tickets
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b %Y')
+    ORDER BY mes ASC
+")->fetchAll();
+
+// Estadísticas generales de tickets
+$ticketMetrics = $pdo->query("
+    SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN status IN ('resuelto', 'cerrado') THEN 1 END) as resueltos,
+        COUNT(CASE WHEN status NOT IN ('resuelto', 'cerrado') THEN 1 END) as pendientes,
+        COUNT(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN 1 END) as creados_mes,
+        COUNT(CASE WHEN status IN ('resuelto', 'cerrado') AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN 1 END) as resueltos_mes,
+        COUNT(CASE WHEN priority = 'urgente' AND status NOT IN ('resuelto', 'cerrado') THEN 1 END) as urgentes_abiertos,
+        COUNT(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 END) as creados_semana,
+        COUNT(CASE WHEN status IN ('resuelto', 'cerrado') AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 END) as resueltos_semana
+    FROM tickets
+")->fetch();
+
+$ticketMetrics['tasa_resolucion'] = $ticketMetrics['total'] > 0 
+    ? round(($ticketMetrics['resueltos'] / $ticketMetrics['total']) * 100, 1) : 0;
+$ticketMetrics['tasa_resolucion_mes'] = $ticketMetrics['creados_mes'] > 0 
+    ? round(($ticketMetrics['resueltos_mes'] / $ticketMetrics['creados_mes']) * 100, 1) : 0;
+
+// Distribución por estado actual
+$ticketsByStatus = $pdo->query("
+    SELECT status, COUNT(*) as count 
+    FROM tickets 
+    GROUP BY status 
+    ORDER BY FIELD(status, 'abierto', 'en_proceso', 'pendiente', 'resuelto', 'cerrado')
+")->fetchAll();
+
+// Distribución por categoría
+$ticketsByCategory = $pdo->query("
+    SELECT category, COUNT(*) as count 
+    FROM tickets 
+    GROUP BY category 
+    ORDER BY count DESC
+")->fetchAll();
+
+// Rendimiento por técnico (últimos 30 días)
+$techPerformance = $pdo->query("
+    SELECT 
+        u.name as tech_name,
+        COUNT(*) as asignados,
+        COUNT(CASE WHEN t.status IN ('resuelto', 'cerrado') THEN 1 END) as resueltos,
+        ROUND(AVG(CASE WHEN t.status IN ('resuelto', 'cerrado') AND t.resolved_at IS NOT NULL 
+              THEN TIMESTAMPDIFF(HOUR, t.created_at, t.resolved_at) END), 1) as avg_horas_resolucion
+    FROM tickets t
+    JOIN users u ON t.assigned_to = u.id
+    WHERE t.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    GROUP BY u.id, u.name
+    ORDER BY resueltos DESC
+    LIMIT 10
+")->fetchAll();
+
+// Actividad por hora del día (últimos 30 días)
+$ticketsByHour = $pdo->query("
+    SELECT HOUR(created_at) as hora, COUNT(*) as count
+    FROM tickets
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    GROUP BY HOUR(created_at)
+    ORDER BY hora
+")->fetchAll();
+$hoursData = array_fill(0, 24, 0);
+foreach ($ticketsByHour as $h) { $hoursData[(int)$h['hora']] = (int)$h['count']; }
+
+// Tiempo promedio de resolución por prioridad
+$avgResByPriority = $pdo->query("
+    SELECT 
+        priority,
+        COUNT(*) as total,
+        ROUND(AVG(TIMESTAMPDIFF(HOUR, created_at, COALESCE(resolved_at, NOW()))), 1) as avg_horas
+    FROM tickets
+    WHERE status IN ('resuelto', 'cerrado') AND resolved_at IS NOT NULL
+    GROUP BY priority
+    ORDER BY FIELD(priority, 'urgente', 'alta', 'media', 'baja')
+")->fetchAll();
+
+// Tickets reabiertos (cambiados de cerrado/resuelto a otro estado)
+$reOpenedCount = $pdo->query("
+    SELECT COUNT(DISTINCT entity_id) as count
+    FROM activity_logs 
+    WHERE action = 'update' 
+      AND entity_type = 'ticket' 
+      AND details LIKE '%→ abierto%'
+      AND (details LIKE '%resuelto →%' OR details LIKE '%cerrado →%')
+      AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+")->fetch()['count'] ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -2177,7 +2279,7 @@ $topActions = $pdo->query("
             <!-- Barra de acciones -->
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                 <div>
-                    <span class="text-muted">Período: últimos 30 días &middot; <?= number_format($auditStats['total']) ?> registros totales</span>
+                    <p class="mb-1 text-muted small">Panel de auditoría y métricas del sistema de soporte. Aquí puedes supervisar la actividad, rendimiento de técnicos, cumplimiento SLA y tendencias de tickets.</p>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-primary btn-sm" onclick="downloadAuditCSV()">
@@ -2189,89 +2291,175 @@ $topActions = $pdo->query("
                 </div>
             </div>
 
-            <!-- Estadísticas -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-3 col-md-6">
+            <!-- ===== FILA 1: KPIs principales ===== -->
+            <div class="row g-3 mb-4">
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="stat-value"><?= number_format($auditStats['total']) ?></div>
-                                <div class="stat-label">Total Registros</div>
+                                <div class="stat-value"><?= number_format($ticketMetrics['total']) ?></div>
+                                <div class="stat-label">Total Tickets</div>
+                                <small class="text-muted"><?= $ticketMetrics['creados_mes'] ?> este mes · <?= $ticketMetrics['creados_semana'] ?> esta semana</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);"><i class="bi bi-journal-text text-white"></i></div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);"><i class="bi bi-ticket-perforated text-white"></i></div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="stat-value"><?= $auditStats['today'] ?></div>
-                                <div class="stat-label">Hoy</div>
+                                <div class="stat-value" style="color: #16a34a;"><?= number_format($ticketMetrics['resueltos']) ?></div>
+                                <div class="stat-label">Tickets Resueltos</div>
+                                <small class="text-muted"><?= $ticketMetrics['resueltos_mes'] ?> este mes · <?= $ticketMetrics['resueltos_semana'] ?> esta semana</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399);"><i class="bi bi-calendar-check text-white"></i></div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="bi bi-check-circle text-white"></i></div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="stat-value"><?= $auditStats['week'] ?></div>
-                                <div class="stat-label">Últimos 7 días</div>
+                                <div class="stat-value" style="color: #0ea5e9;"><?= $ticketMetrics['tasa_resolucion'] ?>%</div>
+                                <div class="stat-label">Tasa de Resolución</div>
+                                <small class="text-muted"><?= $ticketMetrics['tasa_resolucion_mes'] ?>% este mes · <?= $ticketMetrics['pendientes'] ?> pendientes</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);"><i class="bi bi-graph-up text-white"></i></div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);"><i class="bi bi-graph-up-arrow text-white"></i></div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="stat-value"><?= $auditStats['unique_users'] ?></div>
-                                <div class="stat-label">Usuarios Activos</div>
+                                <div class="stat-value" style="color: #dc2626;"><?= $ticketMetrics['urgentes_abiertos'] ?></div>
+                                <div class="stat-label">Urgentes Abiertos</div>
+                                <small class="text-muted"><?= $reOpenedCount ?> reabiertos (30 días)</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);"><i class="bi bi-people text-white"></i></div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);"><i class="bi bi-exclamation-triangle text-white"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Gráficos de Cumplimiento SLA -->
+            <!-- ===== FILA 2: Gráficos de tendencias ===== -->
             <div class="row g-4 mb-4">
-                <div class="col-lg-4">
+                <!-- Creados vs Resueltos por mes -->
+                <div class="col-lg-8">
                     <div class="card-custom">
                         <div class="card-header-custom">
-                            <h5 class="card-title-custom"><i class="bi bi-speedometer2 me-2"></i>Cumplimiento SLA General</h5>
+                            <h5 class="card-title-custom"><i class="bi bi-bar-chart-line me-2"></i>Tickets Creados vs Resueltos por Mes</h5>
                         </div>
-                        <div class="p-3 text-center">
-                            <div class="chart-container" style="height: 220px; position: relative;">
-                                <canvas id="slaComplianceChart"></canvas>
-                            </div>
-                            <div class="row mt-3 text-center small">
-                                <div class="col-4">
-                                    <div class="fw-bold text-success"><?= $slaStats['response_compliance'] ?>%</div>
-                                    <div class="text-muted">Respuesta</div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="fw-bold text-primary"><?= $slaStats['assignment_compliance'] ?>%</div>
-                                    <div class="text-muted">Asignación</div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="fw-bold text-info"><?= $slaStats['resolution_compliance'] ?>%</div>
-                                    <div class="text-muted">Resolución</div>
-                                </div>
+                        <div class="p-3">
+                            <div class="chart-container" style="height: 280px;">
+                                <canvas id="monthlyChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
+                <!-- Distribución por estado -->
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-pie-chart me-2"></i>Estado Actual de Tickets</h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="chart-container" style="height: 220px;">
+                                <canvas id="auditStatusChart"></canvas>
+                            </div>
+                            <div class="mt-2">
+                                <?php foreach ($ticketsByStatus as $s): ?>
+                                <div class="d-flex justify-content-between align-items-center py-1">
+                                    <span class="badge bg-<?= $statusColors[$s['status']] ?? 'secondary' ?> py-1"><?= $statusLabels[$s['status']] ?? ucfirst($s['status']) ?></span>
+                                    <span class="fw-bold small"><?= $s['count'] ?></span>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILA 3: Cumplimiento SLA + Categorías + Horas Pico ===== -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-speedometer2 me-2"></i>Cumplimiento SLA</h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="chart-container" style="height: 200px; position: relative;">
+                                <canvas id="slaComplianceChart"></canvas>
+                            </div>
+                            <div class="row mt-3 text-center small">
+                                <div class="col-4">
+                                    <div class="fw-bold <?= $slaStats['response_compliance'] >= 80 ? 'text-success' : ($slaStats['response_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['response_compliance'] ?>%</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">Respuesta</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold <?= $slaStats['assignment_compliance'] >= 80 ? 'text-success' : ($slaStats['assignment_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['assignment_compliance'] ?>%</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">Asignación</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold <?= $slaStats['resolution_compliance'] >= 80 ? 'text-success' : ($slaStats['resolution_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['resolution_compliance'] ?>%</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">Resolución</div>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="small text-muted">
+                                <div class="d-flex justify-content-between mb-1"><span>Prom. respuesta:</span><strong><?= $slaStats['avg_response'] ?>h</strong></div>
+                                <div class="d-flex justify-content-between mb-1"><span>Prom. asignación:</span><strong><?= $slaStats['avg_assignment'] ?>h</strong></div>
+                                <div class="d-flex justify-content-between mb-1"><span>Prom. resolución:</span><strong><?= $slaStats['avg_resolution'] ?>h</strong></div>
+                                <div class="d-flex justify-content-between"><span>Prom. trabajo:</span><strong><?= $slaStats['avg_work'] ?>h</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-tags me-2"></i>Tickets por Categoría</h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="chart-container" style="height: 220px;">
+                                <canvas id="auditCategoryChart"></canvas>
+                            </div>
+                            <div class="mt-2">
+                                <?php foreach ($ticketsByCategory as $cat): ?>
+                                <div class="d-flex justify-content-between align-items-center py-1">
+                                    <span class="small"><?= $categoryLabels[$cat['category']] ?? ucfirst($cat['category']) ?></span>
+                                    <span class="badge bg-light text-dark border"><?= $cat['count'] ?></span>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-clock me-2"></i>Horas Pico de Creación</h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="chart-container" style="height: 260px;">
+                                <canvas id="peakHoursChart"></canvas>
+                            </div>
+                            <p class="text-muted text-center mt-2" style="font-size: 0.7rem;">Distribución horaria de tickets creados (últimos 30 días)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILA 4: SLA por Prioridad + Tiempos Promedio + Rendimiento técnicos ===== -->
+            <div class="row g-4 mb-4">
                 <div class="col-lg-4">
                     <div class="card-custom">
                         <div class="card-header-custom">
                             <h5 class="card-title-custom"><i class="bi bi-bar-chart me-2"></i>SLA por Prioridad</h5>
                         </div>
                         <div class="p-3">
-                            <div class="chart-container" style="height: 260px;">
+                            <div class="chart-container" style="height: 280px;">
                                 <canvas id="slaPriorityChart"></canvas>
                             </div>
                         </div>
@@ -2283,9 +2471,118 @@ $topActions = $pdo->query("
                             <h5 class="card-title-custom"><i class="bi bi-clock-history me-2"></i>Tiempos Promedio</h5>
                         </div>
                         <div class="p-3">
-                            <div class="chart-container" style="height: 260px;">
+                            <div class="chart-container" style="height: 280px;">
                                 <canvas id="avgTimesChart"></canvas>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-custom">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom"><i class="bi bi-people me-2"></i>Rendimiento por Técnico</h5>
+                            <small class="text-muted">Últimos 30 días</small>
+                        </div>
+                        <div class="p-3">
+                            <?php if (empty($techPerformance)): ?>
+                            <div class="text-center py-4 text-muted"><i class="bi bi-person-x" style="font-size: 2rem;"></i><p class="mt-2 small">Sin datos de técnicos</p></div>
+                            <?php else: ?>
+                            <?php foreach ($techPerformance as $tech): 
+                                $techPct = $tech['asignados'] > 0 ? round(($tech['resueltos'] / $tech['asignados']) * 100) : 0;
+                                $techColor = $techPct >= 80 ? 'success' : ($techPct >= 50 ? 'warning' : 'danger');
+                            ?>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px;height:28px;background:var(--primary-soft);color:var(--primary-dark);font-weight:600;font-size:0.7rem;">
+                                            <?= strtoupper(substr($tech['tech_name'], 0, 1)) ?>
+                                        </div>
+                                        <span class="small fw-semibold"><?= htmlspecialchars($tech['tech_name']) ?></span>
+                                    </div>
+                                    <span class="badge bg-<?= $techColor ?>"><?= $techPct ?>%</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-<?= $techColor ?>" style="width: <?= $techPct ?>%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1" style="font-size: 0.65rem; color: #94a3b8;">
+                                    <span><?= $tech['resueltos'] ?>/<?= $tech['asignados'] ?> resueltos</span>
+                                    <span><?= $tech['avg_horas_resolucion'] ?? '-' ?>h prom.</span>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILA 5: Registros de Auditoría ===== -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">
+                    <h5 class="card-title-custom"><i class="bi bi-info-circle me-2"></i>¿Qué son los Registros de Auditoría?</h5>
+                </div>
+                <div class="p-3">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <p class="small mb-2">Los <strong>registros de auditoría</strong> son un log cronológico de todas las acciones realizadas en el sistema. Cada vez que un usuario inicia sesión, crea un ticket, cambia un estado, asigna un técnico o cualquier otra operación, queda registrado con fecha, hora, usuario y detalles.</p>
+                            <p class="small mb-0 text-muted">Esto permite trazabilidad completa, detección de anomalías y cumplimiento de políticas internas de seguridad.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex flex-column gap-1">
+                                <div class="d-flex align-items-center gap-2"><span class="badge bg-success">Login</span> <small class="text-muted">Inicio de sesión</small></div>
+                                <div class="d-flex align-items-center gap-2"><span class="badge bg-primary">Create</span> <small class="text-muted">Creación de recurso</small></div>
+                                <div class="d-flex align-items-center gap-2"><span class="badge bg-info">Update</span> <small class="text-muted">Modificación de datos</small></div>
+                                <div class="d-flex align-items-center gap-2"><span class="badge bg-danger">Delete</span> <small class="text-muted">Eliminación de recurso</small></div>
+                                <div class="d-flex align-items-center gap-2"><span class="badge bg-secondary">Logout</span> <small class="text-muted">Cierre de sesión</small></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas de registros -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value"><?= number_format($auditStats['total']) ?></div>
+                                <div class="stat-label">Total Registros</div>
+                            </div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1, #4f46e5);"><i class="bi bi-journal-text text-white"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value"><?= $auditStats['today'] ?></div>
+                                <div class="stat-label">Registros Hoy</div>
+                            </div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399);"><i class="bi bi-calendar-check text-white"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value"><?= $auditStats['week'] ?></div>
+                                <div class="stat-label">Últimos 7 días</div>
+                            </div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);"><i class="bi bi-graph-up text-white"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value"><?= $auditStats['unique_users'] ?></div>
+                                <div class="stat-label">Usuarios Activos</div>
+                            </div>
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);"><i class="bi bi-people text-white"></i></div>
                         </div>
                     </div>
                 </div>
@@ -2300,12 +2597,12 @@ $topActions = $pdo->query("
                     <form method="GET" class="row g-3">
                         <input type="hidden" name="page" value="auditoria">
                         <div class="col-md-3">
-                            <label class="form-label">Usuario</label>
-                            <input type="text" name="audit_user" class="form-control" value="<?= htmlspecialchars($auditFilterUser) ?>" placeholder="Nombre o email">
+                            <label class="form-label small">Usuario</label>
+                            <input type="text" name="audit_user" class="form-control form-control-sm" value="<?= htmlspecialchars($auditFilterUser) ?>" placeholder="Nombre o email">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Acción</label>
-                            <select name="audit_action" class="form-select">
+                            <label class="form-label small">Acción</label>
+                            <select name="audit_action" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 <?php foreach ($auditActions as $action): ?>
                                 <option value="<?= $action ?>" <?= $auditFilterAction === $action ? 'selected' : '' ?>><?= ucfirst($action) ?></option>
@@ -2313,8 +2610,8 @@ $topActions = $pdo->query("
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Entidad</label>
-                            <select name="audit_entity" class="form-select">
+                            <label class="form-label small">Entidad</label>
+                            <select name="audit_entity" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 <?php foreach ($auditEntities as $entity): ?>
                                 <option value="<?= $entity ?>" <?= $auditFilterEntity === $entity ? 'selected' : '' ?>><?= ucfirst($entity) ?></option>
@@ -2322,15 +2619,15 @@ $topActions = $pdo->query("
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Desde</label>
-                            <input type="date" name="audit_date_from" class="form-control" value="<?= $auditFilterDateFrom ?>">
+                            <label class="form-label small">Desde</label>
+                            <input type="date" name="audit_date_from" class="form-control form-control-sm" value="<?= $auditFilterDateFrom ?>">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Hasta</label>
-                            <input type="date" name="audit_date_to" class="form-control" value="<?= $auditFilterDateTo ?>">
+                            <label class="form-label small">Hasta</label>
+                            <input type="date" name="audit_date_to" class="form-control form-control-sm" value="<?= $auditFilterDateTo ?>">
                         </div>
                         <div class="col-md-1 d-flex align-items-end">
-                            <button type="submit" class="btn btn-dark w-100"><i class="bi bi-search"></i></button>
+                            <button type="submit" class="btn btn-dark btn-sm w-100"><i class="bi bi-search"></i></button>
                         </div>
                     </form>
                 </div>
@@ -2465,17 +2762,27 @@ $topActions = $pdo->query("
                             <?php if (empty($topActions)): ?>
                             <p class="text-muted text-center py-3">Sin datos</p>
                             <?php else: ?>
-                            <?php foreach ($topActions as $action): ?>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="badge bg-secondary"><?= ucfirst($action['action']) ?></span>
-                                <span class="fw-bold"><?= number_format($action['count']) ?></span>
+                            <?php 
+                            $maxAction = !empty($topActions) ? $topActions[0]['count'] : 1;
+                            foreach ($topActions as $action): 
+                                $actionPct = $maxAction > 0 ? round(($action['count'] / $maxAction) * 100) : 0;
+                                $aColor = $actionColors[$action['action']] ?? 'secondary';
+                            ?>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-<?= $aColor ?>"><?= ucfirst($action['action']) ?></span>
+                                    <span class="fw-bold small"><?= number_format($action['count']) ?></span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-<?= $aColor ?>" style="width: <?= $actionPct ?>%"></div>
+                                </div>
                             </div>
                             <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
                     </div>
                     
-                    <!-- Gráfico de actividad -->
+                    <!-- Gráfico de actividad 7 días -->
                     <div class="card-custom mb-4">
                         <div class="card-header-custom">
                             <h5 class="card-title-custom"><i class="bi bi-graph-up me-2"></i>Actividad (7 días)</h5>
@@ -2487,45 +2794,25 @@ $topActions = $pdo->query("
                         </div>
                     </div>
 
-                    <!-- Resumen de cumplimiento -->
+                    <!-- Resolución por prioridad -->
                     <div class="card-custom">
                         <div class="card-header-custom">
-                            <h5 class="card-title-custom"><i class="bi bi-clipboard-check me-2"></i>Resumen SLA</h5>
+                            <h5 class="card-title-custom"><i class="bi bi-stopwatch me-2"></i>Tiempo Resolución por Prioridad</h5>
                         </div>
                         <div class="p-3">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small mb-1">
-                                    <span>Primera Respuesta</span>
-                                    <span class="fw-bold <?= $slaStats['response_compliance'] >= 80 ? 'text-success' : ($slaStats['response_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['response_compliance'] ?>%</span>
+                            <?php if (empty($avgResByPriority)): ?>
+                            <p class="text-muted text-center py-3 small">Sin datos</p>
+                            <?php else: ?>
+                            <?php foreach ($avgResByPriority as $pr): ?>
+                            <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #f1f5f9;">
+                                <div>
+                                    <span class="badge bg-<?= $priorityColors[$pr['priority']] ?? 'secondary' ?>"><?= ucfirst($pr['priority']) ?></span>
+                                    <small class="text-muted ms-1">(<?= $pr['total'] ?> tickets)</small>
                                 </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar <?= $slaStats['response_compliance'] >= 80 ? 'bg-success' : ($slaStats['response_compliance'] >= 50 ? 'bg-warning' : 'bg-danger') ?>" style="width: <?= $slaStats['response_compliance'] ?>%"></div>
-                                </div>
+                                <span class="fw-bold small"><?= $pr['avg_horas'] ?>h prom.</span>
                             </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small mb-1">
-                                    <span>Asignación</span>
-                                    <span class="fw-bold <?= $slaStats['assignment_compliance'] >= 80 ? 'text-success' : ($slaStats['assignment_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['assignment_compliance'] ?>%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar <?= $slaStats['assignment_compliance'] >= 80 ? 'bg-success' : ($slaStats['assignment_compliance'] >= 50 ? 'bg-warning' : 'bg-danger') ?>" style="width: <?= $slaStats['assignment_compliance'] ?>%"></div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small mb-1">
-                                    <span>Resolución</span>
-                                    <span class="fw-bold <?= $slaStats['resolution_compliance'] >= 80 ? 'text-success' : ($slaStats['resolution_compliance'] >= 50 ? 'text-warning' : 'text-danger') ?>"><?= $slaStats['resolution_compliance'] ?>%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar <?= $slaStats['resolution_compliance'] >= 80 ? 'bg-success' : ($slaStats['resolution_compliance'] >= 50 ? 'bg-warning' : 'bg-danger') ?>" style="width: <?= $slaStats['resolution_compliance'] ?>%"></div>
-                                </div>
-                            </div>
-                            <hr>
-                            <div class="small text-muted">
-                                <div class="d-flex justify-content-between mb-1"><span>Prom. respuesta:</span><strong><?= $slaStats['avg_response'] ?>h</strong></div>
-                                <div class="d-flex justify-content-between mb-1"><span>Prom. asignación:</span><strong><?= $slaStats['avg_assignment'] ?>h</strong></div>
-                                <div class="d-flex justify-content-between"><span>Prom. resolución:</span><strong><?= $slaStats['avg_resolution'] ?>h</strong></div>
-                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -2533,7 +2820,115 @@ $topActions = $pdo->query("
             
             <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // Gráfico de actividad 7 días
+                // ===== Gráfico: Tickets Creados vs Resueltos por Mes =====
+                const monthlyCtx = document.getElementById('monthlyChart');
+                if (monthlyCtx) {
+                    new Chart(monthlyCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: <?= json_encode(array_column($monthlyTickets, 'mes_label')) ?>,
+                            datasets: [
+                                {
+                                    label: 'Creados',
+                                    data: <?= json_encode(array_map('intval', array_column($monthlyTickets, 'creados'))) ?>,
+                                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                    borderRadius: 6,
+                                    barPercentage: 0.7
+                                },
+                                {
+                                    label: 'Resueltos',
+                                    data: <?= json_encode(array_map('intval', array_column($monthlyTickets, 'resueltos'))) ?>,
+                                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                    borderRadius: 6,
+                                    barPercentage: 0.7
+                                },
+                                {
+                                    label: 'Resueltos en 24h',
+                                    data: <?= json_encode(array_map('intval', array_column($monthlyTickets, 'resueltos_24h'))) ?>,
+                                    backgroundColor: 'rgba(6, 182, 212, 0.5)',
+                                    borderRadius: 6,
+                                    barPercentage: 0.7
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                                x: { grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+
+                // ===== Gráfico: Distribución por Estado =====
+                const statusCtx = document.getElementById('auditStatusChart');
+                if (statusCtx) {
+                    const statusColorMap = { 'abierto': '#3b82f6', 'en_proceso': '#f59e0b', 'pendiente': '#6b7280', 'resuelto': '#10b981', 'cerrado': '#1f2937' };
+                    new Chart(statusCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: [<?php foreach($ticketsByStatus as $s) echo "'" . ($statusLabels[$s['status']] ?? ucfirst($s['status'])) . "',"; ?>],
+                            datasets: [{ 
+                                data: [<?php foreach($ticketsByStatus as $s) echo $s['count'] . ','; ?>], 
+                                backgroundColor: [<?php foreach($ticketsByStatus as $s) echo "'" . ($statusColorMap[$s['status']] ?? '#94a3b8') . "',"; ?>],
+                                borderWidth: 2, borderColor: '#fff' 
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+                    });
+                }
+
+                // ===== Gráfico: Categorías =====
+                const catCtx = document.getElementById('auditCategoryChart');
+                if (catCtx) {
+                    const catColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+                    new Chart(catCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: [<?php foreach($ticketsByCategory as $c) echo "'" . ($categoryLabels[$c['category']] ?? ucfirst($c['category'])) . "',"; ?>],
+                            datasets: [{ 
+                                data: [<?php foreach($ticketsByCategory as $c) echo $c['count'] . ','; ?>], 
+                                backgroundColor: catColors.slice(0, <?= count($ticketsByCategory) ?>),
+                                borderWidth: 2, borderColor: '#fff'
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false } } }
+                    });
+                }
+
+                // ===== Gráfico: Horas Pico =====
+                const peakCtx = document.getElementById('peakHoursChart');
+                if (peakCtx) {
+                    const hoursData = <?= json_encode(array_values($hoursData)) ?>;
+                    const hoursLabels = Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0') + ':00');
+                    const maxHour = Math.max(...hoursData);
+                    new Chart(peakCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: hoursLabels,
+                            datasets: [{
+                                data: hoursData,
+                                backgroundColor: hoursData.map(v => v === maxHour && maxHour > 0 ? '#ef4444' : 'rgba(59, 130, 246, 0.6)'),
+                                borderRadius: 3,
+                                barPercentage: 0.9
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ctx.parsed.y + ' tickets' } } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                                x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 90 } }
+                            }
+                        }
+                    });
+                }
+
+                // ===== Gráfico: Actividad 7 días =====
                 const auditCtx = document.getElementById('auditChart');
                 if (auditCtx) {
                     new Chart(auditCtx, {
@@ -2553,46 +2948,29 @@ $topActions = $pdo->query("
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } },
-                            scales: {
-                                y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                            }
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                         }
                     });
                 }
 
-                // Gráfico Doughnut - Cumplimiento SLA General
+                // ===== Gráfico: Cumplimiento SLA General =====
                 const slaCtx = document.getElementById('slaComplianceChart');
                 if (slaCtx) {
                     new Chart(slaCtx, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Respuesta OK', 'Respuesta Incumplida', 'Asignación OK', 'Asignación Incumplida', 'Resolución OK', 'Resolución Incumplida'],
+                            labels: ['Resp. OK', 'Resp. Incumplida', 'Asign. OK', 'Asign. Incumplida', 'Resol. OK', 'Resol. Incumplida'],
                             datasets: [{
-                                data: [
-                                    <?= $slaStats['within_response'] ?>,
-                                    <?= $slaStats['breached_response'] ?>,
-                                    <?= $slaStats['within_assignment'] ?>,
-                                    <?= $slaStats['breached_assignment'] ?>,
-                                    <?= $slaStats['within_resolution'] ?>,
-                                    <?= $slaStats['breached_resolution'] ?>
-                                ],
+                                data: [<?= $slaStats['within_response'] ?>, <?= $slaStats['breached_response'] ?>, <?= $slaStats['within_assignment'] ?>, <?= $slaStats['breached_assignment'] ?>, <?= $slaStats['within_resolution'] ?>, <?= $slaStats['breached_resolution'] ?>],
                                 backgroundColor: ['#10b981', '#f87171', '#3b82f6', '#fb923c', '#06b6d4', '#a78bfa'],
-                                borderWidth: 2,
-                                borderColor: '#fff'
+                                borderWidth: 2, borderColor: '#fff'
                             }]
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: '60%',
-                            plugins: {
-                                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
-                            }
-                        }
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 }, padding: 6 } } } }
                     });
                 }
 
-                // Gráfico Barras - SLA por Prioridad
+                // ===== Gráfico: SLA por Prioridad =====
                 const priCtx = document.getElementById('slaPriorityChart');
                 if (priCtx) {
                     <?php
@@ -2629,15 +3007,12 @@ $topActions = $pdo->query("
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
-                            scales: {
-                                x: { stacked: false },
-                                y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                            }
+                            scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                         }
                     });
                 }
 
-                // Gráfico Barras Horizontales - Tiempos Promedio
+                // ===== Gráfico: Tiempos Promedio =====
                 const avgCtx = document.getElementById('avgTimesChart');
                 if (avgCtx) {
                     new Chart(avgCtx, {
@@ -2656,13 +3031,8 @@ $topActions = $pdo->query("
                             responsive: true,
                             maintainAspectRatio: false,
                             indexAxis: 'y',
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.x + ' horas'; } } }
-                            },
-                            scales: {
-                                x: { beginAtZero: true, title: { display: true, text: 'Horas', font: { size: 11 } } }
-                            }
+                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.x + ' horas'; } } } },
+                            scales: { x: { beginAtZero: true, title: { display: true, text: 'Horas', font: { size: 11 } } } }
                         }
                     });
                 }
@@ -2699,7 +3069,7 @@ $topActions = $pdo->query("
                 const reportDate = new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
 
                 // Capturar gráficos como imagen
-                const charts = ['slaComplianceChart', 'slaPriorityChart', 'avgTimesChart', 'auditChart'];
+                const charts = ['slaComplianceChart', 'slaPriorityChart', 'avgTimesChart', 'auditChart', 'monthlyChart', 'auditStatusChart', 'auditCategoryChart', 'peakHoursChart'];
                 const chartImages = {};
                 charts.forEach(id => {
                     const c = document.getElementById(id);
@@ -2762,15 +3132,21 @@ $topActions = $pdo->query("
 <h1>Informe de Auditoría del Sistema</h1>
 <div class="header-info">
     <span>Empresa Portuaria Coquimbo — Soporte TI</span>
-    <span>Generado el ${reportDate}</span>
+    <span>Generado el \${reportDate}</span>
 </div>
 
-<h2>Estadísticas Generales</h2>
+<h2>Métricas de Tickets</h2>
 <div class="stats-grid">
-    <div class="stat-box"><div class="number"><?= number_format($auditStats['total']) ?></div><div class="label">Total Registros</div></div>
-    <div class="stat-box"><div class="number"><?= $auditStats['today'] ?></div><div class="label">Registros Hoy</div></div>
-    <div class="stat-box"><div class="number"><?= $auditStats['week'] ?></div><div class="label">Últimos 7 Días</div></div>
-    <div class="stat-box"><div class="number"><?= $auditStats['unique_users'] ?></div><div class="label">Usuarios Activos</div></div>
+    <div class="stat-box"><div class="number"><?= number_format($ticketMetrics['total']) ?></div><div class="label">Total Tickets</div></div>
+    <div class="stat-box"><div class="number" style="color:#16a34a;"><?= number_format($ticketMetrics['resueltos']) ?></div><div class="label">Resueltos</div></div>
+    <div class="stat-box"><div class="number" style="color:#0ea5e9;"><?= $ticketMetrics['tasa_resolucion'] ?>%</div><div class="label">Tasa Resolución</div></div>
+    <div class="stat-box"><div class="number" style="color:#dc2626;"><?= $ticketMetrics['urgentes_abiertos'] ?></div><div class="label">Urgentes Abiertos</div></div>
+</div>
+<div class="stats-grid">
+    <div class="stat-box"><div class="number"><?= $ticketMetrics['creados_mes'] ?></div><div class="label">Creados (mes)</div></div>
+    <div class="stat-box"><div class="number"><?= $ticketMetrics['resueltos_mes'] ?></div><div class="label">Resueltos (mes)</div></div>
+    <div class="stat-box"><div class="number"><?= $ticketMetrics['creados_semana'] ?></div><div class="label">Creados (semana)</div></div>
+    <div class="stat-box"><div class="number"><?= $ticketMetrics['resueltos_semana'] ?></div><div class="label">Resueltos (semana)</div></div>
 </div>
 
 <h2>Cumplimiento SLA (últimos 30 días)</h2>
@@ -2795,21 +3171,33 @@ $topActions = $pdo->query("
 
 <h2>Gráficos</h2>
 <div class="charts-grid">
-    ${chartImages['slaComplianceChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Cumplimiento SLA General</h3><img src="' + chartImages['slaComplianceChart'] + '"></div>' : ''}
-    ${chartImages['slaPriorityChart'] ? '<div><h3 style="font-size:12px;color:#475467;">SLA por Prioridad</h3><img src="' + chartImages['slaPriorityChart'] + '"></div>' : ''}
-    ${chartImages['avgTimesChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Tiempos Promedio</h3><img src="' + chartImages['avgTimesChart'] + '"></div>' : ''}
-    ${chartImages['auditChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Actividad Reciente</h3><img src="' + chartImages['auditChart'] + '"></div>' : ''}
+    \${chartImages['monthlyChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Creados vs Resueltos Mensual</h3><img src="' + chartImages['monthlyChart'] + '"></div>' : ''}
+    \${chartImages['auditStatusChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Estado de Tickets</h3><img src="' + chartImages['auditStatusChart'] + '"></div>' : ''}
+    \${chartImages['slaComplianceChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Cumplimiento SLA</h3><img src="' + chartImages['slaComplianceChart'] + '"></div>' : ''}
+    \${chartImages['slaPriorityChart'] ? '<div><h3 style="font-size:12px;color:#475467;">SLA por Prioridad</h3><img src="' + chartImages['slaPriorityChart'] + '"></div>' : ''}
+    \${chartImages['avgTimesChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Tiempos Promedio</h3><img src="' + chartImages['avgTimesChart'] + '"></div>' : ''}
+    \${chartImages['peakHoursChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Horas Pico</h3><img src="' + chartImages['peakHoursChart'] + '"></div>' : ''}
+    \${chartImages['auditCategoryChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Categorías</h3><img src="' + chartImages['auditCategoryChart'] + '"></div>' : ''}
+    \${chartImages['auditChart'] ? '<div><h3 style="font-size:12px;color:#475467;">Actividad Reciente</h3><img src="' + chartImages['auditChart'] + '"></div>' : ''}
+</div>
+
+<h2>Estadísticas de Auditoría</h2>
+<div class="stats-grid">
+    <div class="stat-box"><div class="number"><?= number_format($auditStats['total']) ?></div><div class="label">Total Registros</div></div>
+    <div class="stat-box"><div class="number"><?= $auditStats['today'] ?></div><div class="label">Registros Hoy</div></div>
+    <div class="stat-box"><div class="number"><?= $auditStats['week'] ?></div><div class="label">Últimos 7 Días</div></div>
+    <div class="stat-box"><div class="number"><?= $auditStats['unique_users'] ?></div><div class="label">Usuarios Activos</div></div>
 </div>
 
 <h2>Registros de Actividad (página actual)</h2>
 <table>
 <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Detalles</th></tr></thead>
-<tbody>${tableRows || '<tr><td colspan="5" style="text-align:center;padding:20px;">Sin registros</td></tr>'}</tbody>
+<tbody>\${tableRows || '<tr><td colspan="5" style="text-align:center;padding:20px;">Sin registros</td></tr>'}</tbody>
 </table>
 
 <div class="footer">
     <p>Empresa Portuaria Coquimbo — Sistema de Soporte TI</p>
-    <p>Informe generado automáticamente · ${reportDate}</p>
+    <p>Informe generado automáticamente · \${reportDate}</p>
 </div>
 </body></html>`;
 
