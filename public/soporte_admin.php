@@ -1827,9 +1827,10 @@ unset($tp);
                         <div class="sn-overview-body" style="max-height: 200px; overflow-y: auto;">
                             <?php if (!empty($ticketsPerTechnician)): ?>
                             <?php 
-                            $maxTechTickets = max(array_column($ticketsPerTechnician, 'total'));
+                            $techTicketCounts = array_column($ticketsPerTechnician, 'tickets_asignados');
+                            $maxTechTickets = !empty($techTicketCounts) ? max($techTicketCounts) : 1;
                             foreach ($ticketsPerTechnician as $tech): 
-                                $pctBar = $maxTechTickets > 0 ? round(($tech['total'] / $maxTechTickets) * 100) : 0;
+                                $pctBar = $maxTechTickets > 0 ? round(($tech['tickets_asignados'] / $maxTechTickets) * 100) : 0;
                             ?>
                             <div class="sn-overview-row">
                                 <div class="d-flex align-items-center gap-2">
@@ -1840,7 +1841,7 @@ unset($tp);
                                     <div style="width:60px; height:6px; background:var(--gray-100); border-radius:3px; overflow:hidden;">
                                         <div style="height:100%; width:<?= $pctBar ?>%; background:var(--primary-dark); border-radius:3px;"></div>
                                     </div>
-                                    <span class="sn-count-badge bg-primary text-white"><?= $tech['total'] ?></span>
+                                    <span class="sn-count-badge bg-primary text-white"><?= $tech['tickets_asignados'] ?></span>
                                 </div>
                             </div>
                             <?php endforeach; ?>
@@ -2094,7 +2095,7 @@ unset($tp);
                             'correo': 'Correo', 'impresora': 'Impresora', 'telefonia': 'Telefonía', 'otro': 'Otro'
                         })[c] || c),
                         datasets: [{
-                            data: <?= json_encode(array_column($ticketsByCategory ?? [], 'total')) ?>,
+                            data: <?= json_encode(array_column($ticketsByCategory ?? [], 'count')) ?>,
                             backgroundColor: ['#3b82f6','#f59e0b','#10b981','#8b5cf6','#ec4899','#6366f1','#14b8a6','#94a3b8'],
                             borderWidth: 2,
                             borderColor: '#fff'
@@ -2133,7 +2134,7 @@ unset($tp);
                 // Hourly Activity
                 <?php
                 $hourlyData = array_fill(0, 24, 0);
-                if (!empty($ticketsByHour)) { foreach ($ticketsByHour as $h) { $hourlyData[(int)$h['hour']] = (int)$h['total']; } }
+                if (!empty($ticketsByHour)) { foreach ($ticketsByHour as $h) { $hourlyData[(int)$h['hora']] = (int)$h['count']; } }
                 $hourLabels = [];
                 for ($i = 7; $i <= 20; $i++) $hourLabels[] = str_pad($i, 2, '0', STR_PAD_LEFT) . ':00';
                 $hourValues = array_slice($hourlyData, 7, 14);
