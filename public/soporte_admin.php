@@ -1798,7 +1798,7 @@ unset($tp);
             <!-- Toolbar: Breadcrumb + Search -->
             <div class="sn-toolbar">
                 <div class="sn-breadcrumb">
-                    <a href="?page=dashboard">Incidents</a>
+                    <a href="?page=dashboard">Incidentes</a>
                     <span class="separator">&gt;</span>
                     <span style="color: var(--gray-900); font-weight: 600;">Vista por Estado</span>
                 </div>
@@ -1814,21 +1814,26 @@ unset($tp);
             
             <!-- Kanban: Cards por estado - Grid 2x3 -->
             <style>
-                .lane-card { background:#fff; border:1px solid #d1d5db; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; }
-                .lane-header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid #d1d5db; background:#f9fafb; }
-                .lane-header .lane-title { font-weight:700; font-size:0.85rem; color:#1f2937; display:flex; align-items:center; gap:8px; }
-                .lane-header .lane-count { background:#e5e7eb; color:#374151; font-size:0.7rem; font-weight:600; padding:2px 8px; border-radius:10px; }
-                .lane-body { max-height:320px; overflow-y:auto; overflow-x:auto; }
-                .lane-body::-webkit-scrollbar { width:6px; height:6px; }
-                .lane-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+                .lane-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.2s; }
+                .lane-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.07); }
+                .lane-header { display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #e2e8f0; background:#fff; }
+                .lane-header .lane-title { font-weight:700; font-size:0.88rem; color:#1e293b; display:flex; align-items:center; gap:8px; }
+                .lane-header .lane-title i { font-size:1rem; color:#64748b; }
+                .lane-header .lane-count { background:#f1f5f9; color:#475569; font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:12px; min-width:24px; text-align:center; }
+                .lane-body { max-height:380px; overflow-y:auto; overflow-x:auto; }
+                .lane-body::-webkit-scrollbar { width:5px; height:5px; }
+                .lane-body::-webkit-scrollbar-track { background:transparent; }
+                .lane-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
                 .lane-body::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
                 .lane-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
-                .lane-table thead th { position:sticky; top:0; background:#f9fafb; padding:8px 10px; font-weight:600; color:#6b7280; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
-                .lane-table tbody td { padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; }
-                .lane-table tbody tr { cursor:pointer; transition: background 0.15s; }
-                .lane-table tbody tr:hover { background:#f0f4ff; }
-                .lane-empty { text-align:center; padding:30px 10px; color:#9ca3af; font-size:0.8rem; }
-                .priority-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:600; }
+                .lane-table thead th { position:sticky; top:0; z-index:1; background:#fafbfc; padding:9px 12px; font-weight:600; color:#64748b; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.4px; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
+                .lane-table tbody td { padding:8px 12px; border-bottom:1px solid #f1f5f9; color:#334155; vertical-align:middle; }
+                .lane-table tbody tr { cursor:pointer; transition: background 0.12s ease; }
+                .lane-table tbody tr:hover { background:#f8fafc; }
+                .lane-table tbody tr:active { background:#f1f5f9; }
+                .lane-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:0.82rem; }
+                .lane-empty i { font-size:1.5rem; display:block; margin-bottom:6px; }
+                .priority-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; white-space:nowrap; }
                 .priority-pill.urgente { background:#fef2f2; color:#dc2626; }
                 .priority-pill.alta { background:#fff7ed; color:#ea580c; }
                 .priority-pill.media { background:#eff6ff; color:#2563eb; }
