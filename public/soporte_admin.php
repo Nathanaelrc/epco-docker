@@ -1812,67 +1812,83 @@ unset($tp);
                 </div>
             </div>
             
-            <!-- Kanban: Cards por estado -->
+            <!-- Kanban: Cards por estado - Grid 2x3 -->
+            <style>
+                .lane-card { background:#fff; border:1px solid #d1d5db; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; }
+                .lane-header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid #d1d5db; background:#f9fafb; }
+                .lane-header .lane-title { font-weight:700; font-size:0.85rem; color:#1f2937; display:flex; align-items:center; gap:8px; }
+                .lane-header .lane-count { background:#e5e7eb; color:#374151; font-size:0.7rem; font-weight:600; padding:2px 8px; border-radius:10px; }
+                .lane-body { max-height:320px; overflow-y:auto; overflow-x:auto; }
+                .lane-body::-webkit-scrollbar { width:6px; height:6px; }
+                .lane-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+                .lane-body::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+                .lane-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+                .lane-table thead th { position:sticky; top:0; background:#f9fafb; padding:8px 10px; font-weight:600; color:#6b7280; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+                .lane-table tbody td { padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; }
+                .lane-table tbody tr { cursor:pointer; transition: background 0.15s; }
+                .lane-table tbody tr:hover { background:#f0f4ff; }
+                .lane-empty { text-align:center; padding:30px 10px; color:#9ca3af; font-size:0.8rem; }
+                .priority-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:600; }
+                .priority-pill.urgente { background:#fef2f2; color:#dc2626; }
+                .priority-pill.alta { background:#fff7ed; color:#ea580c; }
+                .priority-pill.media { background:#eff6ff; color:#2563eb; }
+                .priority-pill.baja { background:#f0fdf4; color:#16a34a; }
+            </style>
             <div class="row g-3" id="dashStatusLanes">
                 <?php
                 $laneConfig = [
-                    'abierto'    => ['label' => 'Nuevos',      'color' => '#0c5a8a', 'icon' => 'bi-plus-circle'],
-                    'en_proceso' => ['label' => 'En Proceso',  'color' => '#0c5a8a', 'icon' => 'bi-gear'],
-                    'pendiente'  => ['label' => 'Pendientes',  'color' => '#0c5a8a', 'icon' => 'bi-hourglass-split'],
-                    'resuelto'   => ['label' => 'Resueltos',   'color' => '#0c5a8a', 'icon' => 'bi-check-circle'],
-                    'cerrado'    => ['label' => 'Cerrados',    'color' => '#0c5a8a', 'icon' => 'bi-lock'],
+                    'abierto'    => ['label' => 'Nuevos',      'icon' => 'bi-plus-circle'],
+                    'en_proceso' => ['label' => 'En Proceso',  'icon' => 'bi-gear'],
+                    'pendiente'  => ['label' => 'Pendientes',  'icon' => 'bi-hourglass-split'],
+                    'resuelto'   => ['label' => 'Resueltos',   'icon' => 'bi-check-circle'],
+                    'cerrado'    => ['label' => 'Cerrados',    'icon' => 'bi-lock'],
                 ];
                 foreach ($laneConfig as $statusKey => $lane):
                     $laneTickets = $ticketsByStatusGroup[$statusKey] ?? [];
                 ?>
-                <div class="col-12">
-                    <div class="sn-overview-card">
-                        <div class="sn-overview-header" style="background: <?= $lane['color'] ?>;">
-                            <span><i class="bi <?= $lane['icon'] ?> me-2"></i><?= $lane['label'] ?></span>
-                            <span class="sn-badge"><?= count($laneTickets) ?></span>
+                <div class="col-lg-6">
+                    <div class="lane-card">
+                        <div class="lane-header">
+                            <span class="lane-title"><i class="bi <?= $lane['icon'] ?>"></i><?= $lane['label'] ?></span>
+                            <span class="lane-count"><?= count($laneTickets) ?></span>
                         </div>
                         <?php if (!empty($laneTickets)): ?>
-                        <div class="table-responsive">
-                            <table class="table sn-table mb-0">
+                        <div class="lane-body">
+                            <table class="lane-table">
                                 <thead>
                                     <tr>
-                                        <th>Número</th>
-                                        <th>Descripción</th>
-                                        <th>Solicitante</th>
-                                        <th>Prioridad</th>
-                                        <th>Categoría</th>
-                                        <th>Asignado a</th>
-                                        <th>Creado</th>
-                                        <th>Actualizado</th>
+                                        <th style="min-width:110px">Número</th>
+                                        <th style="min-width:160px">Descripción</th>
+                                        <th style="min-width:110px">Solicitante</th>
+                                        <th style="min-width:80px">Prioridad</th>
+                                        <th style="min-width:80px">Categoría</th>
+                                        <th style="min-width:100px">Asignado a</th>
+                                        <th style="min-width:80px">Creado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 <?php foreach ($laneTickets as $t): ?>
                                 <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="dash-ticket-row" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
-                                    <td><span class="sn-link"><?= $t['ticket_number'] ?></span></td>
-                                    <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
+                                    <td><span class="sn-link" style="font-size:0.75rem"><?= $t['ticket_number'] ?></span></td>
+                                    <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
                                     <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="user-info-avatar" style="width:24px;height:24px;font-size:0.6rem;"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
-                                            <span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <div class="user-info-avatar" style="width:20px;height:20px;font-size:0.55rem;"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
+                                            <span><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
                                         </div>
                                     </td>
-                                    <td>
-                                        <span class="sn-priority-dot <?= $t['priority'] ?>"></span>
-                                        <span class="small"><?= ucfirst($t['priority']) ?></span>
-                                    </td>
-                                    <td><span class="small"><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></span></td>
-                                    <td><span class="small"><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></span></td>
-                                    <td class="text-nowrap small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
-                                    <td class="text-nowrap small text-muted"><?= date('d/m H:i', strtotime($t['updated_at'] ?? $t['created_at'])) ?></td>
+                                    <td><span class="priority-pill <?= $t['priority'] ?>"><span class="sn-priority-dot <?= $t['priority'] ?>"></span><?= ucfirst($t['priority']) ?></span></td>
+                                    <td><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></td>
+                                    <td><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></td>
+                                    <td class="text-nowrap text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
                         <?php else: ?>
-                        <div class="text-center py-3 text-muted small">
-                            <i class="bi bi-inbox"></i> Sin tickets en este estado
+                        <div class="lane-empty">
+                            <i class="bi bi-inbox"></i> Sin tickets
                         </div>
                         <?php endif; ?>
                     </div>
@@ -1886,10 +1902,9 @@ unset($tp);
                 document.querySelectorAll('.dash-ticket-row').forEach(row => {
                     row.style.display = row.dataset.search.includes(q) ? '' : 'none';
                 });
-                // Actualizar contadores en headers
-                document.querySelectorAll('#dashStatusLanes .sn-overview-card').forEach(card => {
+                document.querySelectorAll('#dashStatusLanes .lane-card').forEach(card => {
                     const visible = card.querySelectorAll('.dash-ticket-row:not([style*="display: none"])').length;
-                    const badge = card.querySelector('.sn-badge');
+                    const badge = card.querySelector('.lane-count');
                     if (badge) badge.textContent = visible;
                 });
             }
