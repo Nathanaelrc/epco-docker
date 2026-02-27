@@ -3823,14 +3823,14 @@ tr:nth-child(even){background:#f8fafc}
                 // ===== Gráfico: Distribución por Estado =====
                 const statusCtx = document.getElementById('auditStatusChart');
                 if (statusCtx) {
-                    const statusColorMap = { 'abierto': '#3b82f6', 'en_proceso': '#f59e0b', 'pendiente': '#6b7280', 'resuelto': '#10b981', 'cerrado': '#1f2937' };
+                    <?php $statusColorMapChart = ['asignado' => '#0ea5e9', 'abierto' => '#3b82f6', 'en_proceso' => '#f59e0b', 'pendiente' => '#6b7280', 'resuelto' => '#10b981', 'cerrado' => '#1f2937']; ?>
                     new Chart(statusCtx, {
                         type: 'doughnut',
                         data: {
                             labels: [<?php foreach($ticketsByStatus as $s) echo "'" . ($statusLabels[$s['status']] ?? ucfirst($s['status'])) . "',"; ?>],
                             datasets: [{ 
                                 data: [<?php foreach($ticketsByStatus as $s) echo $s['count'] . ','; ?>], 
-                                backgroundColor: [<?php foreach($ticketsByStatus as $s) echo "'" . ($statusColorMap[$s['status']] ?? '#94a3b8') . "',"; ?>],
+                                backgroundColor: [<?php foreach($ticketsByStatus as $s) echo "'" . ($statusColorMapChart[$s['status']] ?? '#94a3b8') . "',"; ?>],
                                 borderWidth: 2, borderColor: '#fff' 
                             }]
                         },
