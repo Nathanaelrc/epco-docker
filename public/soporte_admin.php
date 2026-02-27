@@ -1744,27 +1744,27 @@ unset($tp);
                     <div class="sn-stat-label">Total</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div class="sn-stat-number" style="color:#3b82f6"><?= $stats['abiertos'] ?></div>
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['abiertos'] ?></div>
                     <div class="sn-stat-label">Nuevos</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div class="sn-stat-number" style="color:#8b5cf6"><?= $stats['en_proceso'] ?></div>
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['en_proceso'] ?></div>
                     <div class="sn-stat-label">En Proceso</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div class="sn-stat-number" style="color:#f59e0b"><?= $stats['pendientes'] ?? 0 ?></div>
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['pendientes'] ?? 0 ?></div>
                     <div class="sn-stat-label">Pendientes</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div class="sn-stat-number" style="color:#10b981"><?= $stats['resueltos'] ?? 0 ?></div>
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['resueltos'] ?? 0 ?></div>
                     <div class="sn-stat-label">Resueltos</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div class="sn-stat-number" style="color:#6b7280"><?= $stats['cerrados'] ?></div>
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['cerrados'] ?></div>
                     <div class="sn-stat-label">Cerrados</div>
                 </div>
                 <div class="sn-stat-item">
-                    <div class="sn-stat-number" style="color:#dc2626"><?= $stats['urgentes'] ?></div>
+                    <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['urgentes'] ?></div>
                     <div class="sn-stat-label">Urgentes</div>
                     <?php if ($stats['urgentes'] > 0): ?>
                     <div class="sn-stat-trend text-danger"><i class="bi bi-exclamation-circle"></i></div>
@@ -1816,11 +1816,11 @@ unset($tp);
             <div class="row g-3" id="dashStatusLanes">
                 <?php
                 $laneConfig = [
-                    'abierto'    => ['label' => 'Nuevos',      'color' => '#3b82f6', 'icon' => 'bi-plus-circle'],
-                    'en_proceso' => ['label' => 'En Proceso',  'color' => '#8b5cf6', 'icon' => 'bi-gear'],
-                    'pendiente'  => ['label' => 'Pendientes',  'color' => '#f59e0b', 'icon' => 'bi-hourglass-split'],
-                    'resuelto'   => ['label' => 'Resueltos',   'color' => '#10b981', 'icon' => 'bi-check-circle'],
-                    'cerrado'    => ['label' => 'Cerrados',    'color' => '#6b7280', 'icon' => 'bi-lock'],
+                    'abierto'    => ['label' => 'Nuevos',      'color' => '#0c5a8a', 'icon' => 'bi-plus-circle'],
+                    'en_proceso' => ['label' => 'En Proceso',  'color' => '#0c5a8a', 'icon' => 'bi-gear'],
+                    'pendiente'  => ['label' => 'Pendientes',  'color' => '#0c5a8a', 'icon' => 'bi-hourglass-split'],
+                    'resuelto'   => ['label' => 'Resueltos',   'color' => '#0c5a8a', 'icon' => 'bi-check-circle'],
+                    'cerrado'    => ['label' => 'Cerrados',    'color' => '#0c5a8a', 'icon' => 'bi-lock'],
                 ];
                 foreach ($laneConfig as $statusKey => $lane):
                     $laneTickets = $ticketsByStatusGroup[$statusKey] ?? [];
