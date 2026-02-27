@@ -599,14 +599,19 @@ $tickets = $pdo->query("
            COALESCE(u.name, t.user_name) as user_name, 
            a.name as assigned_name,
            (SELECT COUNT(*) FROM ticket_attachments ta WHERE ta.ticket_id = t.id) as attachment_count,
-           (SELECT COUNT(*) FROM ticket_comments tc WHERE tc.ticket_id = t.id AND tc.comment LIKE '%Archivos adjuntos%') as comment_attachments
+           (SELECT COUNT(*) FROM ticket_comments tc WHERE tc.ticket_id = t.id AND tc.comment LIKE '%Archivos adjuntos%') as comment_attachments,
+           CASE WHEN t.status IN ('resuelto', 'cerrado')
+               THEN COALESCE(sla.resolution_minutes, CASE t.priority WHEN 'urgente' THEN 240 WHEN 'alta' THEN 480 WHEN 'media' THEN 1440 ELSE 2880 END)
+                    - TIMESTAMPDIFF(MINUTE, t.created_at, COALESCE(t.resolved_at, t.updated_at))
+               ELSE COALESCE(sla.resolution_minutes, CASE t.priority WHEN 'urgente' THEN 240 WHEN 'alta' THEN 480 WHEN 'media' THEN 1440 ELSE 2880 END)
+                    - TIMESTAMPDIFF(MINUTE, t.created_at, NOW())
+           END as sla_remaining_min
     FROM tickets t 
     LEFT JOIN users u ON t.user_id = u.id 
     LEFT JOIN users a ON t.assigned_to = a.id
+    LEFT JOIN sla_settings sla ON sla.priority = t.priority AND sla.is_active = 1
     $where
-    ORDER BY 
-        CASE t.priority WHEN 'urgente' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 ELSE 4 END,
-        t.created_at DESC
+    ORDER BY sla_remaining_min ASC
     LIMIT 100
 ")->fetchAll();
 
@@ -1806,7 +1811,14 @@ unset($tp);
                     <i class="bi bi-search"></i>
                     <input type="text" id="dashSearchInput" placeholder="Buscar tickets por número, título, usuario..." onkeyup="filterDashCards()">
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="auto-refresh-toggle d-flex align-items-center gap-1" style="font-size:0.75rem;">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="autoRefreshToggle" style="cursor:pointer;">
+                            <label class="form-check-label text-muted" for="autoRefreshToggle" style="cursor:pointer; font-size:0.72rem;">Auto</label>
+                        </div>
+                        <span id="refreshCountdown" class="text-muted" style="font-size:0.68rem; min-width:28px;"></span>
+                    </div>
                     <a href="?page=cumplimiento" class="btn btn-outline-dark btn-sm"><i class="bi bi-speedometer2 me-1"></i>Cumplimiento</a>
                     <a href="?page=auditoria" class="btn btn-outline-dark btn-sm"><i class="bi bi-journal-text me-1"></i>Auditoría</a>
                 </div>
@@ -1866,6 +1878,7 @@ unset($tp);
                                         <th style="min-width:160px">Descripción</th>
                                         <th style="min-width:110px">Solicitante</th>
                                         <th style="min-width:80px">Prioridad</th>
+                                        <th style="min-width:70px">SLA</th>
                                         <th style="min-width:80px">Categoría</th>
                                         <th style="min-width:100px">Asignado a</th>
                                         <th style="min-width:80px">Creado</th>
@@ -1883,6 +1896,13 @@ unset($tp);
                                         </div>
                                     </td>
                                     <td><span class="priority-pill <?= $t['priority'] ?>"><span class="sn-priority-dot <?= $t['priority'] ?>"></span><?= ucfirst($t['priority']) ?></span></td>
+                                    <td><?php
+                                        $slaMins = (int)($t['sla_remaining_min'] ?? 0);
+                                        $slaAbs = abs($slaMins);
+                                        if ($slaAbs < 60) { $slaText = $slaAbs . 'm'; } else { $slaText = floor($slaAbs/60) . 'h ' . ($slaAbs%60) . 'm'; }
+                                        if ($slaMins < 0) $slaText = '-' . $slaText;
+                                        $slaClass = $slaMins < 0 ? 'danger' : ($slaMins < 120 ? 'warning' : 'success');
+                                    ?><span class="badge bg-<?= $slaClass ?><?= $slaClass === 'warning' ? ' text-dark' : '' ?>" style="font-size:0.68rem; font-weight:600;"><?= $slaText ?></span></td>
                                     <td><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></td>
                                     <td><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></td>
                                     <td class="text-nowrap text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
@@ -1901,6 +1921,64 @@ unset($tp);
                 <?php endforeach; ?>
             </div>
             
+            <!-- FAQ / Guía de Trabajo -->
+            <div class="mt-4" id="dashFaqSection">
+                <div class="card" style="border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff; border-bottom:1px solid #e2e8f0; padding:12px 18px; cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#faqContent" aria-expanded="false">
+                        <span style="font-weight:700; font-size:0.88rem; color:#1e293b;"><i class="bi bi-question-circle me-2" style="color:#64748b;"></i>Guía de trabajo — ¿Cómo se ordenan y trabajan los tickets?</span>
+                        <i class="bi bi-chevron-down text-muted" style="transition:transform 0.2s;" id="faqChevron"></i>
+                    </div>
+                    <div class="collapse" id="faqContent">
+                        <div class="card-body" style="padding:20px 24px; font-size:0.82rem; color:#334155; line-height:1.7;">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <h6 style="font-weight:700; color:#0c5a8a; font-size:0.85rem;"><i class="bi bi-sort-numeric-up me-1"></i>Orden de los tickets</h6>
+                                    <p class="mb-2">Los tickets se ordenan automáticamente por <strong>tiempo restante de SLA</strong> (de menor a mayor). Los que tienen menos tiempo disponible aparecen primero para que sean atendidos con mayor urgencia.</p>
+                                    <ul class="mb-0" style="padding-left:1.2rem;">
+                                        <li><span class="badge bg-danger" style="font-size:0.65rem;">Negativo</span> — SLA vencido, requiere atención inmediata</li>
+                                        <li><span class="badge bg-warning text-dark" style="font-size:0.65rem;">&lt; 2 horas</span> — SLA próximo a vencer</li>
+                                        <li><span class="badge bg-success" style="font-size:0.65rem;">&gt; 2 horas</span> — Dentro del plazo acordado</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 style="font-weight:700; color:#0c5a8a; font-size:0.85rem;"><i class="bi bi-clock-history me-1"></i>Objetivos SLA por prioridad</h6>
+                                    <table class="table table-sm table-bordered mb-0" style="font-size:0.76rem;">
+                                        <thead style="background:#f8fafc;"><tr><th>Prioridad</th><th>Respuesta</th><th>Resolución</th></tr></thead>
+                                        <tbody>
+                                            <tr><td><span class="priority-pill urgente" style="font-size:0.68rem;">Urgente</span></td><td>30 min</td><td>4 horas</td></tr>
+                                            <tr><td><span class="priority-pill alta" style="font-size:0.68rem;">Alta</span></td><td>1 hora</td><td>8 horas</td></tr>
+                                            <tr><td><span class="priority-pill media" style="font-size:0.68rem;">Media</span></td><td>2 horas</td><td>24 horas</td></tr>
+                                            <tr><td><span class="priority-pill baja" style="font-size:0.68rem;">Baja</span></td><td>4 horas</td><td>48 horas</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 style="font-weight:700; color:#0c5a8a; font-size:0.85rem;"><i class="bi bi-kanban me-1"></i>¿Qué significa cada carril?</h6>
+                                    <ul class="mb-0" style="padding-left:1.2rem;">
+                                        <li><strong>Nuevos</strong> — Tickets recién creados sin atender</li>
+                                        <li><strong>En Proceso</strong> — Un técnico está trabajando en el ticket</li>
+                                        <li><strong>Pendientes</strong> — Esperando respuesta del usuario o un tercero</li>
+                                        <li><strong>Resueltos</strong> — Solución aplicada, esperando confirmación</li>
+                                        <li><strong>Cerrados</strong> — Ticket finalizado</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 style="font-weight:700; color:#0c5a8a; font-size:0.85rem;"><i class="bi bi-tools me-1"></i>¿Cómo trabajar un ticket?</h6>
+                                    <ol class="mb-0" style="padding-left:1.2rem;">
+                                        <li>Revisa el carril <strong>Nuevos</strong> y toma los tickets con menor SLA</li>
+                                        <li>Haz clic para ver el detalle y <strong>asígnate</strong> el ticket</li>
+                                        <li>Cambia el estado a <strong>En Proceso</strong> al comenzar</li>
+                                        <li>Si necesitas información del usuario, pasa a <strong>Pendiente</strong></li>
+                                        <li>Aplica la solución y marca como <strong>Resuelto</strong></li>
+                                        <li>El ticket se cerrará automáticamente o puede cerrarse manualmente</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <script>
             function filterDashCards() {
                 const q = document.getElementById('dashSearchInput').value.toLowerCase();
@@ -1913,6 +1991,54 @@ unset($tp);
                     if (badge) badge.textContent = visible;
                 });
             }
+
+            // === Auto-refresh ===
+            (function() {
+                const REFRESH_INTERVAL = 30; // seconds
+                const toggle = document.getElementById('autoRefreshToggle');
+                const countdown = document.getElementById('refreshCountdown');
+                const chevron = document.getElementById('faqChevron');
+                let timer = null;
+                let remaining = REFRESH_INTERVAL;
+
+                // Persist preference
+                const saved = localStorage.getItem('epco_auto_refresh');
+                if (saved === 'true') toggle.checked = true;
+
+                function tick() {
+                    remaining--;
+                    countdown.textContent = remaining + 's';
+                    if (remaining <= 0) {
+                        location.reload();
+                    }
+                }
+
+                function start() {
+                    remaining = REFRESH_INTERVAL;
+                    countdown.textContent = remaining + 's';
+                    timer = setInterval(tick, 1000);
+                    localStorage.setItem('epco_auto_refresh', 'true');
+                }
+
+                function stop() {
+                    clearInterval(timer);
+                    timer = null;
+                    countdown.textContent = '';
+                    localStorage.setItem('epco_auto_refresh', 'false');
+                }
+
+                toggle.addEventListener('change', () => {
+                    toggle.checked ? start() : stop();
+                });
+
+                if (toggle.checked) start();
+
+                // Chevron rotation for FAQ
+                if (chevron) {
+                    document.getElementById('faqContent').addEventListener('show.bs.collapse', () => chevron.style.transform = 'rotate(180deg)');
+                    document.getElementById('faqContent').addEventListener('hide.bs.collapse', () => chevron.style.transform = 'rotate(0deg)');
+                }
+            })();
             </script>
             
             <?php elseif ($page === 'tickets'): ?>
