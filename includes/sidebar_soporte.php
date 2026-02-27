@@ -567,9 +567,9 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
             <div class="sidebar-section-title">Cumplimiento</div>
             <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php?page=sla" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'sla') ? 'active' : '' ?>">
+                    <a href="soporte_admin.php?page=cumplimiento" class="sidebar-nav-link <?= (isset($_GET['page']) && in_array($_GET['page'], ['sla', 'cumplimiento'])) ? 'active' : '' ?>">
                         <i class="bi bi-graph-up-arrow"></i>
-                        <span>Cumplimiento SLA</span>
+                        <span>Cumplimiento</span>
                     </a>
                 </li>
             </ul>
