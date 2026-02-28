@@ -1366,4 +1366,509 @@ Ir al Panel de Soporte:
 Correo automático · No responder a este mensaje
 TEXT;
     }
+
+    // ================================================================
+    // NOTIFICACIONES DE ACTUALIZACIÓN DE ESTADO Y COMENTARIOS
+    // ================================================================
+
+    /**
+     * Enviar notificación de cambio de estado al creador del ticket y al técnico asignado
+     * @param array $ticket Datos del ticket (con user_email, assigned_to info)
+     * @param string $oldStatus Estado anterior
+     * @param string $newStatus Nuevo estado
+     * @param string $changedByName Nombre de quien realizó el cambio
+     * @param string|null $assignedEmail Email del técnico asignado (opcional)
+     * @param string|null $assignedName Nombre del técnico asignado (opcional)
+     */
+    public function sendTicketStatusUpdateNotification($ticket, $oldStatus, $newStatus, $changedByName, $assignedEmail = null, $assignedName = null) {
+        $recipients = [];
+        
+        // 1. Notificar al creador del ticket
+        $userEmail = $ticket['user_email'] ?? '';
+        if (!empty($userEmail) && filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
+            $recipients[] = ['email' => $userEmail, 'name' => $ticket['user_name'] ?? 'Usuario', 'role' => 'creator'];
+        }
+        
+        // 2. Notificar al técnico asignado (si existe y no es quien hizo el cambio)
+        if (!empty($assignedEmail) && filter_var($assignedEmail, FILTER_VALIDATE_EMAIL)) {
+            // No duplicar si el técnico asignado es el mismo creador
+            if (strtolower(trim($assignedEmail)) !== strtolower(trim($userEmail))) {
+                $recipients[] = ['email' => $assignedEmail, 'name' => $assignedName ?? 'Técnico', 'role' => 'assignee'];
+            }
+        }
+        
+        if (empty($recipients)) {
+            error_log("[EPCO Mail] No hay destinatarios para notificación de cambio de estado");
+            return false;
+        }
+        
+        $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+        $success = true;
+        
+        foreach ($recipients as $r) {
+            try {
+                $this->mailer->clearAddresses();
+                $this->mailer->addAddress(trim($r['email']));
+                
+                $this->mailer->Subject = "Ticket #{$ticketNumber} actualizado - Soporte TI EPCO";
+                $this->mailer->Body = $this->getStatusUpdateTemplate($ticket, $oldStatus, $newStatus, $changedByName, $r['name'], $r['role']);
+                $this->mailer->AltBody = $this->getStatusUpdatePlainText($ticket, $oldStatus, $newStatus, $changedByName, $r['name']);
+                
+                $this->mailer->send();
+                error_log("[EPCO Mail] Notificación de estado enviada a: {$r['email']} ({$r['role']}) para ticket #{$ticketNumber}");
+            } catch (Exception $e) {
+                error_log("[EPCO Mail] Error enviando notificación de estado a {$r['email']}: " . $this->mailer->ErrorInfo);
+                $success = false;
+            }
+        }
+        
+        return $success;
+    }
+
+    /**
+     * Enviar notificación de nuevo comentario al creador del ticket y al técnico asignado
+     * @param array $ticket Datos del ticket
+     * @param string $commentText Texto del comentario
+     * @param string $commentByName Nombre de quien comentó
+     * @param bool $isInternal Si es nota interna (solo notifica al técnico)
+     * @param string|null $assignedEmail Email del técnico asignado
+     * @param string|null $assignedName Nombre del técnico asignado
+     */
+    public function sendTicketCommentNotification($ticket, $commentText, $commentByName, $isInternal = false, $assignedEmail = null, $assignedName = null) {
+        $recipients = [];
+        
+        // 1. Notificar al creador (solo si NO es nota interna)
+        if (!$isInternal) {
+            $userEmail = $ticket['user_email'] ?? '';
+            if (!empty($userEmail) && filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
+                $recipients[] = ['email' => $userEmail, 'name' => $ticket['user_name'] ?? 'Usuario', 'role' => 'creator'];
+            }
+        }
+        
+        // 2. Notificar al técnico asignado
+        if (!empty($assignedEmail) && filter_var($assignedEmail, FILTER_VALIDATE_EMAIL)) {
+            $userEmail = $ticket['user_email'] ?? '';
+            if (strtolower(trim($assignedEmail)) !== strtolower(trim($userEmail)) || $isInternal) {
+                $recipients[] = ['email' => $assignedEmail, 'name' => $assignedName ?? 'Técnico', 'role' => 'assignee'];
+            }
+        }
+        
+        if (empty($recipients)) {
+            error_log("[EPCO Mail] No hay destinatarios para notificación de comentario");
+            return false;
+        }
+        
+        $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+        $typeLabel = $isInternal ? 'Nota interna' : 'Nuevo comentario';
+        $success = true;
+        
+        foreach ($recipients as $r) {
+            try {
+                $this->mailer->clearAddresses();
+                $this->mailer->addAddress(trim($r['email']));
+                
+                $this->mailer->Subject = "{$typeLabel} en Ticket #{$ticketNumber} - Soporte TI EPCO";
+                $this->mailer->Body = $this->getCommentNotificationTemplate($ticket, $commentText, $commentByName, $isInternal, $r['name'], $r['role']);
+                $this->mailer->AltBody = $this->getCommentNotificationPlainText($ticket, $commentText, $commentByName, $r['name']);
+                
+                $this->mailer->send();
+                error_log("[EPCO Mail] Notificación de comentario enviada a: {$r['email']} ({$r['role']}) para ticket #{$ticketNumber}");
+            } catch (Exception $e) {
+                error_log("[EPCO Mail] Error enviando notificación de comentario a {$r['email']}: " . $this->mailer->ErrorInfo);
+                $success = false;
+            }
+        }
+        
+        return $success;
+    }
+
+    /**
+     * Template HTML de notificación de cambio de estado
+     */
+    private function getStatusUpdateTemplate($ticket, $oldStatus, $newStatus, $changedByName, $recipientName, $recipientRole) {
+        $statusLabels = [
+            'abierto' => 'Abierto', 'asignado' => 'Asignado', 'en_proceso' => 'En Proceso',
+            'pendiente' => 'Pendiente', 'en_pausa' => 'En Pausa', 'resuelto' => 'Resuelto', 'cerrado' => 'Cerrado'
+        ];
+        $statusColors = [
+            'abierto' => '#3b82f6', 'asignado' => '#06b6d4', 'en_proceso' => '#f59e0b',
+            'pendiente' => '#6b7280', 'en_pausa' => '#8b5cf6', 'resuelto' => '#16a34a', 'cerrado' => '#374151'
+        ];
+
+        $oldLabel = $statusLabels[$oldStatus] ?? ucfirst($oldStatus);
+        $newLabel = $statusLabels[$newStatus] ?? ucfirst($newStatus);
+        $oldColor = $statusColors[$oldStatus] ?? '#6b7280';
+        $newColor = $statusColors[$newStatus] ?? '#6b7280';
+        
+        $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "TK-{$ticket['id']}", ENT_QUOTES, 'UTF-8');
+        $subject = htmlspecialchars($ticket['title'] ?? $ticket['subject'] ?? 'Sin asunto', ENT_QUOTES, 'UTF-8');
+        $safeName = htmlspecialchars($recipientName, ENT_QUOTES, 'UTF-8');
+        $safeChanger = htmlspecialchars($changedByName, ENT_QUOTES, 'UTF-8');
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+        $now = date('d/m/Y H:i');
+        
+        $contextMsg = $recipientRole === 'creator'
+            ? 'Tu ticket de soporte ha sido actualizado por el equipo t&eacute;cnico.'
+            : 'Un ticket que tienes asignado ha sido actualizado.';
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <style>
+        :root { color-scheme: light dark; }
+        @media (prefers-color-scheme: dark) {
+            body, .body-wrap { background-color: #1a1a2e !important; }
+            .email-box { background-color: #16213e !important; }
+            .header-bg { background-color: #0a3d62 !important; }
+            .label-cell { background-color: #1a1a2e !important; color: #c4cdd5 !important; }
+            .value-cell { background-color: #16213e !important; color: #e4e7ec !important; }
+            .footer-box { background-color: #0f1a30 !important; }
+            .footer-main { color: #c4cdd5 !important; }
+            .footer-sub { color: #667085 !important; }
+            .greeting { color: #e4e7ec !important; }
+            .info-text { color: #c4cdd5 !important; }
+            .ticket-ref { color: #7cb9e8 !important; }
+        }
+    </style>
+</head>
+<body class="body-wrap" style="margin: 0; padding: 0; font-family: 'Arial Nova', Arial, Helvetica, sans-serif; background-color: #f0f2f5;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="body-wrap" style="background-color: #f0f2f5; padding: 30px 15px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="620" cellspacing="0" cellpadding="0" class="email-box" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+
+                    <!-- HEADER -->
+                    <tr>
+                        <td class="header-bg" style="background-color: #0c5a8a; padding: 28px 40px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">
+                                Estado Actualizado
+                            </h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;">
+                                Empresa Portuaria Coquimbo &mdash; Mesa de Ayuda TI
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- SALUDO -->
+                    <tr>
+                        <td style="padding: 30px 40px 10px;">
+                            <p class="greeting" style="margin: 0 0 10px; color: #1d2939; font-size: 16px; font-weight: 600;">
+                                Hola {$safeName},
+                            </p>
+                            <p class="info-text" style="margin: 0; color: #475467; font-size: 14px; line-height: 1.6;">
+                                {$contextMsg}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- TICKET INFO -->
+                    <tr>
+                        <td style="padding: 20px 40px 10px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">N&ordm; de Ticket</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span class="ticket-ref" style="color: #0c5a8a; font-size: 16px; font-weight: 700;">{$ticketNumber}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Asunto</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$subject}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Actualizado por</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$safeChanger}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Fecha</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$now}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CAMBIO DE ESTADO -->
+                    <tr>
+                        <td style="padding: 20px 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <tr>
+                                    <td style="padding: 20px; text-align: center;">
+                                        <p style="margin: 0 0 12px; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Cambio de Estado</p>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                                            <tr>
+                                                <td style="padding: 8px 16px; background-color: {$oldColor}; color: #ffffff; border-radius: 6px; font-size: 14px; font-weight: 600;">
+                                                    {$oldLabel}
+                                                </td>
+                                                <td style="padding: 0 15px; font-size: 20px; color: #9ca3af;">
+                                                    &rarr;
+                                                </td>
+                                                <td style="padding: 8px 16px; background-color: {$newColor}; color: #ffffff; border-radius: 6px; font-size: 14px; font-weight: 600;">
+                                                    {$newLabel}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- BOTÓN -->
+                    <tr>
+                        <td style="padding: 10px 40px 30px; text-align: center;">
+                            <a href="{$appUrl}/iniciar_sesion" style="display: inline-block; padding: 12px 32px; background-color: #0c5a8a; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                                Ver Ticket
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td class="footer-box" style="background-color: #f9fafb; padding: 20px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p class="footer-main" style="margin: 0 0 4px; color: #475467; font-size: 12px;">
+                                Empresa Portuaria Coquimbo &mdash; Soporte TI
+                            </p>
+                            <p class="footer-sub" style="margin: 0; color: #98a2b3; font-size: 11px;">
+                                Correo autom&aacute;tico &middot; No responder a este mensaje
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    private function getStatusUpdatePlainText($ticket, $oldStatus, $newStatus, $changedByName, $recipientName) {
+        $statusLabels = [
+            'abierto' => 'Abierto', 'asignado' => 'Asignado', 'en_proceso' => 'En Proceso',
+            'pendiente' => 'Pendiente', 'en_pausa' => 'En Pausa', 'resuelto' => 'Resuelto', 'cerrado' => 'Cerrado'
+        ];
+        $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+        $subject = $ticket['title'] ?? $ticket['subject'] ?? 'Sin asunto';
+        $oldLabel = $statusLabels[$oldStatus] ?? $oldStatus;
+        $newLabel = $statusLabels[$newStatus] ?? $newStatus;
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+
+        return <<<TEXT
+ESTADO ACTUALIZADO — Soporte TI EPCO
+
+Hola {$recipientName},
+
+El ticket de soporte ha sido actualizado:
+
+- N° de Ticket: {$ticketNumber}
+- Asunto: {$subject}
+- Estado anterior: {$oldLabel}
+- Nuevo estado: {$newLabel}
+- Actualizado por: {$changedByName}
+- Fecha: {$this->formatDate()}
+
+Ir al Portal:
+{$appUrl}/iniciar_sesion
+
+Correo automático · No responder a este mensaje
+TEXT;
+    }
+
+    /**
+     * Template HTML de notificación de nuevo comentario
+     */
+    private function getCommentNotificationTemplate($ticket, $commentText, $commentByName, $isInternal, $recipientName, $recipientRole) {
+        $ticketNumber = htmlspecialchars($ticket['ticket_number'] ?? "TK-{$ticket['id']}", ENT_QUOTES, 'UTF-8');
+        $subject = htmlspecialchars($ticket['title'] ?? $ticket['subject'] ?? 'Sin asunto', ENT_QUOTES, 'UTF-8');
+        $safeName = htmlspecialchars($recipientName, ENT_QUOTES, 'UTF-8');
+        $safeCommenter = htmlspecialchars($commentByName, ENT_QUOTES, 'UTF-8');
+        $safeComment = nl2br(htmlspecialchars($commentText, ENT_QUOTES, 'UTF-8'));
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+        $now = date('d/m/Y H:i');
+        $typeLabel = $isInternal ? 'Nota Interna' : 'Nuevo Comentario';
+        $typeBgColor = $isInternal ? '#fef3c7' : '#e8f4fc';
+        $typeBorderColor = $isInternal ? '#f59e0b' : '#0c5a8a';
+        
+        $contextMsg = $recipientRole === 'creator'
+            ? 'Se ha agregado un comentario en tu ticket de soporte.'
+            : 'Se ha agregado un comentario en un ticket que tienes asignado.';
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <style>
+        :root { color-scheme: light dark; }
+        @media (prefers-color-scheme: dark) {
+            body, .body-wrap { background-color: #1a1a2e !important; }
+            .email-box { background-color: #16213e !important; }
+            .header-bg { background-color: #0a3d62 !important; }
+            .label-cell { background-color: #1a1a2e !important; color: #c4cdd5 !important; }
+            .value-cell { background-color: #16213e !important; color: #e4e7ec !important; }
+            .footer-box { background-color: #0f1a30 !important; }
+            .footer-main { color: #c4cdd5 !important; }
+            .footer-sub { color: #667085 !important; }
+            .greeting { color: #e4e7ec !important; }
+            .info-text { color: #c4cdd5 !important; }
+            .ticket-ref { color: #7cb9e8 !important; }
+            .comment-box { background-color: #1a1a2e !important; border-color: #2c3e6b !important; }
+            .comment-box p { color: #c4cdd5 !important; }
+        }
+    </style>
+</head>
+<body class="body-wrap" style="margin: 0; padding: 0; font-family: 'Arial Nova', Arial, Helvetica, sans-serif; background-color: #f0f2f5;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="body-wrap" style="background-color: #f0f2f5; padding: 30px 15px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="620" cellspacing="0" cellpadding="0" class="email-box" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+
+                    <!-- HEADER -->
+                    <tr>
+                        <td class="header-bg" style="background-color: #0c5a8a; padding: 28px 40px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">
+                                {$typeLabel}
+                            </h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;">
+                                Empresa Portuaria Coquimbo &mdash; Mesa de Ayuda TI
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- SALUDO -->
+                    <tr>
+                        <td style="padding: 30px 40px 10px;">
+                            <p class="greeting" style="margin: 0 0 10px; color: #1d2939; font-size: 16px; font-weight: 600;">
+                                Hola {$safeName},
+                            </p>
+                            <p class="info-text" style="margin: 0; color: #475467; font-size: 14px; line-height: 1.6;">
+                                {$contextMsg}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- TICKET INFO -->
+                    <tr>
+                        <td style="padding: 20px 40px 10px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">N&ordm; de Ticket</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span class="ticket-ref" style="color: #0c5a8a; font-size: 16px; font-weight: 700;">{$ticketNumber}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; width: 160px; background-color: #f9fafb;">
+                                        <strong style="color: #344054; font-size: 13px;">Asunto</strong>
+                                    </td>
+                                    <td class="value-cell" style="padding: 10px 15px; border-bottom: 1px solid #d0d5dd; background-color: #ffffff;">
+                                        <span style="color: #1d2939; font-size: 14px;">{$subject}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- COMENTARIO -->
+                    <tr>
+                        <td style="padding: 20px 40px;">
+                            <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                                Comentario de {$safeCommenter} &middot; {$now}
+                            </p>
+                            <div class="comment-box" style="padding: 16px 20px; background-color: {$typeBgColor}; border-left: 4px solid {$typeBorderColor}; border-radius: 0 8px 8px 0;">
+                                <p style="margin: 0; color: #1d2939; font-size: 14px; line-height: 1.7;">
+                                    {$safeComment}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- BOTÓN -->
+                    <tr>
+                        <td style="padding: 10px 40px 30px; text-align: center;">
+                            <a href="{$appUrl}/iniciar_sesion" style="display: inline-block; padding: 12px 32px; background-color: #0c5a8a; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                                Ver Ticket
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td class="footer-box" style="background-color: #f9fafb; padding: 20px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p class="footer-main" style="margin: 0 0 4px; color: #475467; font-size: 12px;">
+                                Empresa Portuaria Coquimbo &mdash; Soporte TI
+                            </p>
+                            <p class="footer-sub" style="margin: 0; color: #98a2b3; font-size: 11px;">
+                                Correo autom&aacute;tico &middot; No responder a este mensaje
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    private function getCommentNotificationPlainText($ticket, $commentText, $commentByName, $recipientName) {
+        $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
+        $subject = $ticket['title'] ?? $ticket['subject'] ?? 'Sin asunto';
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+
+        return <<<TEXT
+NUEVO COMENTARIO — Soporte TI EPCO
+
+Hola {$recipientName},
+
+Se ha agregado un comentario en el ticket:
+
+- N° de Ticket: {$ticketNumber}
+- Asunto: {$subject}
+- Comentario de: {$commentByName}
+- Fecha: {$this->formatDate()}
+
+───────────────────────────────────────────────
+COMENTARIO
+───────────────────────────────────────────────
+{$commentText}
+
+Ir al Portal:
+{$appUrl}/iniciar_sesion
+
+Correo automático · No responder a este mensaje
+TEXT;
+    }
+
+    /**
+     * Helper para formatear fecha actual
+     */
+    private function formatDate() {
+        return date('d/m/Y H:i');
+    }
 }

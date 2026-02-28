@@ -115,6 +115,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } catch (Exception $e) {}
             }
             
+            // Notificar cambio de estado al creador y al técnico asignado
+            if ($currentTicket['status'] !== $newStatus && !in_array($newStatus, ['resuelto', 'cerrado'])) {
+                try {
+                    $ticketStmt = $pdo->prepare('SELECT t.*, a.name as assigned_name, a.email as assigned_email FROM tickets t LEFT JOIN users a ON t.assigned_to = a.id WHERE t.id = ?');
+                    $ticketStmt->execute([$ticketId]);
+                    $ticketData = $ticketStmt->fetch();
+                    if ($ticketData) {
+                        require_once __DIR__ . '/../includes/ServicioCorreo.php';
+                        $mailService = new MailService();
+                        $mailService->sendTicketStatusUpdateNotification(
+                            $ticketData,
+                            $currentTicket['status'],
+                            $newStatus,
+                            $user['name'],
+                            $ticketData['assigned_email'] ?? null,
+                            $ticketData['assigned_name'] ?? null
+                        );
+                    }
+                } catch (Exception $e) {}
+            }
+            
             header("Location: {$redirectBase}&msg=updated");
             exit;
         }
@@ -130,6 +151,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$ticketId, $user['id'], $user['name'], $comment, $isInternal]);
             $pdo->prepare('UPDATE tickets SET updated_at = NOW() WHERE id = ?')->execute([$ticketId]);
             logActivity($user['id'], 'comment_added', 'tickets', $ticketId, 'Comentario agregado');
+            
+            // Notificar comentario al creador y técnico asignado
+            try {
+                $ticketStmt = $pdo->prepare('SELECT t.*, a.name as assigned_name, a.email as assigned_email FROM tickets t LEFT JOIN users a ON t.assigned_to = a.id WHERE t.id = ?');
+                $ticketStmt->execute([$ticketId]);
+                $ticketData = $ticketStmt->fetch();
+                if ($ticketData) {
+                    require_once __DIR__ . '/../includes/ServicioCorreo.php';
+                    $mailService = new MailService();
+                    $mailService->sendTicketCommentNotification(
+                        $ticketData,
+                        $comment,
+                        $user['name'],
+                        (bool)$isInternal,
+                        $ticketData['assigned_email'] ?? null,
+                        $ticketData['assigned_name'] ?? null
+                    );
+                }
+            } catch (Exception $e) {}
             
             header("Location: {$redirectBase}&msg=comment_added#actividad");
             exit;

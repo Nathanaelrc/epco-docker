@@ -154,6 +154,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newStatus = sanitize($_POST['new_status']);
         $resolution = sanitize($_POST['resolution'] ?? '');
         
+        // Obtener estado anterior antes del UPDATE
+        $prevStmt = $pdo->prepare('SELECT t.id, t.status, t.title, t.user_email, t.user_name, t.ticket_number, a.name as assigned_name, a.email as assigned_email FROM tickets t LEFT JOIN users a ON t.assigned_to = a.id WHERE t.id = ?');
+        $prevStmt->execute([$ticketId]);
+        $prevTicket = $prevStmt->fetch();
+        $oldStatus = $prevTicket['status'] ?? 'abierto';
+        
         $stmt = $pdo->prepare('UPDATE tickets SET status = ?, resolution = ? WHERE id = ?');
         $stmt->execute([$newStatus, $resolution, $ticketId]);
         logActivity($user['id'], 'ticket_updated', 'tickets', $ticketId, "Estado cambiado a: $newStatus");
@@ -177,7 +183,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=status_updated';
+        // Notificar cambio de estado al creador y al técnico asignado (excepto resuelto/cerrado que ya envían su propia notificación)
+        if (!in_array($newStatus, ['resuelto', 'cerrado']) && $prevTicket) {
+            try {
+                require_once __DIR__ . '/../includes/ServicioCorreo.php';
+                $mailService = new MailService();
+                $mailService->sendTicketStatusUpdateNotification(
+                    $prevTicket, $oldStatus, $newStatus, $user['name'],
+                    $prevTicket['assigned_email'] ?? null, $prevTicket['assigned_name'] ?? null
+                );
+            } catch (Exception $e) {
+                error_log('[EPCO] Error enviando email de estado: ' . $e->getMessage());
+            }
+        }
         header("Location: $redirectUrl");
         exit;
     }
@@ -243,6 +261,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } catch (Exception $e) {
                 error_log('[EPCO] Error enviando email de cierre: ' . $e->getMessage());
+            }
+        }
+        
+        // Notificar cambio de estado al creador y técnico asignado
+        if ($currentTicket['status'] !== $newStatus && !in_array($newStatus, ['resuelto', 'cerrado'])) {
+            try {
+                $ticketStmt = $pdo->prepare('SELECT t.*, a.name as assigned_name, a.email as assigned_email FROM tickets t LEFT JOIN users a ON t.assigned_to = a.id WHERE t.id = ?');
+                $ticketStmt->execute([$ticketId]);
+                $ticketData = $ticketStmt->fetch();
+                if ($ticketData) {
+                    require_once __DIR__ . '/../includes/ServicioCorreo.php';
+                    $mailService = new MailService();
+                    $mailService->sendTicketStatusUpdateNotification(
+                        $ticketData, $currentTicket['status'], $newStatus, $user['name'],
+                        $ticketData['assigned_email'] ?? null, $ticketData['assigned_name'] ?? null
+                    );
+                }
+            } catch (Exception $e) {
+                error_log('[EPCO] Error enviando email de estado: ' . $e->getMessage());
             }
         }
         
@@ -384,6 +421,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('INSERT INTO ticket_comments (ticket_id, user_id, user_name, comment, is_internal) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$ticketId, $user['id'], $user['name'], $comment, $isInternal]);
         logActivity($user['id'], 'comment_added', 'tickets', $ticketId, 'Comentario agregado al ticket');
+        
+        // Notificar comentario al creador y técnico asignado
+        try {
+            $ticketStmt = $pdo->prepare('SELECT t.*, a.name as assigned_name, a.email as assigned_email FROM tickets t LEFT JOIN users a ON t.assigned_to = a.id WHERE t.id = ?');
+            $ticketStmt->execute([$ticketId]);
+            $ticketData = $ticketStmt->fetch();
+            if ($ticketData) {
+                require_once __DIR__ . '/../includes/ServicioCorreo.php';
+                $mailService = new MailService();
+                $mailService->sendTicketCommentNotification(
+                    $ticketData, $comment, $user['name'], (bool)$isInternal,
+                    $ticketData['assigned_email'] ?? null, $ticketData['assigned_name'] ?? null
+                );
+            }
+        } catch (Exception $e) {
+            error_log('[EPCO] Error enviando email de comentario: ' . $e->getMessage());
+        }
         
         $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=comment_added';
         header("Location: $redirectUrl");
