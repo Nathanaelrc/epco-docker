@@ -577,6 +577,7 @@ $stats = $pdo->query("
         SUM(CASE WHEN status = 'abierto' THEN 1 ELSE 0 END) as abiertos,
         SUM(CASE WHEN status = 'en_proceso' THEN 1 ELSE 0 END) as en_proceso,
         SUM(CASE WHEN status = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
+        SUM(CASE WHEN status = 'en_pausa' THEN 1 ELSE 0 END) as en_pausa,
         SUM(CASE WHEN status = 'resuelto' THEN 1 ELSE 0 END) as resueltos,
         SUM(CASE WHEN status = 'cerrado' THEN 1 ELSE 0 END) as cerrados,
         SUM(CASE WHEN priority = 'urgente' AND status NOT IN ('resuelto', 'cerrado') THEN 1 ELSE 0 END) as urgentes
@@ -937,8 +938,8 @@ $slaStats['assignment_compliance'] = $assignedCount > 0 ? round(($slaStats['with
 $slaStats['resolution_compliance'] = $resolvedCount > 0 ? round(($slaStats['within_resolution'] / $resolvedCount) * 100, 1) : 100;
 
 // Labels
-$statusColors = ['abierto' => 'primary', 'asignado' => 'info', 'en_proceso' => 'warning', 'pendiente' => 'secondary', 'resuelto' => 'success', 'cerrado' => 'dark'];
-$statusLabels = ['abierto' => 'Abierto', 'asignado' => 'Asignado', 'en_proceso' => 'En Proceso', 'pendiente' => 'Pendiente', 'resuelto' => 'Resuelto', 'cerrado' => 'Cerrado'];
+$statusColors = ['abierto' => 'primary', 'asignado' => 'info', 'en_proceso' => 'warning', 'pendiente' => 'secondary', 'en_pausa' => 'info', 'resuelto' => 'success', 'cerrado' => 'dark'];
+$statusLabels = ['abierto' => 'Abierto', 'asignado' => 'Asignado', 'en_proceso' => 'En Proceso', 'pendiente' => 'Pendiente', 'en_pausa' => 'En Pausa', 'resuelto' => 'Resuelto', 'cerrado' => 'Cerrado'];
 $priorityColors = ['urgente' => 'danger', 'alta' => 'warning', 'media' => 'info', 'baja' => 'secondary'];
 $categoryLabels = ['hardware' => 'Hardware', 'software' => 'Software', 'red' => 'Red', 'acceso' => 'Acceso', 'otro' => 'Otro'];
 
@@ -1734,7 +1735,7 @@ unset($tp);
             // Agrupar tickets por estado
             $ticketsByStatusGroup = [
                 'abierto' => [], 'en_proceso' => [], 'pendiente' => [],
-                'resuelto' => [], 'cerrado' => []
+                'en_pausa' => [], 'resuelto' => [], 'cerrado' => []
             ];
             foreach ($tickets as $t) {
                 $st = $t['status'];
@@ -1759,6 +1760,10 @@ unset($tp);
                 <div class="sn-stat-item">
                     <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['pendientes'] ?? 0 ?></div>
                     <div class="sn-stat-label">Pendientes</div>
+                </div>
+                <div class="sn-stat-item">
+                    <div class="sn-stat-number" style="color:#8b5cf6"><?= $stats['en_pausa'] ?? 0 ?></div>
+                    <div class="sn-stat-label">En Pausa</div>
                 </div>
                 <div class="sn-stat-item">
                     <div class="sn-stat-number" style="color:var(--primary-dark)"><?= $stats['resueltos'] ?? 0 ?></div>
@@ -1826,90 +1831,92 @@ unset($tp);
             
             <!-- Kanban: Cards por estado - Grid 2x3 -->
             <style>
-                .lane-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.2s; }
-                .lane-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.07); }
-                .lane-header { display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #e2e8f0; background:#fff; }
-                .lane-header .lane-title { font-weight:700; font-size:0.88rem; color:#1e293b; display:flex; align-items:center; gap:8px; }
-                .lane-header .lane-title i { font-size:1rem; color:#64748b; }
-                .lane-header .lane-count { background:#f1f5f9; color:#475569; font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:12px; min-width:24px; text-align:center; }
-                .lane-body { max-height:380px; overflow-y:auto; overflow-x:auto; }
-                .lane-body::-webkit-scrollbar { width:5px; height:5px; }
+                .lane-card { background:#fff; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 2px 8px rgba(0,0,0,0.06); transition: all 0.25s ease; border:none; }
+                .lane-card:hover { box-shadow:0 8px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+                .lane-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; background:linear-gradient(135deg, var(--lane-color) 0%, var(--lane-color-dark) 100%); }
+                .lane-header .lane-title { font-weight:700; font-size:0.95rem; color:#fff; display:flex; align-items:center; gap:10px; text-shadow:0 1px 2px rgba(0,0,0,0.1); }
+                .lane-header .lane-title i { font-size:1.1rem; opacity:0.9; }
+                .lane-header .lane-count { background:rgba(255,255,255,0.25); color:#fff; font-size:0.8rem; font-weight:700; padding:5px 14px; border-radius:20px; min-width:32px; text-align:center; backdrop-filter:blur(4px); }
+                .lane-body { max-height:320px; overflow-y:auto; padding:8px; background:#f8fafc; }
+                .lane-body::-webkit-scrollbar { width:6px; }
                 .lane-body::-webkit-scrollbar-track { background:transparent; }
                 .lane-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
                 .lane-body::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
-                .lane-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
-                .lane-table thead th { position:sticky; top:0; z-index:1; background:#fafbfc; padding:9px 12px; font-weight:600; color:#64748b; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.4px; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
-                .lane-table tbody td { padding:8px 12px; border-bottom:1px solid #f1f5f9; color:#334155; vertical-align:middle; }
-                .lane-table tbody tr { cursor:pointer; transition: background 0.12s ease; }
-                .lane-table tbody tr:hover { background:#f8fafc; }
-                .lane-table tbody tr:active { background:#f1f5f9; }
-                .lane-empty { text-align:center; padding:40px 10px; color:#94a3b8; font-size:0.82rem; }
-                .lane-empty i { font-size:1.5rem; display:block; margin-bottom:6px; }
-                .priority-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; white-space:nowrap; }
-                .priority-pill.urgente { background:#fef2f2; color:#dc2626; }
-                .priority-pill.alta { background:#fff7ed; color:#ea580c; }
-                .priority-pill.media { background:#eff6ff; color:#2563eb; }
-                .priority-pill.baja { background:#f0fdf4; color:#16a34a; }
+                .lane-empty { text-align:center; padding:50px 20px; color:#94a3b8; font-size:0.85rem; background:#f8fafc; }
+                .lane-empty i { font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.5; }
+                
+                /* Ticket Cards dentro de las lanes */
+                .ticket-mini-card { background:#fff; border-radius:10px; padding:14px 16px; margin-bottom:8px; cursor:pointer; transition:all 0.15s ease; border:1px solid #e2e8f0; }
+                .ticket-mini-card:hover { background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.08); border-color:#cbd5e1; }
+                .ticket-mini-card:last-child { margin-bottom:0; }
+                .ticket-mini-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+                .ticket-mini-number { font-size:0.75rem; font-weight:700; color:var(--lane-color); letter-spacing:0.3px; }
+                .ticket-mini-sla { font-size:0.68rem; font-weight:600; padding:3px 8px; border-radius:6px; }
+                .ticket-mini-title { font-size:0.82rem; font-weight:600; color:#1e293b; margin-bottom:8px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+                .ticket-mini-footer { display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#64748b; }
+                .ticket-mini-user { display:flex; align-items:center; gap:6px; }
+                .ticket-mini-avatar { width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:#4338ca; }
+                .ticket-mini-meta { display:flex; align-items:center; gap:8px; }
+                .ticket-mini-priority { width:8px; height:8px; border-radius:50%; }
+                .ticket-mini-priority.urgente { background:#dc2626; }
+                .ticket-mini-priority.alta { background:#ea580c; }
+                .ticket-mini-priority.media { background:#2563eb; }
+                .ticket-mini-priority.baja { background:#16a34a; }
+                
+                /* Colores de lanes */
+                .lane-abierto { --lane-color:#3b82f6; --lane-color-dark:#2563eb; }
+                .lane-en_proceso { --lane-color:#f59e0b; --lane-color-dark:#d97706; }
+                .lane-pendiente { --lane-color:#64748b; --lane-color-dark:#475569; }
+                .lane-en_pausa { --lane-color:#8b5cf6; --lane-color-dark:#7c3aed; }
+                .lane-resuelto { --lane-color:#22c55e; --lane-color-dark:#16a34a; }
+                .lane-cerrado { --lane-color:#1e293b; --lane-color-dark:#0f172a; }
             </style>
             <div class="row g-3" id="dashStatusLanes">
                 <?php
                 $laneConfig = [
-                    'abierto'    => ['label' => 'Nuevos',      'icon' => 'bi-plus-circle'],
-                    'en_proceso' => ['label' => 'En Proceso',  'icon' => 'bi-gear'],
-                    'pendiente'  => ['label' => 'Pendientes',  'icon' => 'bi-hourglass-split'],
-                    'resuelto'   => ['label' => 'Resueltos',   'icon' => 'bi-check-circle'],
-                    'cerrado'    => ['label' => 'Cerrados',    'icon' => 'bi-lock'],
+                    'abierto'    => ['label' => 'Nuevos',      'icon' => 'bi-plus-circle',      'color' => '#3b82f6'],
+                    'en_proceso' => ['label' => 'En Proceso',  'icon' => 'bi-gear',             'color' => '#f59e0b'],
+                    'pendiente'  => ['label' => 'Pendientes',  'icon' => 'bi-hourglass-split', 'color' => '#64748b'],
+                    'en_pausa'   => ['label' => 'En Pausa',    'icon' => 'bi-pause-circle',    'color' => '#8b5cf6'],
+                    'resuelto'   => ['label' => 'Resueltos',   'icon' => 'bi-check-circle',    'color' => '#22c55e'],
+                    'cerrado'    => ['label' => 'Cerrados',    'icon' => 'bi-lock',            'color' => '#1e293b'],
                 ];
                 foreach ($laneConfig as $statusKey => $lane):
                     $laneTickets = $ticketsByStatusGroup[$statusKey] ?? [];
                 ?>
-                <div class="col-lg-6">
-                    <div class="lane-card">
+                <div class="col-lg-6 col-xl-4">
+                    <div class="lane-card lane-<?= $statusKey ?>">
                         <div class="lane-header">
                             <span class="lane-title"><i class="bi <?= $lane['icon'] ?>"></i><?= $lane['label'] ?></span>
                             <span class="lane-count"><?= count($laneTickets) ?></span>
                         </div>
                         <?php if (!empty($laneTickets)): ?>
                         <div class="lane-body">
-                            <table class="lane-table">
-                                <thead>
-                                    <tr>
-                                        <th style="min-width:110px">Número</th>
-                                        <th style="min-width:160px">Descripción</th>
-                                        <th style="min-width:110px">Solicitante</th>
-                                        <th style="min-width:80px">Prioridad</th>
-                                        <th style="min-width:70px">SLA</th>
-                                        <th style="min-width:80px">Categoría</th>
-                                        <th style="min-width:100px">Asignado a</th>
-                                        <th style="min-width:80px">Creado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($laneTickets as $t): ?>
-                                <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="dash-ticket-row" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
-                                    <td><span class="sn-link" style="font-size:0.75rem"><?= $t['ticket_number'] ?></span></td>
-                                    <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-1">
-                                            <div class="user-info-avatar" style="width:20px;height:20px;font-size:0.55rem;"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
-                                            <span><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
-                                        </div>
-                                    </td>
-                                    <td><span class="priority-pill <?= $t['priority'] ?>"><span class="sn-priority-dot <?= $t['priority'] ?>"></span><?= ucfirst($t['priority']) ?></span></td>
-                                    <td><?php
-                                        $slaMins = (int)($t['sla_remaining_min'] ?? 0);
-                                        $slaAbs = abs($slaMins);
-                                        if ($slaAbs < 60) { $slaText = $slaAbs . 'm'; } else { $slaText = floor($slaAbs/60) . 'h ' . ($slaAbs%60) . 'm'; }
-                                        if ($slaMins < 0) $slaText = '-' . $slaText;
-                                        $slaClass = $slaMins < 0 ? 'danger' : ($slaMins < 120 ? 'warning' : 'success');
-                                    ?><span class="badge bg-<?= $slaClass ?><?= $slaClass === 'warning' ? ' text-dark' : '' ?>" style="font-size:0.68rem; font-weight:600;"><?= $slaText ?></span></td>
-                                    <td><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></td>
-                                    <td><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></td>
-                                    <td class="text-nowrap text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                            <?php foreach ($laneTickets as $t): 
+                                $slaMins = (int)($t['sla_remaining_min'] ?? 0);
+                                $slaAbs = abs($slaMins);
+                                if ($slaAbs < 60) { $slaText = $slaAbs . 'm'; } else { $slaText = floor($slaAbs/60) . 'h ' . ($slaAbs%60) . 'm'; }
+                                if ($slaMins < 0) $slaText = '-' . $slaText;
+                                $slaClass = $slaMins < 0 ? 'danger' : ($slaMins < 120 ? 'warning' : 'success');
+                            ?>
+                            <div class="ticket-mini-card" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
+                                <div class="ticket-mini-header">
+                                    <span class="ticket-mini-number"><?= $t['ticket_number'] ?></span>
+                                    <span class="ticket-mini-sla bg-<?= $slaClass ?><?= $slaClass === 'warning' ? ' text-dark' : '' ?>" style="color:<?= $slaClass === 'warning' ? '#000' : '#fff' ?>"><?= $slaText ?></span>
+                                </div>
+                                <div class="ticket-mini-title"><?= htmlspecialchars($t['title']) ?></div>
+                                <div class="ticket-mini-footer">
+                                    <div class="ticket-mini-user">
+                                        <div class="ticket-mini-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
+                                        <span><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
+                                    </div>
+                                    <div class="ticket-mini-meta">
+                                        <span class="ticket-mini-priority <?= $t['priority'] ?>" title="<?= ucfirst($t['priority']) ?>"></span>
+                                        <span><?= date('d/m H:i', strtotime($t['created_at'])) ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
                         <?php else: ?>
                         <div class="lane-empty">
@@ -1958,6 +1965,7 @@ unset($tp);
                                         <li><strong>Nuevos</strong> — Tickets recién creados sin atender</li>
                                         <li><strong>En Proceso</strong> — Un técnico está trabajando en el ticket</li>
                                         <li><strong>Pendientes</strong> — Esperando respuesta del usuario o un tercero</li>
+                                        <li><strong>En Pausa</strong> — Trabajo pausado temporalmente (escalado, externo, etc.)</li>
                                         <li><strong>Resueltos</strong> — Solución aplicada, esperando confirmación</li>
                                         <li><strong>Cerrados</strong> — Ticket finalizado</li>
                                     </ul>
@@ -1969,6 +1977,7 @@ unset($tp);
                                         <li>Haz clic para ver el detalle y <strong>asígnate</strong> el ticket</li>
                                         <li>Cambia el estado a <strong>En Proceso</strong> al comenzar</li>
                                         <li>Si necesitas información del usuario, pasa a <strong>Pendiente</strong></li>
+                                        <li>Si debes pausar el trabajo (escalado, etc.), usa <strong>En Pausa</strong></li>
                                         <li>Aplica la solución y marca como <strong>Resuelto</strong></li>
                                         <li>El ticket se cerrará automáticamente o puede cerrarse manualmente</li>
                                     </ol>
@@ -1982,11 +1991,11 @@ unset($tp);
             <script>
             function filterDashCards() {
                 const q = document.getElementById('dashSearchInput').value.toLowerCase();
-                document.querySelectorAll('.dash-ticket-row').forEach(row => {
-                    row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+                document.querySelectorAll('.ticket-mini-card').forEach(card => {
+                    card.style.display = card.dataset.search.includes(q) ? '' : 'none';
                 });
                 document.querySelectorAll('#dashStatusLanes .lane-card').forEach(card => {
-                    const visible = card.querySelectorAll('.dash-ticket-row:not([style*="display: none"])').length;
+                    const visible = card.querySelectorAll('.ticket-mini-card:not([style*="display: none"])').length;
                     const badge = card.querySelector('.lane-count');
                     if (badge) badge.textContent = visible;
                 });
@@ -4787,6 +4796,7 @@ tr:nth-child(even){background:#f8fafc}
                                                 <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>Abierto</option>
                                                 <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
                                                 <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                                                <option value="en_pausa" <?= $t['status'] === 'en_pausa' ? 'selected' : '' ?>>En Pausa</option>
                                                 <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>Resuelto</option>
                                                 <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
                                             </select>
