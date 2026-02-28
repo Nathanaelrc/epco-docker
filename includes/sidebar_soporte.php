@@ -40,42 +40,41 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
         top: 0;
         left: 0;
         right: 0;
-        height: 60px;
+        height: 50px;
         background: linear-gradient(135deg, #0c5a8a 0%, #094a72 100%);
         z-index: 1001;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 20px;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        padding: 0 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     
     .epco-logo-btn {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         background: rgba(255,255,255,0.1);
         border: none;
-        padding: 8px 16px;
-        border-radius: 12px;
+        padding: 6px 12px;
+        border-radius: 8px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         color: white;
     }
     
     .epco-logo-btn:hover {
         background: rgba(255,255,255,0.2);
-        transform: scale(1.02);
     }
     
     .epco-logo-btn .logo-text {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 0.95rem;
+        font-weight: 600;
     }
     
     .epco-logo-btn .menu-icon {
-        font-size: 1.2rem;
-        transition: transform 0.3s ease;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease;
     }
     
     .epco-logo-btn.active .menu-icon {
@@ -85,24 +84,24 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     .topbar-right {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
     }
     
     .topbar-clock {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         background: rgba(255,255,255,0.15);
-        padding: 8px 15px;
-        border-radius: 10px;
+        padding: 5px 10px;
+        border-radius: 6px;
         color: white;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
     
     .topbar-user {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         color: white;
     }
     
@@ -112,26 +111,26 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     .topbar-user-name {
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
     }
     
     .topbar-user-role {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         opacity: 0.8;
     }
     
     .topbar-avatar {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         background: rgba(255,255,255,0.2);
-        border-radius: 10px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.85rem;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
     }
     
     .topbar-avatar:hover {
@@ -145,12 +144,12 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0,0,0,0.4);
         z-index: 1002;
         opacity: 0;
         visibility: hidden;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(4px);
+        transition: all 0.25s ease;
+        backdrop-filter: blur(3px);
     }
     
     .sidebar-overlay.active {
@@ -162,15 +161,15 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     .epco-sidebar {
         position: fixed;
         top: 0;
-        left: -320px;
-        width: 320px;
+        left: -280px;
+        width: 280px;
         height: 100vh;
         background: linear-gradient(180deg, #0c5a8a 0%, #094a72 50%, #073a5a 100%);
         z-index: 1003;
-        transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
-        box-shadow: 5px 0 30px rgba(0,0,0,0.3);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.25);
     }
     
     .epco-sidebar.active {
@@ -179,7 +178,7 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     /* Header del sidebar */
     .sidebar-header {
-        padding: 25px;
+        padding: 15px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -189,18 +188,18 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     .sidebar-brand {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
     
     .sidebar-brand-logo {
-        width: 45px;
-        height: 45px;
+        width: 36px;
+        height: 36px;
         background: rgba(255,255,255,0.15);
-        border-radius: 12px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3rem;
+        font-size: 1.1rem;
         color: white;
     }
     
@@ -210,27 +209,27 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     .sidebar-brand-text h4 {
         margin: 0;
-        font-weight: 800;
-        font-size: 1.5rem;
-        letter-spacing: -1px;
+        font-weight: 700;
+        font-size: 1.2rem;
+        letter-spacing: -0.5px;
     }
     
     .sidebar-brand-text span {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         opacity: 0.7;
         text-transform: uppercase;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
     }
     
     .sidebar-close {
         background: rgba(255,255,255,0.1);
         border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
         color: white;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -245,21 +244,21 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     .sidebar-content {
         flex: 1;
         overflow-y: auto;
-        padding: 20px 0;
+        padding: 12px 0;
     }
     
     .sidebar-section {
-        margin-bottom: 25px;
+        margin-bottom: 12px;
     }
     
     .sidebar-section-title {
         color: rgba(255,255,255,0.5);
-        font-size: 0.7rem;
+        font-size: 0.6rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        padding: 0 25px;
-        margin-bottom: 10px;
+        letter-spacing: 1.5px;
+        padding: 0 18px;
+        margin-bottom: 6px;
     }
     
     .sidebar-nav {
@@ -269,38 +268,38 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     }
     
     .sidebar-nav-item {
-        margin: 2px 12px;
+        margin: 1px 8px;
     }
     
     .sidebar-nav-link {
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 14px 18px;
+        gap: 10px;
+        padding: 9px 14px;
         color: rgba(255,255,255,0.85);
         text-decoration: none;
-        border-radius: 12px;
-        transition: all 0.3s ease;
+        border-radius: 8px;
+        transition: all 0.2s ease;
         font-weight: 500;
-        font-size: 0.95rem;
+        font-size: 0.82rem;
         position: relative;
     }
     
     .sidebar-nav-link:hover {
         background: rgba(255,255,255,0.1);
         color: white;
-        transform: translateX(5px);
+        transform: translateX(3px);
     }
     
     .sidebar-nav-link.active {
         background: rgba(255,255,255,0.15);
         color: white;
-        box-shadow: inset 4px 0 0 white;
+        box-shadow: inset 3px 0 0 white;
     }
     
     .sidebar-nav-link i {
-        width: 22px;
-        font-size: 1.15rem;
+        width: 18px;
+        font-size: 1rem;
         text-align: center;
     }
     
@@ -308,9 +307,9 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
         margin-left: auto;
         background: rgba(255,255,255,0.2);
         color: white;
-        font-size: 0.7rem;
-        padding: 4px 8px;
-        border-radius: 20px;
+        font-size: 0.65rem;
+        padding: 2px 6px;
+        border-radius: 10px;
     }
     
     .sidebar-nav-link .badge.urgent {
@@ -328,29 +327,29 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     /* Footer del sidebar */
     .sidebar-footer {
-        padding: 20px;
+        padding: 12px;
         border-top: 1px solid rgba(255,255,255,0.1);
     }
     
     .sidebar-user-card {
         background: rgba(255,255,255,0.1);
-        border-radius: 14px;
-        padding: 15px;
+        border-radius: 10px;
+        padding: 10px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
     
     .sidebar-user-avatar {
-        width: 48px;
-        height: 48px;
+        width: 36px;
+        height: 36px;
         background: rgba(255,255,255,0.2);
-        border-radius: 12px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 1.2rem;
+        font-size: 0.95rem;
         color: white;
     }
     
@@ -360,25 +359,25 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     .sidebar-user-info h6 {
         color: white;
-        margin: 0 0 2px 0;
+        margin: 0 0 1px 0;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.82rem;
     }
     
     .sidebar-user-info span {
         color: rgba(255,255,255,0.6);
-        font-size: 0.8rem;
+        font-size: 0.7rem;
     }
     
     .sidebar-logout {
         background: rgba(239, 68, 68, 0.2);
         border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
         color: #fca5a5;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -392,7 +391,7 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     /* Ajustar contenido principal */
     body.has-sidebar {
-        padding-top: 60px;
+        padding-top: 50px;
     }
     
     /* Responsive */
@@ -410,7 +409,7 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     /* Scrollbar del sidebar */
     .sidebar-content::-webkit-scrollbar {
-        width: 5px;
+        width: 4px;
     }
     
     .sidebar-content::-webkit-scrollbar-track {
@@ -419,7 +418,7 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
     
     .sidebar-content::-webkit-scrollbar-thumb {
         background: rgba(255,255,255,0.2);
-        border-radius: 10px;
+        border-radius: 4px;
     }
     
     .sidebar-content::-webkit-scrollbar-thumb:hover {

@@ -5,12 +5,31 @@
 require_once '../includes/bootstrap.php';
 require_once '../includes/auth.php';
 
+/**
+ * Validar que el redirect sea seguro (solo rutas internas)
+ */
+function isSafeRedirect($redirect) {
+    if (!$redirect) return false;
+    
+    // Lista blanca de páginas permitidas
+    $allowedPages = [
+        'soporte_admin', 'intranet_dashboard', 'intranet_soporte',
+        'denuncias', 'denuncia_seguimiento', 'profile', 'index',
+        'documents', 'events', 'knowledge_base', 'search', 'soporte'
+    ];
+    
+    // Limpiar el redirect
+    $redirect = basename(str_replace('.php', '', $redirect));
+    
+    return in_array($redirect, $allowedPages);
+}
+
 // Si ya está logueado, redirigir automáticamente
 if (isLoggedIn()) {
     $redirect = $_GET['redirect'] ?? null;
     
-    if ($redirect) {
-        $redirect = str_replace('.php', '', $redirect);
+    if ($redirect && isSafeRedirect($redirect)) {
+        $redirect = basename(str_replace('.php', '', $redirect));
         header("Location: $redirect");
     } elseif ($_SESSION['user_role'] === 'soporte') {
         header("Location: soporte_admin");
@@ -25,35 +44,37 @@ $success = '';
 
 // Procesar login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $identifier = sanitize($_POST['identifier'] ?? '');
-    $password = $_POST['password'] ?? '';
-    
-    if (empty($identifier) || empty($password)) {
-        $error = 'Por favor complete todos los campos.';
+    // Verificar CSRF token
+    if (!verifyCsrfToken($_POST[CSRF_TOKEN_NAME] ?? '')) {
+        $error = 'Token de seguridad inválido. Recargue la página e intente de nuevo.';
     } else {
-        if (login($identifier, $password)) {
-            // Registrar login exitoso
-            logActivity($_SESSION['user_id'], 'login', 'users', $_SESSION['user_id'], 'Inicio de sesión exitoso');
-            
-            // Redirección: primero verificar si hay un redirect específico
-            $redirect = $_GET['redirect'] ?? null;
-            
-            if ($redirect) {
-                // Si hay redirect específico, usarlo (puede venir del enlace del correo)
-                $redirect = str_replace('.php', '', $redirect);
-                header("Location: $redirect");
-            } elseif ($_SESSION['user_role'] === 'soporte') {
-                // Si es soporte sin redirect, ir al panel de soporte
-                header("Location: soporte_admin");
-            } else {
-                // Otros usuarios van a la intranet
-                header("Location: intranet_dashboard");
-            }
-            exit;
+        $identifier = sanitize($_POST['identifier'] ?? '');
+        $password = $_POST['password'] ?? '';
+        
+        if (empty($identifier) || empty($password)) {
+            $error = 'Por favor complete todos los campos.';
         } else {
-            // Registrar intento fallido
-            logActivity(null, 'login_failed', 'users', null, "Intento de login fallido para: $identifier");
-            $error = 'Credenciales incorrectas. Intente nuevamente.';
+            if (login($identifier, $password)) {
+                // Registrar login exitoso
+                logActivity($_SESSION['user_id'], 'login', 'users', $_SESSION['user_id'], 'Inicio de sesión exitoso');
+                
+                // Redirección: primero verificar si hay un redirect específico y es seguro
+                $redirect = $_GET['redirect'] ?? null;
+                
+                if ($redirect && isSafeRedirect($redirect)) {
+                    $redirect = basename(str_replace('.php', '', $redirect));
+                    header("Location: $redirect");
+                } elseif ($_SESSION['user_role'] === 'soporte') {
+                    header("Location: soporte_admin");
+                } else {
+                    header("Location: intranet_dashboard");
+                }
+                exit;
+            } else {
+                // Registrar intento fallido
+                logActivity(null, 'login_failed', 'users', null, "Intento de login fallido para: $identifier");
+                $error = 'Credenciales incorrectas. Intente nuevamente.';
+            }
         }
     }
 }
@@ -168,6 +189,7 @@ $pageTitle = 'Iniciar Sesión';
                         <?php endif; ?>
                         
                         <form method="POST" action="">
+                            <?= csrfInput() ?>
                             <div class="mb-4">
                                 <label class="form-label fw-semibold text-dark">Usuario o Correo</label>
                                 <div class="input-group">
@@ -213,15 +235,5 @@ $pageTitle = 'Iniciar Sesión';
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        gsap.from('.login-card', { y: 50, opacity: 0, duration: 0.8, ease: 'power3.out' });
-    </script>
-    
-    <!-- Service Worker -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW:', err));
-        }
-    </script>
 </body>
 </html>

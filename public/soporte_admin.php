@@ -175,6 +175,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
+    // Actualizar ticket desde panel de trabajo unificado (estilo ServiceNow)
+    if ($action === 'update_ticket_work') {
+        $ticketId = (int)$_POST['ticket_id'];
+        $newStatus = sanitize($_POST['new_status'] ?? '');
+        $resolution = sanitize($_POST['resolution'] ?? '');
+        $assignTo = !empty($_POST['assign_to']) ? (int)$_POST['assign_to'] : null;
+        $priority = sanitize($_POST['priority'] ?? '');
+        
+        // Obtener datos actuales del ticket para comparar
+        $currentStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+        $currentStmt->execute([$ticketId]);
+        $currentTicket = $currentStmt->fetch();
+        
+        $changes = [];
+        
+        // Actualizar todos los campos
+        $stmt = $pdo->prepare('UPDATE tickets SET status = ?, resolution = ?, assigned_to = ?, priority = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$newStatus, $resolution, $assignTo, $priority, $ticketId]);
+        
+        // Registrar cambios en log
+        if ($currentTicket['status'] !== $newStatus) $changes[] = "Estado: {$newStatus}";
+        if ($currentTicket['priority'] !== $priority) $changes[] = "Prioridad: {$priority}";
+        if ($currentTicket['assigned_to'] != $assignTo) $changes[] = "Asignación actualizada";
+        
+        logActivity($user['id'], 'ticket_updated', 'tickets', $ticketId, implode(', ', $changes) ?: 'Ticket actualizado');
+        
+        // Enviar correo al técnico si se cambió la asignación
+        if ($assignTo && $currentTicket['assigned_to'] != $assignTo) {
+            try {
+                $techStmt = $pdo->prepare('SELECT name, email FROM users WHERE id = ?');
+                $techStmt->execute([$assignTo]);
+                $techData = $techStmt->fetch();
+                if ($techData && !empty($techData['email'])) {
+                    require_once __DIR__ . '/../includes/MailService.php';
+                    $mailService = new MailService();
+                    $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+                    $ticketStmt->execute([$ticketId]);
+                    $ticketData = $ticketStmt->fetch();
+                    $mailService->sendTicketAssignedNotification($ticketData, $techData['name'], $techData['email']);
+                }
+            } catch (Exception $e) {
+                error_log('[EPCO] Error enviando email de asignación: ' . $e->getMessage());
+            }
+        }
+        
+        // Enviar correo al usuario cuando el ticket se cierra o resuelve
+        if (in_array($newStatus, ['resuelto', 'cerrado']) && !in_array($currentTicket['status'], ['resuelto', 'cerrado'])) {
+            try {
+                $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+                $ticketStmt->execute([$ticketId]);
+                $ticketData = $ticketStmt->fetch();
+                if ($ticketData && !empty($ticketData['user_email'])) {
+                    require_once __DIR__ . '/../includes/MailService.php';
+                    $mailService = new MailService();
+                    $ticketData['subject'] = $ticketData['title'];
+                    $ticketData['resolution'] = $resolution;
+                    $ticketData['status'] = $newStatus;
+                    $mailService->sendTicketClosedNotification($ticketData, $user['name']);
+                }
+            } catch (Exception $e) {
+                error_log('[EPCO] Error enviando email de cierre: ' . $e->getMessage());
+            }
+        }
+        
+        $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=ticket_updated';
+        header("Location: $redirectUrl");
+        exit;
+    }
+    
     // Auto-asignarse ticket (soporte)
     if ($action === 'self_assign') {
         $ticketId = (int)$_POST['ticket_id'];
@@ -4601,376 +4670,404 @@ tr:nth-child(even){background:#f8fafc}
         $ticketComments = $pdo->prepare('SELECT * FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at ASC');
         $ticketComments->execute([$t['id']]);
         $comments = $ticketComments->fetchAll();
+        
+        // Pre-procesar evidencia
+        $ticketNum = $t['ticket_number'];
+        $evidenceDir = __DIR__ . '/uploads/tickets/' . $ticketNum;
+        $evidenceFiles = [];
+        $evidenceImages = [];
+        $evidenceDocs = [];
+        if (is_dir($evidenceDir)) {
+            $scan = array_diff(scandir($evidenceDir), ['.', '..', '.gitkeep']);
+            foreach ($scan as $f) { $evidenceFiles[$f] = 'uploads/tickets/' . $ticketNum . '/' . $f; }
+        }
+        foreach ($comments as $c) {
+            if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $m)) {
+                $names = array_map('trim', explode(',', $m[1]));
+                foreach ($names as $fname) {
+                    $fname = trim($fname);
+                    if ($fname && !isset($evidenceFiles[$fname])) { $evidenceFiles[$fname] = 'uploads/tickets/' . $ticketNum . '/' . $fname; }
+                }
+            }
+        }
+        foreach ($evidenceFiles as $fn => $fu) {
+            $ext = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg','jpeg','png','gif','webp'])) { $evidenceImages[$fn] = $fu; } else { $evidenceDocs[$fn] = $fu; }
+        }
+        $totalEvidence = count($evidenceFiles);
+        
+        // Calcular antigüedad
+        $createdDate = new DateTime($t['created_at']);
+        $now = new DateTime();
+        $diffDays = $createdDate->diff($now)->days;
+        $updatedAt = $t['updated_at'] ?? $t['created_at'];
     ?>
     <div class="modal fade" id="ticketModal<?= $t['id'] ?>" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content" style="max-height: 90vh;">
-                <!-- Header con tema azul -->
-                <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); color: #fff;">
-                    <div class="d-flex align-items-center gap-3">
-                        <h5 class="modal-title mb-0"><i class="bi bi-ticket-detailed me-2"></i><?= $t['ticket_number'] ?></h5>
-                        <span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span>
-                        <span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span>
+            <div class="modal-content" style="max-height: 95vh; border: none; border-radius: 12px; overflow: hidden;">
+                <!-- Header estilo ServiceNow -->
+                <div class="modal-header py-2 px-3" style="background: linear-gradient(135deg, #1e3a5f 0%, #0c5a8a 100%); border: none;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="text-white fw-bold" style="font-size: 1.1rem;"><?= $t['ticket_number'] ?></span>
+                        <span class="badge bg-<?= $statusColors[$t['status']] ?> py-1"><?= $statusLabels[$t['status']] ?></span>
+                        <span class="badge bg-<?= $priorityColors[$t['priority']] ?> py-1"><?= ucfirst($t['priority']) ?></span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <small class="opacity-75"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></small>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <small class="text-white-50"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></small>
+                        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
                     </div>
                 </div>
-                <div class="modal-body p-0">
-                    <!-- Tabs de navegación -->
-                    <ul class="nav nav-tabs px-3 pt-2" id="ticketTabs<?= $t['id'] ?>" role="tablist" style="border-bottom: 2px solid #e2e8f0;">
-                        <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details<?= $t['id'] ?>" type="button"><i class="bi bi-info-circle me-1"></i>Detalles</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#editTab<?= $t['id'] ?>" type="button"><i class="bi bi-pencil-square me-1"></i>Editar</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity<?= $t['id'] ?>" type="button"><i class="bi bi-chat-dots me-1"></i>Actividad <span class="badge bg-secondary ms-1"><?= count($comments) ?></span></button>
-                        </li>
-                    </ul>
-                    
-                    <div class="tab-content">
-                        <!-- TAB: Detalles -->
-                        <div class="tab-pane fade show active" id="details<?= $t['id'] ?>">
-                            <?php
-                            // ===== EVIDENCIA ADJUNTA (pre-procesar) =====
-                            $ticketNum = $t['ticket_number'];
-                            $evidenceDir = __DIR__ . '/uploads/tickets/' . $ticketNum;
-                            $evidenceFiles = [];
-                            $evidenceImages = [];
-                            $evidenceDocs = [];
-                            if (is_dir($evidenceDir)) {
-                                $scan = array_diff(scandir($evidenceDir), ['.', '..', '.gitkeep']);
-                                foreach ($scan as $f) { $evidenceFiles[$f] = 'uploads/tickets/' . $ticketNum . '/' . $f; }
-                            }
-                            foreach ($comments as $c) {
-                                if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $m)) {
-                                    $names = array_map('trim', explode(',', $m[1]));
-                                    foreach ($names as $fname) {
-                                        $fname = trim($fname);
-                                        if ($fname && !isset($evidenceFiles[$fname])) { $evidenceFiles[$fname] = 'uploads/tickets/' . $ticketNum . '/' . $fname; }
-                                    }
-                                }
-                            }
-                            foreach ($evidenceFiles as $fn => $fu) {
-                                $ext = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
-                                if (in_array($ext, ['jpg','jpeg','png','gif','webp'])) { $evidenceImages[$fn] = $fu; } else { $evidenceDocs[$fn] = $fu; }
-                            }
-                            $totalEvidence = count($evidenceFiles);
+                
+                <div class="modal-body p-0" style="background: #f8fafc;">
+                    <div class="row g-0" style="min-height: 70vh;">
+                        
+                        <!-- ========== COLUMNA IZQUIERDA: Información del Ticket ========== -->
+                        <div class="col-lg-4 border-end" style="background: #fff;">
                             
-                            // Calcular antigüedad
-                            $createdDate = new DateTime($t['created_at']);
-                            $now = new DateTime();
-                            $diffDays = $createdDate->diff($now)->days;
-                            $updatedAt = $t['updated_at'] ?? $t['created_at'];
-                            ?>
-                            <!-- Barra de resumen rápido -->
-                            <div class="d-flex flex-wrap align-items-center gap-2 px-4 py-3" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                <span class="badge bg-<?= $statusColors[$t['status']] ?> py-1 px-2"><?= $statusLabels[$t['status']] ?></span>
-                                <span class="badge bg-<?= $priorityColors[$t['priority']] ?> py-1 px-2"><?= ucfirst($t['priority']) ?></span>
-                                <span class="badge bg-light text-dark border py-1 px-2"><i class="bi bi-folder me-1"></i><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span>
-                                <span class="text-muted small ms-auto"><i class="bi bi-clock me-1"></i>Creado hace <?= $diffDays === 0 ? 'hoy' : $diffDays . ' día' . ($diffDays > 1 ? 's' : '') ?></span>
-                                <?php if ($t['assigned_name']): ?>
-                                <span class="badge bg-primary-subtle text-primary border py-1 px-2"><i class="bi bi-person me-1"></i><?= htmlspecialchars($t['assigned_name']) ?></span>
-                                <?php else: ?>
-                                <span class="badge bg-warning-subtle text-warning-emphasis border py-1 px-2"><i class="bi bi-person-exclamation me-1"></i>Sin asignar</span>
-                                <?php endif; ?>
+                            <!-- Sección: Información General -->
+                            <div class="p-3 border-bottom">
+                                <h6 class="text-uppercase fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
+                                    <i class="bi bi-info-circle me-1"></i>Información del Ticket
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted mb-1" style="font-size: 0.7rem;">Título</label>
+                                    <p class="mb-0 fw-semibold" style="font-size: 0.9rem; line-height: 1.4;"><?= htmlspecialchars($t['title']) ?></p>
+                                </div>
+                                
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label text-muted mb-1" style="font-size: 0.7rem;">Categoría</label>
+                                        <p class="mb-0"><span class="badge bg-light text-dark border"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></p>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted mb-1" style="font-size: 0.7rem;">Prioridad</label>
+                                        <p class="mb-0"><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></p>
+                                    </div>
+                                </div>
                             </div>
                             
-                            <div class="row g-0">
-                                <!-- Columna principal (contenido) -->
-                                <div class="col-lg-8 p-4" style="border-right: 1px solid #e2e8f0;">
-                                    <!-- Título -->
-                                    <h5 class="fw-bold mb-3" style="line-height: 1.4;"><?= htmlspecialchars($t['title']) ?></h5>
-                                    
-                                    <!-- Descripción (adaptable al contenido) -->
-                                    <div class="mb-3">
-                                        <div class="d-flex align-items-center gap-2 mb-2">
-                                            <i class="bi bi-text-left text-muted"></i>
-                                            <span class="small fw-semibold text-muted text-uppercase" style="letter-spacing: 0.5px;">Descripción</span>
-                                        </div>
-                                        <div class="rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px;">
-                                            <p class="mb-0" style="line-height: 1.6; white-space: pre-line;"><?= htmlspecialchars($t['description']) ?></p>
-                                        </div>
+                            <!-- Sección: Solicitante -->
+                            <div class="p-3 border-bottom">
+                                <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
+                                    <i class="bi bi-person me-1"></i>Solicitante
+                                </h6>
+                                <div class="d-flex align-items-center gap-2 p-2 rounded" style="background: #f1f5f9;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: var(--primary-soft); color: var(--primary-dark); font-weight: 600;">
+                                        <?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?>
                                     </div>
-                                    
-                                    <?php if ($t['resolution']): ?>
-                                    <!-- Resolución -->
-                                    <div class="mb-3">
-                                        <div class="d-flex align-items-center gap-2 mb-2">
-                                            <i class="bi bi-check-circle text-success"></i>
-                                            <span class="small fw-semibold text-success text-uppercase" style="letter-spacing: 0.5px;">Resolución</span>
-                                        </div>
-                                        <div class="rounded-3" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px;">
-                                            <p class="mb-0" style="line-height: 1.6; white-space: pre-line;"><?= htmlspecialchars($t['resolution']) ?></p>
-                                        </div>
+                                    <div>
+                                        <div class="fw-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($t['user_name'] ?? 'Sin nombre') ?></div>
+                                        <div class="text-muted" style="font-size: 0.75rem;"><?= htmlspecialchars($t['user_email'] ?? '-') ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sección: Descripción -->
+                            <div class="p-3 border-bottom">
+                                <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
+                                    <i class="bi bi-text-left me-1"></i>Descripción
+                                </h6>
+                                <div class="p-2 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0; max-height: 150px; overflow-y: auto;">
+                                    <p class="mb-0" style="font-size: 0.85rem; line-height: 1.5; white-space: pre-line;"><?= htmlspecialchars($t['description']) ?></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Sección: Fechas -->
+                            <div class="p-3 border-bottom">
+                                <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
+                                    <i class="bi bi-calendar3 me-1"></i>Fechas
+                                </h6>
+                                <div class="d-flex flex-column gap-1">
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Creado:</small>
+                                        <small class="fw-semibold"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></small>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Actualizado:</small>
+                                        <small class="fw-semibold"><?= date('d/m/Y H:i', strtotime($updatedAt)) ?></small>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Antigüedad:</small>
+                                        <small class="badge bg-<?= $diffDays > 3 ? 'warning' : 'light' ?> text-<?= $diffDays > 3 ? 'dark' : 'muted' ?>"><?= $diffDays === 0 ? 'Hoy' : $diffDays . ' día' . ($diffDays > 1 ? 's' : '') ?></small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sección: Archivos Adjuntos -->
+                            <div class="p-3">
+                                <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
+                                    <i class="bi bi-paperclip me-1"></i>Adjuntos (<?= $totalEvidence ?>)
+                                </h6>
+                                <?php if ($totalEvidence > 0): ?>
+                                    <?php if (count($evidenceImages) > 0): ?>
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        <?php foreach ($evidenceImages as $fname => $furl):
+                                            $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
+                                            $fullDiskPath = __DIR__ . '/' . $furl;
+                                            if (file_exists($fullDiskPath)): ?>
+                                        <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" 
+                                           class="position-relative d-block rounded overflow-hidden" style="width: 60px; height: 60px; border: 2px solid #e2e8f0;">
+                                            <img src="<?= htmlspecialchars($furl) ?>" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </a>
+                                        <?php endif; endforeach; ?>
                                     </div>
                                     <?php endif; ?>
-                                    
-                                    <!-- Evidencia / Archivos adjuntos -->
-                                    <?php if ($totalEvidence > 0): ?>
-                                    <div class="mb-2">
-                                        <div class="d-flex align-items-center gap-2 mb-2">
-                                            <i class="bi bi-paperclip text-muted"></i>
-                                            <span class="small fw-semibold text-muted text-uppercase" style="letter-spacing: 0.5px;">Evidencia (<?= $totalEvidence ?>)</span>
-                                        </div>
-                                        
-                                        <?php if (count($evidenceImages) > 0): ?>
-                                        <!-- Galería de imágenes -->
-                                        <div class="d-flex flex-wrap gap-2 mb-2">
-                                            <?php foreach ($evidenceImages as $fname => $furl):
-                                                $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
-                                                $fullDiskPath = __DIR__ . '/' . $furl;
-                                                $fileExists = file_exists($fullDiskPath);
-                                            ?>
-                                            <?php if ($fileExists): ?>
-                                            <a href="javascript:void(0)" onclick="openLightbox('<?= htmlspecialchars($furl, ENT_QUOTES) ?>', '<?= htmlspecialchars($displayName, ENT_QUOTES) ?>')" 
-                                               class="position-relative d-block rounded-3 overflow-hidden shadow-sm" 
-                                               style="width: 100px; height: 100px; border: 2px solid #e2e8f0; transition: all 0.2s;"
-                                               onmouseover="this.style.borderColor='var(--primary-dark)';this.style.transform='scale(1.05)'" 
-                                               onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='scale(1)'"
-                                               title="<?= htmlspecialchars($displayName) ?>">
-                                                <img src="<?= htmlspecialchars($furl) ?>" alt="<?= htmlspecialchars($displayName) ?>" 
-                                                     style="width: 100%; height: 100%; object-fit: cover;">
-                                                <div class="position-absolute bottom-0 start-0 end-0 d-flex align-items-center justify-content-center" 
-                                                     style="background: rgba(0,0,0,0.5); padding: 2px;">
-                                                    <i class="bi bi-zoom-in text-white" style="font-size: 0.7rem;"></i>
-                                                </div>
-                                            </a>
-                                            <?php endif; ?>
-                                            <?php endforeach; ?>
-                                        </div>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (count($evidenceDocs) > 0): ?>
-                                        <!-- Documentos adjuntos -->
-                                        <div class="d-flex flex-column gap-1">
-                                            <?php foreach ($evidenceDocs as $fname => $furl):
-                                                $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
-                                                $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
-                                                $fullDiskPath = __DIR__ . '/' . $furl;
-                                                $fileExists = file_exists($fullDiskPath);
-                                                $iconMap = ['pdf' => 'file-earmark-pdf text-danger', 'doc' => 'file-earmark-word text-primary', 'docx' => 'file-earmark-word text-primary', 'xls' => 'file-earmark-excel text-success', 'xlsx' => 'file-earmark-excel text-success', 'zip' => 'file-earmark-zip text-warning', 'rar' => 'file-earmark-zip text-warning'];
+                                    <?php if (count($evidenceDocs) > 0): ?>
+                                    <div class="d-flex flex-column gap-1">
+                                        <?php foreach ($evidenceDocs as $fname => $furl):
+                                            $ext = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
+                                            $displayName = preg_replace('/^[a-f0-9]+_/', '', $fname);
+                                            $fullDiskPath = __DIR__ . '/' . $furl;
+                                            if (file_exists($fullDiskPath)):
+                                                $iconMap = ['pdf' => 'file-earmark-pdf text-danger', 'doc' => 'file-earmark-word text-primary', 'docx' => 'file-earmark-word text-primary'];
                                                 $icon = $iconMap[$ext] ?? 'file-earmark text-muted';
-                                            ?>
-                                            <div class="d-flex align-items-center gap-2 rounded-2 px-3 py-2" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                                                <i class="bi bi-<?= $icon ?>" style="font-size: 1.1rem;"></i>
-                                                <span class="small fw-semibold flex-grow-1 text-truncate"><?= htmlspecialchars($displayName) ?></span>
-                                                <span class="text-muted" style="font-size: 0.7rem;"><?= strtoupper($ext) ?><?php if ($fileExists): ?> · <?= round(filesize($fullDiskPath) / 1024) ?> KB<?php endif; ?></span>
-                                                <?php if ($fileExists): ?>
-                                                <a href="<?= htmlspecialchars($furl) ?>" download class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;"><i class="bi bi-download"></i></a>
-                                                <?php endif; ?>
-                                            </div>
-                                            <?php endforeach; ?>
+                                        ?>
+                                        <a href="<?= htmlspecialchars($furl) ?>" download class="d-flex align-items-center gap-2 p-2 rounded text-decoration-none" style="background: #f1f5f9; font-size: 0.8rem;">
+                                            <i class="bi bi-<?= $icon ?>"></i>
+                                            <span class="text-truncate text-dark"><?= htmlspecialchars($displayName) ?></span>
+                                            <i class="bi bi-download text-muted ms-auto"></i>
+                                        </a>
+                                        <?php endif; endforeach; ?>
+                                    </div>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                <div class="text-center py-3 rounded" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
+                                    <i class="bi bi-paperclip text-muted"></i>
+                                    <p class="mb-0 small text-muted">Sin archivos</p>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- ========== COLUMNA DERECHA: Área de Trabajo ========== -->
+                        <div class="col-lg-8 d-flex flex-column">
+                            
+                            <!-- Panel de Trabajo Superior -->
+                            <div class="p-3" style="background: #fff; border-bottom: 1px solid #e2e8f0;">
+                                <form method="POST" id="ticketWorkForm<?= $t['id'] ?>">
+                                    <input type="hidden" name="action" value="update_ticket_work">
+                                    <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                    
+                                    <!-- Fila 1: Estado + Asignación -->
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold" style="font-size: 0.75rem;">
+                                                <i class="bi bi-flag me-1"></i>Estado
+                                            </label>
+                                            <select name="new_status" class="form-select form-select-sm" style="font-size: 0.85rem;">
+                                                <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>🔵 Abierto</option>
+                                                <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>🟡 En Proceso</option>
+                                                <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>⏳ Pendiente</option>
+                                                <option value="en_pausa" <?= $t['status'] === 'en_pausa' ? 'selected' : '' ?>>⏸️ En Pausa</option>
+                                                <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>✅ Resuelto</option>
+                                                <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>⬛ Cerrado</option>
+                                            </select>
                                         </div>
-                                        <?php endif; ?>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold" style="font-size: 0.75rem;">
+                                                <i class="bi bi-person-check me-1"></i>Asignado a
+                                            </label>
+                                            <select name="assign_to" class="form-select form-select-sm" style="font-size: 0.85rem;">
+                                                <option value="">Sin asignar</option>
+                                                <?php foreach ($technicians as $tech): ?>
+                                                <option value="<?= $tech['id'] ?>" <?= $t['assigned_to'] == $tech['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tech['name']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold" style="font-size: 0.75rem;">
+                                                <i class="bi bi-arrow-up-circle me-1"></i>Prioridad
+                                            </label>
+                                            <select name="priority" class="form-select form-select-sm" style="font-size: 0.85rem;">
+                                                <option value="baja" <?= $t['priority'] === 'baja' ? 'selected' : '' ?>>🟢 Baja</option>
+                                                <option value="media" <?= $t['priority'] === 'media' ? 'selected' : '' ?>>🔵 Media</option>
+                                                <option value="alta" <?= $t['priority'] === 'alta' ? 'selected' : '' ?>>🟠 Alta</option>
+                                                <option value="urgente" <?= $t['priority'] === 'urgente' ? 'selected' : '' ?>>🔴 Urgente</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Fila 2: Resolución / Notas de Trabajo -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold" style="font-size: 0.75rem;">
+                                            <i class="bi bi-journal-text me-1"></i>Notas de Resolución / Trabajo
+                                        </label>
+                                        <textarea name="resolution" class="form-control" rows="3" placeholder="Escribe aquí las notas de trabajo, solución aplicada o información relevante..." style="font-size: 0.85rem;"><?= htmlspecialchars($t['resolution'] ?? '') ?></textarea>
+                                    </div>
+                                    
+                                    <!-- Botones de Acción -->
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-check-lg me-1"></i>Actualizar Ticket
+                                            </button>
+                                            <button type="button" class="btn btn-success btn-sm" onclick="resolveAndClose<?= $t['id'] ?>()">
+                                                <i class="bi bi-check-circle me-1"></i>Resolver y Cerrar
+                                            </button>
+                                        </div>
+                                        <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este ticket? Esta acción no se puede deshacer.')">
+                                            <input type="hidden" name="action" value="delete_ticket">
+                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-trash me-1"></i>Eliminar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- Panel: Edición Rápida (Colapsable) -->
+                            <div class="border-bottom">
+                                <button class="btn btn-link w-100 text-start d-flex justify-content-between align-items-center py-2 px-3 text-decoration-none collapsed" 
+                                        type="button" data-bs-toggle="collapse" data-bs-target="#editSection<?= $t['id'] ?>" 
+                                        style="background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">
+                                    <span><i class="bi bi-pencil me-1"></i>EDITAR DATOS DEL TICKET</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <div class="collapse" id="editSection<?= $t['id'] ?>">
+                                    <div class="p-3" style="background: #fff;">
+                                        <form method="POST">
+                                            <input type="hidden" name="action" value="update_ticket">
+                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-semibold">Solicitante</label>
+                                                    <input type="text" name="user_name" class="form-control form-control-sm" value="<?= htmlspecialchars($t['user_name'] ?? '') ?>">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-semibold">Email</label>
+                                                    <input type="email" name="user_email" class="form-control form-control-sm" value="<?= htmlspecialchars($t['user_email'] ?? '') ?>">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-semibold">Categoría</label>
+                                                    <select name="category" class="form-select form-select-sm">
+                                                        <option value="hardware" <?= $t['category'] === 'hardware' ? 'selected' : '' ?>>Hardware</option>
+                                                        <option value="software" <?= $t['category'] === 'software' ? 'selected' : '' ?>>Software</option>
+                                                        <option value="red" <?= $t['category'] === 'red' ? 'selected' : '' ?>>Red</option>
+                                                        <option value="acceso" <?= $t['category'] === 'acceso' ? 'selected' : '' ?>>Acceso</option>
+                                                        <option value="otro" <?= $t['category'] === 'otro' ? 'selected' : '' ?>>Otro</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-semibold">Título</label>
+                                                    <input type="text" name="title" class="form-control form-control-sm" value="<?= htmlspecialchars($t['title']) ?>">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label small fw-semibold">Descripción</label>
+                                                    <textarea name="description" class="form-control form-control-sm" rows="3"><?= htmlspecialchars($t['description']) ?></textarea>
+                                                </div>
+                                                <div class="col-12 text-end">
+                                                    <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-save me-1"></i>Guardar Datos</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ========== ACTIVIDAD / HISTORIAL ========== -->
+                            <div class="flex-grow-1 d-flex flex-column" style="background: #f8fafc;">
+                                <div class="px-3 py-2" style="background: #fff; border-bottom: 1px solid #e2e8f0;">
+                                    <h6 class="mb-0 text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
+                                        <i class="bi bi-chat-square-text me-1"></i>Actividad / Notas de Trabajo
+                                        <span class="badge bg-secondary ms-1"><?= count($comments) ?></span>
+                                    </h6>
+                                </div>
+                                
+                                <!-- Lista de Actividad -->
+                                <div class="flex-grow-1 p-3" style="overflow-y: auto; max-height: 250px;">
+                                    <?php if (empty($comments)): ?>
+                                    <div class="text-center py-4">
+                                        <i class="bi bi-chat-left text-muted" style="font-size: 2rem;"></i>
+                                        <p class="text-muted small mt-2 mb-0">Sin actividad registrada</p>
                                     </div>
                                     <?php else: ?>
-                                    <div class="text-center py-3 rounded-3 mb-2" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
-                                        <i class="bi bi-paperclip text-muted" style="font-size: 1.3rem;"></i>
-                                        <p class="mb-0 small text-muted mt-1">Sin archivos adjuntos</p>
+                                    <?php foreach ($comments as $c): ?>
+                                    <div class="d-flex gap-2 mb-3">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                                             style="width: 32px; height: 32px; background: <?= $c['is_internal'] ? '#fef3c7' : 'var(--primary-soft)' ?>; 
+                                                    color: <?= $c['is_internal'] ? '#92400e' : 'var(--primary-dark)' ?>; font-weight: 600; font-size: 0.75rem;">
+                                            <?= strtoupper(substr($c['user_name'] ?? 'S', 0, 1)) ?>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <div>
+                                                    <span class="fw-semibold" style="font-size: 0.8rem;"><?= htmlspecialchars($c['user_name'] ?? 'Sistema') ?></span>
+                                                    <?php if ($c['is_internal']): ?>
+                                                    <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;"><i class="bi bi-lock-fill me-1"></i>Interno</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.7rem;"><?= date('d/m H:i', strtotime($c['created_at'])) ?></small>
+                                            </div>
+                                            <div class="p-2 rounded" style="background: <?= $c['is_internal'] ? '#fef9c3' : '#f1f5f9' ?>; font-size: 0.85rem;">
+                                                <?php
+                                                $commentText = htmlspecialchars($c['comment']);
+                                                if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $cm)) {
+                                                    $fileNames = array_map('trim', explode(',', $cm[1]));
+                                                    $linkedNames = [];
+                                                    foreach ($fileNames as $fn) {
+                                                        $fn = trim($fn);
+                                                        if (!$fn) continue;
+                                                        $fileUrl = 'uploads/tickets/' . $ticketNum . '/' . $fn;
+                                                        $cleanName = preg_replace('/^[a-f0-9]+_/', '', $fn);
+                                                        $fExt = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
+                                                        $fIsImg = in_array($fExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                                        if ($fIsImg) {
+                                                            $linkedNames[] = '<a href="javascript:void(0)" onclick="openLightbox(\'' . htmlspecialchars($fileUrl, ENT_QUOTES) . '\', \'' . htmlspecialchars($cleanName, ENT_QUOTES) . '\')" class="text-primary"><i class="bi bi-image me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                                        } else {
+                                                            $linkedNames[] = '<a href="' . htmlspecialchars($fileUrl) . '" download class="text-primary"><i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
+                                                        }
+                                                    }
+                                                    $commentText = str_replace(htmlspecialchars($cm[0]), 'Archivos adjuntos: ' . implode(', ', $linkedNames), $commentText);
+                                                }
+                                                echo nl2br($commentText);
+                                                ?>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <?php endforeach; ?>
                                     <?php endif; ?>
                                 </div>
                                 
-                                <!-- Panel lateral compacto -->
-                                <div class="col-lg-4 p-0" style="background: #fafbfc;">
-                                    <!-- Info del ticket -->
-                                    <div class="px-3 py-3" style="border-bottom: 1px solid #e2e8f0;">
-                                        <h6 class="fw-bold mb-2 small text-uppercase" style="color: var(--primary-dark); letter-spacing: 0.5px;"><i class="bi bi-info-circle me-1"></i>Información</h6>
-                                        <div class="d-flex flex-column gap-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">Solicitante</small>
-                                                <span class="small fw-semibold"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">Email</small>
-                                                <span class="small text-truncate ms-2" style="max-width: 160px;"><?= htmlspecialchars($t['user_email'] ?? '-') ?></span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">Asignado</small>
-                                                <span class="small fw-semibold"><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">Creado</small>
-                                                <span class="small"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">Actualizado</small>
-                                                <span class="small"><?= date('d/m/Y H:i', strtotime($updatedAt)) ?></span>
+                                <!-- Agregar Comentario -->
+                                <div class="p-3 border-top" style="background: #fff;">
+                                    <form method="POST">
+                                        <input type="hidden" name="action" value="add_comment">
+                                        <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
+                                        <div class="d-flex gap-2">
+                                            <textarea name="comment" class="form-control form-control-sm" rows="2" placeholder="Agregar nota de trabajo..." required style="font-size: 0.85rem;"></textarea>
+                                            <div class="d-flex flex-column gap-1">
+                                                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send"></i></button>
+                                                <div class="form-check" title="Nota interna">
+                                                    <input type="checkbox" name="is_internal" class="form-check-input" id="internal<?= $t['id'] ?>" style="margin: 0;">
+                                                    <label class="form-check-label visually-hidden" for="internal<?= $t['id'] ?>">Interno</label>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    
-                                    <!-- Cambiar Estado -->
-                                    <div class="px-3 py-3" style="border-bottom: 1px solid #e2e8f0;">
-                                        <h6 class="fw-bold mb-2 small text-uppercase" style="letter-spacing: 0.5px;"><i class="bi bi-arrow-repeat me-1"></i>Cambiar Estado</h6>
-                                        <form method="POST">
-                                            <input type="hidden" name="action" value="change_status">
-                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                            <select name="new_status" class="form-select form-select-sm mb-2">
-                                                <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>Abierto</option>
-                                                <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
-                                                <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                                                <option value="en_pausa" <?= $t['status'] === 'en_pausa' ? 'selected' : '' ?>>En Pausa</option>
-                                                <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>Resuelto</option>
-                                                <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
-                                            </select>
-                                            <textarea name="resolution" class="form-control form-control-sm mb-2" rows="2" placeholder="Resolución (opcional)"><?= htmlspecialchars($t['resolution'] ?? '') ?></textarea>
-                                            <button type="submit" class="btn btn-sm btn-dark w-100"><i class="bi bi-check-lg me-1"></i>Actualizar</button>
-                                        </form>
-                                    </div>
-                                    
-                                    <!-- Asignar -->
-                                    <div class="px-3 py-3" style="border-bottom: 1px solid #e2e8f0;">
-                                        <h6 class="fw-bold mb-2 small text-uppercase" style="letter-spacing: 0.5px;"><i class="bi bi-person-check me-1"></i>Asignación</h6>
-                                        <form method="POST">
-                                            <input type="hidden" name="action" value="assign_ticket">
-                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                            <select name="assign_to" class="form-select form-select-sm mb-2">
-                                                <option value="">Sin asignar</option>
-                                                <?php foreach ($technicians as $tech): ?>
-                                                <option value="<?= $tech['id'] ?>" <?= $t['assigned_to'] == $tech['id'] ? 'selected' : '' ?>><?= htmlspecialchars($tech['name']) ?> (<?= $tech['role'] ?>)</option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="submit" class="btn btn-sm btn-outline-dark w-100"><i class="bi bi-person-plus me-1"></i>Asignar</button>
-                                        </form>
-                                        <?php if ($t['assigned_to']): ?>
-                                        <form method="POST" class="mt-2">
-                                            <input type="hidden" name="action" value="unassign_ticket">
-                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('¿Desasignar este ticket?')"><i class="bi bi-person-dash me-1"></i>Desasignar</button>
-                                        </form>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <!-- Eliminar -->
-                                    <div class="px-3 py-3">
-                                        <form method="POST" onsubmit="return confirm('¿Eliminar el ticket <?= $t['ticket_number'] ?>? Esta acción no se puede deshacer.')">
-                                            <input type="hidden" name="action" value="delete_ticket">
-                                            <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash me-1"></i>Eliminar Ticket</button>
-                                        </form>
-                                    </div>
+                                        <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-lock me-1"></i>Marca la casilla para nota interna (no visible al usuario)
+                                        </small>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- TAB: Editar -->
-                        <div class="tab-pane fade p-4" id="editTab<?= $t['id'] ?>">
-                            <form method="POST">
-                                <input type="hidden" name="action" value="update_ticket">
-                                <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Nombre del solicitante</label>
-                                        <input type="text" name="user_name" class="form-control" value="<?= htmlspecialchars($t['user_name'] ?? '') ?>">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Email del solicitante</label>
-                                        <input type="email" name="user_email" class="form-control" value="<?= htmlspecialchars($t['user_email'] ?? '') ?>">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Categoría *</label>
-                                        <select name="category" class="form-select" required>
-                                            <option value="hardware" <?= $t['category'] === 'hardware' ? 'selected' : '' ?>>Hardware</option>
-                                            <option value="software" <?= $t['category'] === 'software' ? 'selected' : '' ?>>Software</option>
-                                            <option value="red" <?= $t['category'] === 'red' ? 'selected' : '' ?>>Red</option>
-                                            <option value="acceso" <?= $t['category'] === 'acceso' ? 'selected' : '' ?>>Acceso</option>
-                                            <option value="otro" <?= $t['category'] === 'otro' ? 'selected' : '' ?>>Otro</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Prioridad *</label>
-                                        <select name="priority" class="form-select" required>
-                                            <option value="baja" <?= $t['priority'] === 'baja' ? 'selected' : '' ?>>Baja</option>
-                                            <option value="media" <?= $t['priority'] === 'media' ? 'selected' : '' ?>>Media</option>
-                                            <option value="alta" <?= $t['priority'] === 'alta' ? 'selected' : '' ?>>Alta</option>
-                                            <option value="urgente" <?= $t['priority'] === 'urgente' ? 'selected' : '' ?>>Urgente</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Título *</label>
-                                        <input type="text" name="title" class="form-control" required value="<?= htmlspecialchars($t['title']) ?>">
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Descripción *</label>
-                                        <textarea name="description" class="form-control" rows="5" required><?= htmlspecialchars($t['description']) ?></textarea>
-                                    </div>
-                                    <div class="col-12 text-end">
-                                        <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Guardar Cambios</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <!-- TAB: Actividad (Comentarios) -->
-                        <div class="tab-pane fade p-4" id="activity<?= $t['id'] ?>">
-                            <?php if (empty($comments)): ?>
-                            <div class="text-center py-4 text-muted">
-                                <i class="bi bi-chat-left-text" style="font-size: 2rem;"></i>
-                                <p class="mt-2 mb-0">Sin comentarios aún</p>
-                            </div>
-                            <?php else: foreach ($comments as $c): ?>
-                            <div class="d-flex gap-3 mb-3">
-                                <div class="flex-shrink-0">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:var(--primary-soft);color:var(--primary-dark);font-weight:600;font-size:0.85rem;">
-                                        <?= strtoupper(substr($c['user_name'] ?? 'S', 0, 1)) ?>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <strong class="small"><?= htmlspecialchars($c['user_name'] ?? 'Sistema') ?></strong>
-                                        <small class="text-muted"><?= date('d/m H:i', strtotime($c['created_at'])) ?></small>
-                                    </div>
-                                    <div class="p-2 rounded-3" style="background: #f1f5f9;">
-                                        <p class="mb-0 small"><?php
-                                            $ticketNum = $t['ticket_number'];
-                                            $commentText = htmlspecialchars($c['comment']);
-                                            if (preg_match('/Archivos adjuntos:\s*(.+)$/m', $c['comment'], $cm)) {
-                                                $fileNames = array_map('trim', explode(',', $cm[1]));
-                                                $linkedNames = [];
-                                                foreach ($fileNames as $fn) {
-                                                    $fn = trim($fn);
-                                                    if (!$fn) continue;
-                                                    $fileUrl = 'uploads/tickets/' . $ticketNum . '/' . $fn;
-                                                    $cleanName = preg_replace('/^[a-f0-9]+_/', '', $fn);
-                                                    $fExt = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
-                                                    $fIsImg = in_array($fExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                                    if ($fIsImg) {
-                                                        $linkedNames[] = '<a href="javascript:void(0)" onclick="openLightbox(\'' . htmlspecialchars($fileUrl, ENT_QUOTES) . '\', \'' . htmlspecialchars($cleanName, ENT_QUOTES) . '\')" class="text-primary" style="cursor:pointer"><i class="bi bi-image me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
-                                                    } else {
-                                                        $linkedNames[] = '<a href="' . htmlspecialchars($fileUrl) . '" download class="text-primary"><i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($cleanName) . '</a>';
-                                                    }
-                                                }
-                                                $commentText = str_replace(htmlspecialchars($cm[0]), 'Archivos adjuntos: ' . implode(', ', $linkedNames), $commentText);
-                                            }
-                                            echo nl2br($commentText);
-                                        ?></p>
-                                    </div>
-                                    <?php if ($c['is_internal']): ?><span class="badge bg-warning text-dark mt-1"><i class="bi bi-lock me-1"></i>Nota interna</span><?php endif; ?>
-                                </div>
-                            </div>
-                            <?php endforeach; endif; ?>
-                            
-                            <hr>
-                            <form method="POST">
-                                <input type="hidden" name="action" value="add_comment">
-                                <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
-                                <textarea name="comment" class="form-control mb-2" rows="3" placeholder="Escribir comentario..." required></textarea>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="form-check"><input type="checkbox" name="is_internal" class="form-check-input" id="internalUnified<?= $t['id'] ?>"><label class="form-check-label small" for="internalUnified<?= $t['id'] ?>">Nota interna (no visible para el usuario)</label></div>
-                                    <button type="submit" class="btn btn-sm btn-dark"><i class="bi bi-send me-1"></i>Enviar</button>
-                                </div>
-                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script>
+    function resolveAndClose<?= $t['id'] ?>() {
+        const form = document.getElementById('ticketWorkForm<?= $t['id'] ?>');
+        form.querySelector('[name="new_status"]').value = 'resuelto';
+        if (!form.querySelector('[name="resolution"]').value.trim()) {
+            form.querySelector('[name="resolution"]').value = 'Ticket resuelto por el equipo de soporte.';
+        }
+        form.submit();
+    }
+    </script>
     <?php endforeach; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

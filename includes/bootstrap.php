@@ -10,9 +10,34 @@ ini_set('default_charset', 'UTF-8');
 mb_internal_encoding('UTF-8');
 mb_http_output('UTF-8');
 
-// Header Content-Type con charset
+// =============================================
+// HEADERS DE SEGURIDAD HTTP
+// =============================================
 if (!headers_sent()) {
+    // Content-Type con charset
     header('Content-Type: text/html; charset=UTF-8');
+    
+    // Prevenir clickjacking
+    header('X-Frame-Options: SAMEORIGIN');
+    
+    // Prevenir MIME-type sniffing
+    header('X-Content-Type-Options: nosniff');
+    
+    // Activar filtro XSS del navegador
+    header('X-XSS-Protection: 1; mode=block');
+    
+    // Referrer Policy - evitar filtrar info sensible
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    
+    // Permissions Policy - restringir APIs del navegador
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+    
+    // Cache control para páginas autenticadas
+    if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['logged_in'])) {
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+    }
 }
 
 // Definir constante para prevenir acceso directo
