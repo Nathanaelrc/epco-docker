@@ -646,10 +646,17 @@ $faqs = [
                 Soporte TI
             </span>
             
+            <?php if ($user): ?>
+            <a href="soporte_admin.php" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
+                <i class="bi bi-speedometer2"></i>
+                <span class="d-none d-sm-inline">Ir al Dashboard</span>
+            </a>
+            <?php else: ?>
             <a href="login.php?redirect=soporte_admin" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
                 <i class="bi bi-box-arrow-in-right"></i>
                 <span class="d-none d-sm-inline">Iniciar Sesión</span>
             </a>
+            <?php endif; ?>
         </div>
     </div>
     

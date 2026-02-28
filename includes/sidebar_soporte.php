@@ -534,9 +534,9 @@ $soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
             </ul>
         </div>
         
-        <!-- Gestión de Tickets -->
+        <!-- Clasificación de Tickets -->
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Gestión de Tickets</div>
+            <div class="sidebar-section-title">Clasificación de Tickets</div>
             <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
                     <a href="soporte_admin.php?page=tickets&filter=all" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && (!isset($_GET['filter']) || $_GET['filter'] === 'all')) ? 'active' : '' ?>">
