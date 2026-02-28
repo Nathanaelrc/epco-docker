@@ -77,7 +77,7 @@ EXPOSE 80
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -fsS http://localhost/health || exit 1
+    CMD curl -fsS http://localhost/salud || exit 1
 
 # Entrypoint que ajusta permisos de volúmenes montados en runtime
 ENTRYPOINT ["app-entrypoint.sh"]
