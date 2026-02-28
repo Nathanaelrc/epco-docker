@@ -1837,31 +1837,36 @@ unset($tp);
                 .lane-header .lane-title { font-weight:700; font-size:0.9rem; color:#1e293b; display:flex; align-items:center; gap:10px; }
                 .lane-header .lane-title i { font-size:1.1rem; color:var(--lane-color); }
                 .lane-header .lane-count { background:var(--lane-color); color:#fff; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:20px; min-width:28px; text-align:center; }
-                .lane-body { height:580px; overflow-y:auto; padding:10px; background:#f8fafc; }
-                .lane-body::-webkit-scrollbar { width:6px; }
+                .lane-body { height:400px; overflow-y:auto; overflow-x:auto; }
+                .lane-body::-webkit-scrollbar { width:6px; height:6px; }
                 .lane-body::-webkit-scrollbar-track { background:transparent; }
                 .lane-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
                 .lane-body::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
-                .lane-empty { text-align:center; padding:60px 20px; color:#94a3b8; font-size:0.85rem; background:#f8fafc; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+                .lane-empty { text-align:center; padding:60px 20px; color:#94a3b8; font-size:0.85rem; background:#fafbfc; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; }
                 .lane-empty i { font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.5; }
                 
-                /* Ticket Cards dentro de las lanes */
-                .ticket-mini-card { background:#fff; border-radius:10px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:all 0.15s ease; border:1px solid #e2e8f0; }
-                .ticket-mini-card:hover { background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.08); border-color:#cbd5e1; }
-                .ticket-mini-card:last-child { margin-bottom:0; }
-                .ticket-mini-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
-                .ticket-mini-number { font-size:0.73rem; font-weight:700; color:var(--lane-color); letter-spacing:0.3px; }
-                .ticket-mini-sla { font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:6px; }
-                .ticket-mini-title { font-size:0.8rem; font-weight:600; color:#1e293b; margin-bottom:6px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
-                .ticket-mini-footer { display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:#64748b; }
-                .ticket-mini-user { display:flex; align-items:center; gap:5px; }
-                .ticket-mini-avatar { width:20px; height:20px; border-radius:5px; background:linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display:flex; align-items:center; justify-content:center; font-size:0.55rem; font-weight:700; color:#4338ca; }
-                .ticket-mini-meta { display:flex; align-items:center; gap:6px; }
-                .ticket-mini-priority { width:7px; height:7px; border-radius:50%; }
-                .ticket-mini-priority.urgente { background:#dc2626; }
-                .ticket-mini-priority.alta { background:#ea580c; }
-                .ticket-mini-priority.media { background:#2563eb; }
-                .ticket-mini-priority.baja { background:#16a34a; }
+                /* Tabla dentro de lanes */
+                .lane-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+                .lane-table thead th { position:sticky; top:0; z-index:1; background:#fafbfc; padding:10px 12px; font-weight:600; color:#64748b; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid #e2e8f0; white-space:nowrap; text-align:left; }
+                .lane-table tbody td { padding:10px 12px; border-bottom:1px solid #f1f5f9; color:#334155; vertical-align:middle; }
+                .lane-table tbody tr { cursor:pointer; transition: background 0.12s ease; }
+                .lane-table tbody tr:hover { background:#f8fafc; }
+                .lane-table tbody tr:active { background:#f1f5f9; }
+                .lane-table .ticket-link { color:var(--lane-color); font-weight:600; font-size:0.75rem; }
+                .lane-table .user-cell { display:flex; align-items:center; gap:8px; }
+                .lane-table .user-avatar { width:24px; height:24px; border-radius:6px; background:linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:#4338ca; flex-shrink:0; }
+                .priority-badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; white-space:nowrap; }
+                .priority-badge.urgente { background:#fef2f2; color:#dc2626; }
+                .priority-badge.alta { background:#fff7ed; color:#ea580c; }
+                .priority-badge.media { background:#eff6ff; color:#2563eb; }
+                .priority-badge.baja { background:#f0fdf4; color:#16a34a; }
+                .status-badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:12px; font-size:0.7rem; font-weight:600; white-space:nowrap; }
+                .status-badge.abierto { background:#dbeafe; color:#1d4ed8; }
+                .status-badge.en_proceso { background:#fef3c7; color:#b45309; }
+                .status-badge.pendiente { background:#f1f5f9; color:#475569; }
+                .status-badge.en_pausa { background:#ede9fe; color:#7c3aed; }
+                .status-badge.resuelto { background:#dcfce7; color:#15803d; }
+                .status-badge.cerrado { background:#f1f5f9; color:#1e293b; }
                 
                 /* Colores de lanes */
                 .lane-abierto { --lane-color:#3b82f6; }
@@ -1881,10 +1886,11 @@ unset($tp);
                     'resuelto'   => ['label' => 'Resueltos',   'icon' => 'bi-check-circle',    'color' => '#22c55e'],
                     'cerrado'    => ['label' => 'Cerrados',    'icon' => 'bi-lock',            'color' => '#1e293b'],
                 ];
+                $statusLabelsShort = ['abierto' => 'Abierto', 'en_proceso' => 'En Proceso', 'pendiente' => 'Pendiente', 'en_pausa' => 'En Pausa', 'resuelto' => 'Resuelto', 'cerrado' => 'Cerrado'];
                 foreach ($laneConfig as $statusKey => $lane):
                     $laneTickets = $ticketsByStatusGroup[$statusKey] ?? [];
                 ?>
-                <div class="col-lg-6 col-xl-4">
+                <div class="col-lg-6">
                     <div class="lane-card lane-<?= $statusKey ?>">
                         <div class="lane-header">
                             <span class="lane-title"><i class="bi <?= $lane['icon'] ?>"></i><?= $lane['label'] ?></span>
@@ -1892,31 +1898,43 @@ unset($tp);
                         </div>
                         <?php if (!empty($laneTickets)): ?>
                         <div class="lane-body">
-                            <?php foreach ($laneTickets as $t): 
-                                $slaMins = (int)($t['sla_remaining_min'] ?? 0);
-                                $slaAbs = abs($slaMins);
-                                if ($slaAbs < 60) { $slaText = $slaAbs . 'm'; } else { $slaText = floor($slaAbs/60) . 'h ' . ($slaAbs%60) . 'm'; }
-                                if ($slaMins < 0) $slaText = '-' . $slaText;
-                                $slaClass = $slaMins < 0 ? 'danger' : ($slaMins < 120 ? 'warning' : 'success');
-                            ?>
-                            <div class="ticket-mini-card" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
-                                <div class="ticket-mini-header">
-                                    <span class="ticket-mini-number"><?= $t['ticket_number'] ?></span>
-                                    <span class="ticket-mini-sla bg-<?= $slaClass ?><?= $slaClass === 'warning' ? ' text-dark' : '' ?>" style="color:<?= $slaClass === 'warning' ? '#000' : '#fff' ?>"><?= $slaText ?></span>
-                                </div>
-                                <div class="ticket-mini-title"><?= htmlspecialchars($t['title']) ?></div>
-                                <div class="ticket-mini-footer">
-                                    <div class="ticket-mini-user">
-                                        <div class="ticket-mini-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
-                                        <span><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
-                                    </div>
-                                    <div class="ticket-mini-meta">
-                                        <span class="ticket-mini-priority <?= $t['priority'] ?>" title="<?= ucfirst($t['priority']) ?>"></span>
-                                        <span><?= date('d/m H:i', strtotime($t['created_at'])) ?></span>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php endforeach; ?>
+                            <table class="lane-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket</th>
+                                        <th>Título</th>
+                                        <th>Usuario</th>
+                                        <th>Categoría</th>
+                                        <th>Prioridad</th>
+                                        <th>Estado</th>
+                                        <th>Evidencia</th>
+                                        <th>Asignado</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($laneTickets as $t): 
+                                    $hasAttachments = ($t['attachment_count'] ?? 0) > 0 || ($t['comment_attachments'] ?? 0) > 0;
+                                ?>
+                                <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
+                                    <td><span class="ticket-link"><?= $t['ticket_number'] ?></span></td>
+                                    <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
+                                    <td>
+                                        <div class="user-cell">
+                                            <div class="user-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
+                                            <span><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
+                                        </div>
+                                    </td>
+                                    <td><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></td>
+                                    <td><span class="priority-badge <?= $t['priority'] ?>"><?= ucfirst($t['priority']) ?></span></td>
+                                    <td><span class="status-badge <?= $t['status'] ?>"><?= $statusLabelsShort[$t['status']] ?? ucfirst($t['status']) ?></span></td>
+                                    <td class="text-center"><?= $hasAttachments ? '<i class="bi bi-paperclip text-primary"></i>' : '<span class="text-muted">No</span>' ?></td>
+                                    <td><?= htmlspecialchars($t['assigned_name'] ?? 'Sin asignar') ?></td>
+                                    <td class="text-nowrap text-muted"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
                         <?php else: ?>
                         <div class="lane-empty">
@@ -1991,11 +2009,11 @@ unset($tp);
             <script>
             function filterDashCards() {
                 const q = document.getElementById('dashSearchInput').value.toLowerCase();
-                document.querySelectorAll('.ticket-mini-card').forEach(card => {
-                    card.style.display = card.dataset.search.includes(q) ? '' : 'none';
+                document.querySelectorAll('.ticket-row').forEach(row => {
+                    row.style.display = row.dataset.search.includes(q) ? '' : 'none';
                 });
                 document.querySelectorAll('#dashStatusLanes .lane-card').forEach(card => {
-                    const visible = card.querySelectorAll('.ticket-mini-card:not([style*="display: none"])').length;
+                    const visible = card.querySelectorAll('.ticket-row:not([style*="display: none"])').length;
                     const badge = card.querySelector('.lane-count');
                     if (badge) badge.textContent = visible;
                 });
