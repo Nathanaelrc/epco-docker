@@ -49,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $redirectBase = "detalle_ticket.php?id={$ticketId}";
     
+    try {
+    
     // Actualizar ticket (estado, asignación, prioridad, resolución)
     if ($action === 'update_ticket_work') {
         $newStatus = sanitize($_POST['new_status'] ?? '');
@@ -158,11 +160,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $pdo->prepare('DELETE FROM ticket_comments WHERE ticket_id = ?')->execute([$ticketId]);
+        $pdo->prepare('DELETE FROM ticket_history WHERE ticket_id = ?')->execute([$ticketId]);
         $pdo->prepare('DELETE FROM ticket_attachments WHERE ticket_id = ?')->execute([$ticketId]);
+        $pdo->prepare('DELETE FROM ticket_surveys WHERE ticket_id = ?')->execute([$ticketId]);
         $pdo->prepare('DELETE FROM tickets WHERE id = ?')->execute([$ticketId]);
         logActivity($user['id'], 'ticket_deleted', 'tickets', $ticketId, 'Ticket eliminado');
         
         header("Location: soporte_admin.php?page=tickets&msg=ticket_deleted");
+        exit;
+    }
+    
+    } catch (Exception $e) {
+        error_log("[EPCO detalle_ticket] Error POST action={$action}: " . $e->getMessage());
+        header("Location: {$redirectBase}&msg=error");
         exit;
     }
 }
@@ -248,21 +258,14 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
             --gray-700: #334155;
             --gray-900: #0f172a;
         }
-        body { background: var(--gray-100); margin: 0; }
+        body.has-sidebar { background: var(--gray-100); }
+        .main-content { min-height: calc(100vh - 60px); padding-top: 0; }
         
-        /* Header del ticket */
-        .ticket-header {
+        /* Subheader del ticket */
+        .ticket-subheader {
             background: white;
-            padding: 18px 0;
+            padding: 14px 28px;
             border-bottom: 1px solid var(--gray-200);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .ticket-header .header-inner {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -270,13 +273,13 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
             gap: 12px;
         }
         .ticket-id-badge {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--primary-dark);
             font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
         }
         .ticket-title-main {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 600;
             color: var(--gray-900);
             margin: 0;
@@ -288,11 +291,9 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
         }
         .header-meta strong { color: var(--gray-700); }
         
-        /* Contenedor centrado */
+        /* Contenedor ancho */
         .page-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
+            padding: 24px 28px;
         }
         
         /* Secciones */
@@ -363,13 +364,11 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
         
         /* Toast */
         .msg-banner {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 10px 24px;
+            padding: 10px 28px;
             font-size: 0.85rem;
             font-weight: 500;
             border-radius: 6px;
-            margin-top: 16px;
+            margin: 16px 28px 0;
         }
         
         /* Botones tema */
@@ -385,30 +384,31 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
         }
     </style>
 </head>
-<body>
+<body class="has-sidebar">
+    <?php include '../includes/barra_lateral_soporte.php'; ?>
     
-    <!-- Header del Ticket -->
-    <div class="ticket-header">
-        <div class="header-inner">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                <a href="<?= htmlspecialchars($returnUrl) ?>" class="btn btn-sm btn-outline-secondary" title="Volver">
-                    <i class="bi bi-arrow-left me-1"></i>Volver
-                </a>
-                <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="ticket-id-badge"><?= htmlspecialchars($t['ticket_number']) ?></span>
-                        <span class="badge bg-<?= $statusColors[$t['status']] ?> py-1 px-2"><?= $statusLabels[$t['status']] ?></span>
-                        <span class="badge bg-<?= $priorityColors[$t['priority']] ?> py-1 px-2"><?= ucfirst($t['priority']) ?></span>
-                    </div>
-                    <h1 class="ticket-title-main"><?= htmlspecialchars($t['title']) ?></h1>
+    <main class="main-content">
+    
+    <!-- Subheader del Ticket -->
+    <div class="ticket-subheader">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <a href="<?= htmlspecialchars($returnUrl) ?>" class="btn btn-sm btn-outline-secondary" title="Volver">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="ticket-id-badge"><?= htmlspecialchars($t['ticket_number']) ?></span>
+                    <span class="badge bg-<?= $statusColors[$t['status']] ?> py-1 px-2"><?= $statusLabels[$t['status']] ?></span>
+                    <span class="badge bg-<?= $priorityColors[$t['priority']] ?> py-1 px-2"><?= ucfirst($t['priority']) ?></span>
                 </div>
+                <h1 class="ticket-title-main"><?= htmlspecialchars($t['title']) ?></h1>
             </div>
-            <div class="d-flex align-items-center gap-3 header-meta">
-                <span><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></span>
-                <?php if ($t['assigned_name']): ?>
-                <span>Asignado a: <strong><?= htmlspecialchars($t['assigned_name']) ?></strong></span>
-                <?php endif; ?>
-            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3 header-meta">
+            <span><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></span>
+            <?php if ($t['assigned_name']): ?>
+            <span>Asignado a: <strong><?= htmlspecialchars($t['assigned_name']) ?></strong></span>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -423,7 +423,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
         <div class="row g-4">
             
             <!-- ========== COLUMNA IZQUIERDA: Información ========== -->
-            <div class="col-lg-5">
+            <div class="col-lg-4">
                 <div class="detail-card">
                     
                     <!-- Información General -->
@@ -577,7 +577,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
             </div>
             
             <!-- ========== COLUMNA DERECHA: Área de Trabajo ========== -->
-            <div class="col-lg-7">
+            <div class="col-lg-8">
                 
                 <!-- Panel de Trabajo -->
                 <div class="detail-card mb-4">
@@ -595,7 +595,6 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                                         <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>Abierto</option>
                                         <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
                                         <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                                        <option value="en_pausa" <?= $t['status'] === 'en_pausa' ? 'selected' : '' ?>>En Pausa</option>
                                         <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>Resuelto</option>
                                         <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
                                     </select>
@@ -726,6 +725,8 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
             </div>
         </div>
     </div>
+    
+    </main>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
