@@ -15,7 +15,7 @@ class MailService {
     private $config;
     
     public function __construct() {
-        $this->config = require __DIR__ . '/../config/mail.php';
+        $this->config = require __DIR__ . '/../config/correo.php';
         $this->mailer = new PHPMailer(true);
         $this->configure();
     }
@@ -348,7 +348,7 @@ class MailService {
                     <!-- BOTÓN -->
                     <tr>
                         <td style="padding: 20px 40px 30px;" align="center">
-                            <a href="{$appUrl}/ticket_seguimiento.php" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                            <a href="{$appUrl}/seguimiento_ticket.php" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
                                 Consultar Estado del Ticket
                             </a>
                         </td>
@@ -417,7 +417,7 @@ DESCRIPCIÓN
 Tiempo estimado de resolución: {$slaLabel}
 
 Consultar estado del ticket:
-{$appUrl}/ticket_seguimiento.php
+{$appUrl}/seguimiento_ticket.php
 
 Correo automático · No responder a este mensaje
 TEXT;
@@ -688,7 +688,7 @@ ROW;
                     <!-- ===== BOT&Oacute;N DE ACCI&Oacute;N ===== -->
                     <tr>
                         <td style="padding: 15px 40px 35px;" align="center">
-                            <a href="{$appUrl}/login.php?redirect=soporte_admin" class="btn-action" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.3px;">
+                            <a href="{$appUrl}/iniciar_sesion.php?redirect=soporte_admin" class="btn-action" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.3px;">
                                 Ver en Panel de Soporte
                             </a>
                         </td>
@@ -758,7 +758,7 @@ DESCRIPCIÓN
 
 ───────────────────────────────────────────────
 Ver en Panel de Soporte:
-{$appUrl}/login.php?redirect=soporte_admin
+{$appUrl}/iniciar_sesion.php?redirect=soporte_admin
 
 Correo automático · No responder a este mensaje
 TEXT;
@@ -969,7 +969,7 @@ TEXT;
                     <!-- BOTÓN -->
                     <tr>
                         <td style="padding: 20px 40px 30px;" align="center">
-                            <a href="{$appUrl}/login.php?redirect=soporte_admin" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                            <a href="{$appUrl}/iniciar_sesion.php?redirect=soporte_admin" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
                                 Ir al Panel de Soporte
                             </a>
                         </td>
@@ -1230,7 +1230,7 @@ HTML;
                     <!-- BOTÓN -->
                     <tr>
                         <td style="padding: 20px 40px 30px;" align="center">
-                            <a href="{$appUrl}/ticket_seguimiento.php" style="display: inline-block; background-color: #065f46; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                            <a href="{$appUrl}/seguimiento_ticket.php" style="display: inline-block; background-color: #065f46; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
                                 Ver Detalles del Ticket
                             </a>
                         </td>
@@ -1310,7 +1310,7 @@ Tu opinión nos ayuda a mejorar. Ingresa a la plataforma
 con tu número de ticket {$ticketNumber}.
 
 Ver detalles del ticket:
-{$appUrl}/ticket_seguimiento.php
+{$appUrl}/seguimiento_ticket.php
 
 Correo automático · No responder a este mensaje
 TEXT;
@@ -1361,7 +1361,7 @@ DESCRIPCIÓN
 Plazo de resolución SLA: {$slaLabel}
 
 Ir al Panel de Soporte:
-{$appUrl}/login.php?redirect=soporte_admin
+{$appUrl}/iniciar_sesion.php?redirect=soporte_admin
 
 Correo automático · No responder a este mensaje
 TEXT;

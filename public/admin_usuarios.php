@@ -4,7 +4,7 @@
  */
 require_once '../includes/bootstrap.php';
 
-requireAuth('login.php?redirect=users_admin.php');
+requireAuth('iniciar_sesion.php?redirect=admin_usuarios.php');
 $user = getCurrentUser();
 
 // Solo admin puede acceder
@@ -290,7 +290,7 @@ $roleLabels = ['admin' => 'Administrador', 'soporte' => 'Soporte TI', 'social' =
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <div class="container py-4">
         <!-- Header -->
@@ -391,7 +391,7 @@ $roleLabels = ['admin' => 'Administrador', 'soporte' => 'Soporte TI', 'social' =
                         <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                     </div>
                     <div class="col-md-2">
-                        <a href="users_admin.php" class="btn btn-outline-secondary w-100">Limpiar</a>
+                        <a href="admin_usuarios.php" class="btn btn-outline-secondary w-100">Limpiar</a>
                     </div>
                 </form>
             </div>

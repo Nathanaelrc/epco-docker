@@ -3,7 +3,7 @@
  * EPCO - Login
  */
 require_once '../includes/bootstrap.php';
-require_once '../includes/auth.php';
+require_once '../includes/autenticacion.php';
 
 /**
  * Validar que el redirect sea seguro (solo rutas internas)
@@ -211,7 +211,7 @@ $pageTitle = 'Iniciar Sesión';
                                     <input type="checkbox" class="form-check-input" id="remember">
                                     <label class="form-check-label text-muted" for="remember">Recordarme</label>
                                 </div>
-                                <a href="forgot_password.php" class="text-decoration-none" style="color: #0ea5e9;">¿Olvidó su contraseña?</a>
+                                <a href="recuperar_contrasena.php" class="text-decoration-none" style="color: #0ea5e9;">¿Olvidó su contraseña?</a>
                             </div>
                             
                             <button type="submit" class="btn btn-login btn-lg w-100 text-white mb-4">

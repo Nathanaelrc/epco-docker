@@ -41,7 +41,7 @@ $user = isLoggedIn() ? getCurrentUser() : null;
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <div class="container py-4">
         <div class="row">

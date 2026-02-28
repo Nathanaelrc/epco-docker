@@ -4,13 +4,13 @@
  */
 require_once '../includes/bootstrap.php';
 
-requireAuth('login.php?redirect=news_admin.php');
+requireAuth('iniciar_sesion.php?redirect=admin_noticias.php');
 
 $user = getCurrentUser();
 
 // Admin, social y soporte pueden acceder
 if (!in_array($user['role'], ['admin', 'social', 'soporte'])) {
-    header("Location: intranet_dashboard.php");
+    header("Location: panel_intranet.php");
     exit;
 }
 
@@ -239,7 +239,7 @@ $draftNews = $totalNews - $publishedNews;
     </style>
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
     
     <!-- Page Header -->
     <div class="page-header">
@@ -428,7 +428,7 @@ $draftNews = $totalNews - $publishedNews;
                                         <i class="bi bi-check-lg me-2"></i><?= $editNews ? 'Guardar Cambios' : 'Crear Noticia' ?>
                                     </button>
                                     <?php if ($editNews): ?>
-                                    <a href="news_admin.php" class="btn btn-outline-secondary">
+                                    <a href="admin_noticias.php" class="btn btn-outline-secondary">
                                         <i class="bi bi-x-lg me-2"></i>Cancelar
                                     </a>
                                     <?php endif; ?>

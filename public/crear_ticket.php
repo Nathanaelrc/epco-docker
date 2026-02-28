@@ -3,7 +3,7 @@
  * EPCO - Crear Ticket de Soporte con subida de archivos
  */
 require_once '../includes/bootstrap.php';
-require_once '../includes/MailService.php';
+require_once '../includes/ServicioCorreo.php';
 
 $success = '';
 $error = '';
@@ -11,7 +11,7 @@ $ticketNumber = '';
 
 // Detectar desde dónde viene el usuario para el botón volver
 $fromIntranet = isset($_GET['from']) && $_GET['from'] === 'intranet';
-$backUrl = $fromIntranet ? 'intranet_dashboard.php' : 'soporte.php';
+$backUrl = $fromIntranet ? 'panel_intranet.php' : 'soporte.php';
 $backText = $fromIntranet ? 'Volver a Intranet' : 'Volver a Soporte';
 
 // Configuración de uploads
@@ -522,7 +522,7 @@ $pageTitle = 'Crear Ticket';
             <h5>Ticket registrado correctamente</h5>
             <p class="mb-3"><?= $success ?></p>
             <div class="d-flex gap-2 flex-wrap">
-                <a href="ticket_seguimiento.php?ticket=<?= $ticketNumber ?><?= $fromIntranet ? '&from=intranet' : '' ?>" class="btn btn-primary-submit">Ver ticket</a>
+                <a href="seguimiento_ticket.php?ticket=<?= $ticketNumber ?><?= $fromIntranet ? '&from=intranet' : '' ?>" class="btn btn-primary-submit">Ver ticket</a>
                 <a href="<?= $backUrl ?>" class="btn btn-cancel"><?= $backText ?></a>
             </div>
         </div>

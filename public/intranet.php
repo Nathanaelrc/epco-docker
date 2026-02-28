@@ -5,9 +5,9 @@
 require_once '../includes/bootstrap.php';
 
 if (isLoggedIn()) {
-    header('Location: intranet_dashboard.php');
+    header('Location: panel_intranet.php');
 } else {
-    header('Location: login.php?redirect=intranet_dashboard');
+    header('Location: iniciar_sesion.php?redirect=intranet_dashboard');
 }
 exit;
 ?>

@@ -281,7 +281,7 @@ $isSoporteRole = $userRole === 'soporte';
                 
                 <!-- Intranet oculta temporalmente
                 <div class="card-wrapper">
-                    <a href="intranet_dashboard.php" class="card-option card-intranet">
+                    <a href="panel_intranet.php" class="card-option card-intranet">
                         <div class="icon-wrapper floating" style="animation-delay: 0.5s;">
                             <i class="bi bi-building text-white" style="font-size: 3rem;"></i>
                         </div>
@@ -298,7 +298,7 @@ $isSoporteRole = $userRole === 'soporte';
                 
                 <div class="text-center w-100 mt-4">
                     <span class="text-white-50 me-3">Bienvenido, <strong><?= htmlspecialchars($_SESSION['user_name'] ?? 'Usuario') ?></strong> (Soporte)</span>
-                    <a href="logout.php" class="btn btn-outline-light btn-sm">
+                    <a href="cerrar_sesion.php" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión
                     </a>
                 </div>
@@ -364,7 +364,7 @@ $isSoporteRole = $userRole === 'soporte';
                         Bienvenido, <strong><?= htmlspecialchars($_SESSION['user_name'] ?? 'Usuario') ?></strong>
                         <span class="badge bg-light text-dark ms-2"><?= ucfirst($userRole) ?></span>
                     </span>
-                    <a href="logout.php" class="btn btn-outline-light btn-sm ms-3">
+                    <a href="cerrar_sesion.php" class="btn btn-outline-light btn-sm ms-3">
                         <i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión
                     </a>
                 </div>

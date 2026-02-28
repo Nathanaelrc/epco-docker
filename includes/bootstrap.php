@@ -59,7 +59,7 @@ require_once EPCO_ROOT . '/config/app.php';
 require_once EPCO_ROOT . '/config/database.php';
 
 // Cargar helpers
-require_once EPCO_ROOT . '/includes/helpers.php';
+require_once EPCO_ROOT . '/includes/utilidades.php';
 
 // Cargar autenticación
-require_once EPCO_ROOT . '/includes/auth.php';
+require_once EPCO_ROOT . '/includes/autenticacion.php';

@@ -12,7 +12,7 @@ $success = false;
 
 // Si ya está logueado, redirigir
 if (isLoggedIn()) {
-    header('Location: intranet_dashboard.php');
+    header('Location: panel_intranet.php');
     exit;
 }
 
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             // Encolar email (en producción se enviaría realmente)
             $resetUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . 
-                        dirname($_SERVER['REQUEST_URI']) . '/forgot_password.php?step=reset&token=' . $token;
+                        dirname($_SERVER['REQUEST_URI']) . '/recuperar_contrasena.php?step=reset&token=' . $token;
             
             $emailBody = "
                 <h2>Recuperación de Contraseña</h2>
@@ -227,7 +227,7 @@ if ($step === 'reset' && $token) {
                                 </div>
                                 <h4 class="fw-bold mb-3">¡Contraseña Actualizada!</h4>
                                 <p class="text-muted mb-4">Tu contraseña ha sido cambiada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.</p>
-                                <a href="login.php" class="btn btn-primary btn-lg w-100">
+                                <a href="iniciar_sesion.php" class="btn btn-primary btn-lg w-100">
                                     <i class="bi bi-box-arrow-in-right me-2"></i>Ir a Iniciar Sesión
                                 </a>
                             </div>
@@ -301,7 +301,7 @@ if ($step === 'reset' && $token) {
                         <?php endif; ?>
                         
                         <div class="text-center">
-                            <a href="login.php" class="text-muted text-decoration-none">
+                            <a href="iniciar_sesion.php" class="text-muted text-decoration-none">
                                 <i class="bi bi-arrow-left me-2"></i>Volver a Iniciar Sesión
                             </a>
                         </div>

@@ -10,9 +10,9 @@ $pageTitle = 'Soporte TI';
 
 // Detectar origen
 $fromIntranet = isset($_GET['from']) && $_GET['from'] === 'intranet';
-$backUrl = $fromIntranet ? 'intranet_dashboard.php' : 'index.php';
-$ticketCreateUrl = $fromIntranet ? 'ticket_create.php?from=intranet' : 'ticket_create.php';
-$ticketSeguimientoUrl = $fromIntranet ? 'ticket_seguimiento.php?from=intranet' : 'ticket_seguimiento.php';
+$backUrl = $fromIntranet ? 'panel_intranet.php' : 'index.php';
+$ticketCreateUrl = $fromIntranet ? 'crear_ticket.php?from=intranet' : 'crear_ticket.php';
+$ticketSeguimientoUrl = $fromIntranet ? 'seguimiento_ticket.php?from=intranet' : 'seguimiento_ticket.php';
 
 // Estadísticas rápidas (si está logueado)
 $userTickets = ['total' => 0, 'abiertos' => 0, 'resueltos' => 0];
@@ -652,7 +652,7 @@ $faqs = [
                 <span class="d-none d-sm-inline">Ir al Dashboard</span>
             </a>
             <?php else: ?>
-            <a href="login.php?redirect=soporte_admin" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
+            <a href="iniciar_sesion.php?redirect=soporte_admin" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
                 <i class="bi bi-box-arrow-in-right"></i>
                 <span class="d-none d-sm-inline">Iniciar Sesión</span>
             </a>
@@ -715,7 +715,7 @@ $faqs = [
                 </div>
                 
                 <div class="col-lg-4 col-md-6 fade-up">
-                    <a href="knowledge_base.php" class="action-card tertiary">
+                    <a href="base_conocimiento.php" class="action-card tertiary">
                         <div class="action-icon">
                             <i class="bi bi-book"></i>
                         </div>
@@ -1031,7 +1031,7 @@ $faqs = [
             errorDiv.style.display = 'none';
             infoDiv.style.display = 'none';
 
-            fetch('api/ticket_lookup?ticket_number=' + encodeURIComponent(numero))
+            fetch('api/buscar_ticket?ticket_number=' + encodeURIComponent(numero))
                 .then(r => r.json())
                 .then(data => {
                     resultado.style.display = 'block';

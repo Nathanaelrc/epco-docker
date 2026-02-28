@@ -4,7 +4,7 @@
  */
 require_once '../includes/bootstrap.php';
 
-requireAuth('login.php?redirect=intranet_dashboard.php');
+requireAuth('iniciar_sesion.php?redirect=panel_intranet.php');
 
 $user = getCurrentUser();
 
@@ -721,7 +721,7 @@ $areas = [
     </style>
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
     
     <!-- Hero Welcome -->
     <section class="hero-welcome">
@@ -768,7 +768,7 @@ $areas = [
             <!-- Quick Access -->
             <div class="row g-4 mb-5">
                 <div class="col-lg-3 col-md-6">
-                    <a href="documents.php" class="quick-link">
+                    <a href="documentos.php" class="quick-link">
                         <div class="quick-link-icon" style="background: linear-gradient(135deg, #059669, #34d399);">
                             <i class="bi bi-folder2-open"></i>
                         </div>
@@ -779,7 +779,7 @@ $areas = [
                     </a>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <a href="events.php" class="quick-link">
+                    <a href="eventos.php" class="quick-link">
                         <div class="quick-link-icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
                             <i class="bi bi-calendar-event"></i>
                         </div>
@@ -790,7 +790,7 @@ $areas = [
                     </a>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <a href="profile.php" class="quick-link">
+                    <a href="perfil.php" class="quick-link">
                         <div class="quick-link-icon" style="background: linear-gradient(135deg, #6366f1, #818cf8);">
                             <i class="bi bi-person-circle"></i>
                         </div>
@@ -801,7 +801,7 @@ $areas = [
                     </a>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <a href="search.php" class="quick-link">
+                    <a href="buscar.php" class="quick-link">
                         <div class="quick-link-icon" style="background: linear-gradient(135deg, #64748b, #94a3b8);">
                             <i class="bi bi-search"></i>
                         </div>
@@ -841,7 +841,7 @@ $areas = [
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2 class="section-title mb-0"><i class="bi bi-newspaper"></i>Últimas Noticias</h2>
                             <?php if ($canManageNews): ?>
-                            <a href="news_admin.php" class="btn btn-sm btn-outline-dark">
+                            <a href="admin_noticias.php" class="btn btn-sm btn-outline-dark">
                                 <i class="bi bi-plus-lg me-1"></i>Gestionar
                             </a>
                             <?php endif; ?>
@@ -891,7 +891,7 @@ $areas = [
                     <div class="d-flex justify-content-between align-items-center">
                         <h2 class="section-title mb-0"><i class="bi bi-pin-angle"></i>Boletín Interno</h2>
                         <?php if ($canManageBulletins): ?>
-                        <a href="bulletin_admin.php" class="btn btn-sm btn-outline-primary">
+                        <a href="admin_boletines.php" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-gear"></i> Gestionar
                         </a>
                         <?php endif; ?>
@@ -1062,9 +1062,9 @@ $areas = [
                     <br><small class="opacity-75">© <?= date('Y') ?> Todos los derechos reservados</small>
                 </div>
                 <div class="col-md-6 text-center text-md-end footer-links">
-                    <a href="ticket_create.php?from=intranet">Crear Ticket</a>
+                    <a href="crear_ticket.php?from=intranet">Crear Ticket</a>
                     <a href="denuncias.php?from=intranet">Denuncias</a>
-                    <a href="logout.php">Salir</a>
+                    <a href="cerrar_sesion.php">Salir</a>
                 </div>
             </div>
         </div>

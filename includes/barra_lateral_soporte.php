@@ -1,6 +1,6 @@
 <?php
 /**
- * EPCO - Sidebar Reutilizable
+ * EPCO - Sidebar para Dashboard Soporte TI
  * Aparece al hacer click en el logo EPCO
  */
 
@@ -9,21 +9,30 @@ if (!isset($user)) {
 }
 
 if (!$user) {
-    header('Location: login.php');
+    header('Location: iniciar_sesion.php');
     exit;
 }
 
-$isAdmin = in_array($user['role'], ['admin']);
-$isAdminOrSoporte = in_array($user['role'], ['admin', 'soporte']);
-$canManageNews = in_array($user['role'], ['admin', 'social']);
-$canManageBulletins = in_array($user['role'], ['admin', 'social']);
-$canViewDenuncias = in_array($user['role'], ['admin', 'denuncia']);
-
-// Determinar página activa
+$isAdmin = $user['role'] === 'admin';
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
+
+// Obtener estadísticas para los badges
+global $pdo;
+$soporteStats = $pdo->query("
+    SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'abierto' THEN 1 ELSE 0 END) as abiertos,
+        SUM(CASE WHEN status = 'en_proceso' THEN 1 ELSE 0 END) as en_proceso,
+        SUM(CASE WHEN status IN ('resuelto', 'cerrado') THEN 1 ELSE 0 END) as cerrados,
+        SUM(CASE WHEN priority = 'urgente' AND status NOT IN ('resuelto', 'cerrado') THEN 1 ELSE 0 END) as urgentes
+    FROM tickets
+")->fetch();
+$misTicketsCount = $pdo->prepare("SELECT COUNT(*) as total FROM tickets WHERE assigned_to = ?");
+$misTicketsCount->execute([$user['id']]);
+$soporteStats['mis_tickets'] = $misTicketsCount->fetch()['total'];
 ?>
 
-<!-- Sidebar Styles -->
+<!-- Sidebar Soporte TI Styles -->
 <style>
     /* Header minimalista con logo clickeable */
     .epco-topbar {
@@ -31,42 +40,41 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         top: 0;
         left: 0;
         right: 0;
-        height: 60px;
+        height: 50px;
         background: linear-gradient(135deg, #0c5a8a 0%, #094a72 100%);
         z-index: 1001;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 20px;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        padding: 0 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     
     .epco-logo-btn {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         background: rgba(255,255,255,0.1);
         border: none;
-        padding: 8px 16px;
-        border-radius: 12px;
+        padding: 6px 12px;
+        border-radius: 8px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         color: white;
     }
     
     .epco-logo-btn:hover {
         background: rgba(255,255,255,0.2);
-        transform: scale(1.02);
     }
     
     .epco-logo-btn .logo-text {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 0.95rem;
+        font-weight: 600;
     }
     
     .epco-logo-btn .menu-icon {
-        font-size: 1.2rem;
-        transition: transform 0.3s ease;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease;
     }
     
     .epco-logo-btn.active .menu-icon {
@@ -76,24 +84,24 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     .topbar-right {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
     }
     
     .topbar-clock {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         background: rgba(255,255,255,0.15);
-        padding: 8px 15px;
-        border-radius: 10px;
+        padding: 5px 10px;
+        border-radius: 6px;
         color: white;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
     
     .topbar-user {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         color: white;
     }
     
@@ -103,26 +111,26 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     
     .topbar-user-name {
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
     }
     
     .topbar-user-role {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         opacity: 0.8;
     }
     
     .topbar-avatar {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         background: rgba(255,255,255,0.2);
-        border-radius: 10px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.85rem;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
     }
     
     .topbar-avatar:hover {
@@ -136,12 +144,12 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0,0,0,0.4);
         z-index: 1002;
         opacity: 0;
         visibility: hidden;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(4px);
+        transition: all 0.25s ease;
+        backdrop-filter: blur(3px);
     }
     
     .sidebar-overlay.active {
@@ -153,15 +161,15 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     .epco-sidebar {
         position: fixed;
         top: 0;
-        left: -320px;
-        width: 320px;
+        left: -280px;
+        width: 280px;
         height: 100vh;
         background: linear-gradient(180deg, #0c5a8a 0%, #094a72 50%, #073a5a 100%);
         z-index: 1003;
-        transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
-        box-shadow: 5px 0 30px rgba(0,0,0,0.3);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.25);
     }
     
     .epco-sidebar.active {
@@ -170,7 +178,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     
     /* Header del sidebar */
     .sidebar-header {
-        padding: 25px;
+        padding: 15px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -180,18 +188,18 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     .sidebar-brand {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
     
     .sidebar-brand-logo {
-        width: 45px;
-        height: 45px;
+        width: 36px;
+        height: 36px;
         background: rgba(255,255,255,0.15);
-        border-radius: 12px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3rem;
+        font-size: 1.1rem;
         color: white;
     }
     
@@ -201,27 +209,27 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     
     .sidebar-brand-text h4 {
         margin: 0;
-        font-weight: 800;
-        font-size: 1.5rem;
-        letter-spacing: -1px;
+        font-weight: 700;
+        font-size: 1.2rem;
+        letter-spacing: -0.5px;
     }
     
     .sidebar-brand-text span {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         opacity: 0.7;
         text-transform: uppercase;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
     }
     
     .sidebar-close {
         background: rgba(255,255,255,0.1);
         border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
         color: white;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -236,21 +244,21 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     .sidebar-content {
         flex: 1;
         overflow-y: auto;
-        padding: 20px 0;
+        padding: 12px 0;
     }
     
     .sidebar-section {
-        margin-bottom: 25px;
+        margin-bottom: 12px;
     }
     
     .sidebar-section-title {
         color: rgba(255,255,255,0.5);
-        font-size: 0.7rem;
+        font-size: 0.6rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        padding: 0 25px;
-        margin-bottom: 10px;
+        letter-spacing: 1.5px;
+        padding: 0 18px;
+        margin-bottom: 6px;
     }
     
     .sidebar-nav {
@@ -260,38 +268,38 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     }
     
     .sidebar-nav-item {
-        margin: 2px 12px;
+        margin: 1px 8px;
     }
     
     .sidebar-nav-link {
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 14px 18px;
+        gap: 10px;
+        padding: 9px 14px;
         color: rgba(255,255,255,0.85);
         text-decoration: none;
-        border-radius: 12px;
-        transition: all 0.3s ease;
+        border-radius: 8px;
+        transition: all 0.2s ease;
         font-weight: 500;
-        font-size: 0.95rem;
+        font-size: 0.82rem;
         position: relative;
     }
     
     .sidebar-nav-link:hover {
         background: rgba(255,255,255,0.1);
         color: white;
-        transform: translateX(5px);
+        transform: translateX(3px);
     }
     
     .sidebar-nav-link.active {
         background: rgba(255,255,255,0.15);
         color: white;
-        box-shadow: inset 4px 0 0 white;
+        box-shadow: inset 3px 0 0 white;
     }
     
     .sidebar-nav-link i {
-        width: 22px;
-        font-size: 1.15rem;
+        width: 18px;
+        font-size: 1rem;
         text-align: center;
     }
     
@@ -299,44 +307,49 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         margin-left: auto;
         background: rgba(255,255,255,0.2);
         color: white;
-        font-size: 0.7rem;
-        padding: 4px 8px;
-        border-radius: 20px;
+        font-size: 0.65rem;
+        padding: 2px 6px;
+        border-radius: 10px;
     }
     
-    .sidebar-nav-link .badge.new {
-        background: #22c55e;
+    .sidebar-nav-link .badge.urgent {
+        background: #fbbf24;
+        color: #854d0e;
     }
     
     .sidebar-nav-link .badge.alert {
         background: #ef4444;
     }
     
+    .sidebar-nav-link .badge.info {
+        background: #3b82f6;
+    }
+    
     /* Footer del sidebar */
     .sidebar-footer {
-        padding: 20px;
+        padding: 12px;
         border-top: 1px solid rgba(255,255,255,0.1);
     }
     
     .sidebar-user-card {
         background: rgba(255,255,255,0.1);
-        border-radius: 14px;
-        padding: 15px;
+        border-radius: 10px;
+        padding: 10px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
     
     .sidebar-user-avatar {
-        width: 48px;
-        height: 48px;
+        width: 36px;
+        height: 36px;
         background: rgba(255,255,255,0.2);
-        border-radius: 12px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 1.2rem;
+        font-size: 0.95rem;
         color: white;
     }
     
@@ -346,28 +359,29 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     
     .sidebar-user-info h6 {
         color: white;
-        margin: 0 0 2px 0;
+        margin: 0 0 1px 0;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.82rem;
     }
     
     .sidebar-user-info span {
         color: rgba(255,255,255,0.6);
-        font-size: 0.8rem;
+        font-size: 0.7rem;
     }
     
     .sidebar-logout {
         background: rgba(239, 68, 68, 0.2);
         border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
         color: #fca5a5;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
+        text-decoration: none;
     }
     
     .sidebar-logout:hover {
@@ -377,7 +391,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     
     /* Ajustar contenido principal */
     body.has-sidebar {
-        padding-top: 60px;
+        padding-top: 50px;
     }
     
     /* Responsive */
@@ -395,7 +409,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     
     /* Scrollbar del sidebar */
     .sidebar-content::-webkit-scrollbar {
-        width: 5px;
+        width: 4px;
     }
     
     .sidebar-content::-webkit-scrollbar-track {
@@ -404,7 +418,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     
     .sidebar-content::-webkit-scrollbar-thumb {
         background: rgba(255,255,255,0.2);
-        border-radius: 10px;
+        border-radius: 4px;
     }
     
     .sidebar-content::-webkit-scrollbar-thumb:hover {
@@ -436,10 +450,12 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                     <?= strtoupper(substr($user['name'], 0, 1)) ?>
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="profile.php"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
-                    <li><a class="dropdown-item" href="search.php"><i class="bi bi-search me-2"></i>Búsqueda</a></li>
+                    <li><a class="dropdown-item" href="perfil.php"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+                    <!-- Intranet oculta temporalmente
+                    <li><a class="dropdown-item" href="panel_intranet.php"><i class="bi bi-house me-2"></i>Intranet</a></li>
+                    -->
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión</a></li>
+                    <li><a class="dropdown-item text-danger" href="cerrar_sesion.php"><i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>
@@ -449,16 +465,16 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 <!-- Overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-<!-- Sidebar -->
+<!-- Sidebar Soporte TI -->
 <aside class="epco-sidebar" id="epcoSidebar">
     <div class="sidebar-header">
         <div class="sidebar-brand">
             <div class="sidebar-brand-logo">
-                <i class="bi bi-building"></i>
+                <i class="bi bi-headset"></i>
             </div>
             <div class="sidebar-brand-text">
-                <h4>EPCO</h4>
-                <span>Intranet</span>
+                <h4>Soporte TI</h4>
+                <span>Panel Admin</span>
             </div>
         </div>
         <button class="sidebar-close" onclick="closeSidebar()">
@@ -467,128 +483,127 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     </div>
     
     <div class="sidebar-content">
-        <!-- Navegación Principal -->
+        <!-- Principal -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">Principal</div>
             <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
-                    <a href="intranet_dashboard.php" class="sidebar-nav-link <?= $currentPage === 'intranet_dashboard' ? 'active' : '' ?>">
-                        <i class="bi bi-house-door"></i>
-                        <span>Inicio</span>
+                    <a href="soporte_admin.php?page=dashboard" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'dashboard') || !isset($_GET['page']) ? 'active' : '' ?>">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="documents.php" class="sidebar-nav-link <?= $currentPage === 'documents' ? 'active' : '' ?>">
-                        <i class="bi bi-folder"></i>
-                        <span>Documentos</span>
+                    <a href="soporte_admin.php?page=nuevo_ticket" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'nuevo_ticket') ? 'active' : '' ?>">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Nuevo Ticket</span>
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="knowledge_base.php" class="sidebar-nav-link <?= $currentPage === 'knowledge_base' ? 'active' : '' ?>">
-                        <i class="bi bi-book"></i>
-                        <span>Base de Conocimiento</span>
-                    </a>
-                </li>
-                <li class="sidebar-nav-item">
-                    <a href="events.php" class="sidebar-nav-link <?= $currentPage === 'events' ? 'active' : '' ?>">
-                        <i class="bi bi-calendar-event"></i>
-                        <span>Calendario</span>
+                    <a href="soporte_admin.php?page=tickets&filter=urgent" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && isset($_GET['filter']) && $_GET['filter'] === 'urgent') ? 'active' : '' ?>">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span>Urgentes</span>
+                        <?php if ($soporteStats['urgentes'] > 0): ?>
+                        <span class="badge urgent"><?= $soporteStats['urgentes'] ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
             </ul>
         </div>
         
-        <!-- Servicios -->
+        <!-- Mis Tickets -->
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Servicios</div>
+            <div class="sidebar-section-title">Mis Tickets</div>
             <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
-                    <a href="intranet_soporte.php" class="sidebar-nav-link <?= $currentPage === 'intranet_soporte' || $currentPage === 'soporte' ? 'active' : '' ?>">
-                        <i class="bi bi-headset"></i>
-                        <span>Soporte TI</span>
+                    <a href="soporte_admin.php?page=mis_tickets" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'mis_tickets') ? 'active' : '' ?>">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Asignados a mí</span>
+                        <?php if ($soporteStats['mis_tickets'] > 0): ?>
+                        <span class="badge info"><?= $soporteStats['mis_tickets'] ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="denuncias.php?from=intranet" class="sidebar-nav-link">
-                        <i class="bi bi-shield-check"></i>
-                        <span>Canal de Integridad</span>
+                    <a href="soporte_admin.php?page=mi_cumplimiento" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'mi_cumplimiento') ? 'active' : '' ?>">
+                        <i class="bi bi-speedometer"></i>
+                        <span>Mi Cumplimiento SLA</span>
                     </a>
                 </li>
             </ul>
         </div>
         
-        <?php if ($canManageNews || $canManageBulletins): ?>
-        <!-- Gestión de Contenido -->
+        <!-- Clasificación de Tickets -->
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Contenido</div>
+            <div class="sidebar-section-title">Clasificación de Tickets</div>
             <ul class="sidebar-nav">
-                <?php if ($canManageNews): ?>
                 <li class="sidebar-nav-item">
-                    <a href="news_admin.php" class="sidebar-nav-link <?= $currentPage === 'news_admin' ? 'active' : '' ?>">
-                        <i class="bi bi-newspaper"></i>
-                        <span>Gestionar Noticias</span>
+                    <a href="soporte_admin.php?page=tickets&filter=all" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && (!isset($_GET['filter']) || $_GET['filter'] === 'all')) ? 'active' : '' ?>">
+                        <i class="bi bi-ticket-detailed"></i>
+                        <span>Todos los Tickets</span>
+                        <span class="badge"><?= $soporteStats['total'] ?></span>
                     </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($canManageBulletins): ?>
                 <li class="sidebar-nav-item">
-                    <a href="bulletin_admin.php" class="sidebar-nav-link <?= $currentPage === 'bulletin_admin' ? 'active' : '' ?>">
-                        <i class="bi bi-pin-angle"></i>
-                        <span>Gestionar Boletines</span>
+                    <a href="soporte_admin.php?page=tickets&filter=open" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && isset($_GET['filter']) && $_GET['filter'] === 'open') ? 'active' : '' ?>">
+                        <i class="bi bi-inbox"></i>
+                        <span>Abiertos</span>
+                        <span class="badge info"><?= $soporteStats['abiertos'] + $soporteStats['en_proceso'] ?></span>
                     </a>
                 </li>
-                <?php endif; ?>
+                <li class="sidebar-nav-item">
+                    <a href="soporte_admin.php?page=tickets&filter=closed" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'tickets' && isset($_GET['filter']) && $_GET['filter'] === 'closed') ? 'active' : '' ?>">
+                        <i class="bi bi-check-circle"></i>
+                        <span>Cerrados</span>
+                        <span class="badge"><?= $soporteStats['cerrados'] ?></span>
+                    </a>
+                </li>
             </ul>
         </div>
-        <?php endif; ?>
         
-        <?php if ($isAdminOrSoporte || $canViewDenuncias): ?>
+        <!-- Cumplimiento -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Cumplimiento</div>
+            <ul class="sidebar-nav">
+                <li class="sidebar-nav-item">
+                    <a href="soporte_admin.php?page=cumplimiento" class="sidebar-nav-link <?= (isset($_GET['page']) && in_array($_GET['page'], ['sla', 'cumplimiento'])) ? 'active' : '' ?>">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>Cumplimiento</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
         <!-- Administración -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">Administración</div>
             <ul class="sidebar-nav">
-                <?php if ($isAdminOrSoporte): ?>
                 <li class="sidebar-nav-item">
-                    <a href="soporte_admin.php" class="sidebar-nav-link <?= $currentPage === 'soporte_admin' ? 'active' : '' ?>">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>Panel de Soporte</span>
-                    </a>
-                </li>
-                <li class="sidebar-nav-item">
-                    <a href="users_admin.php" class="sidebar-nav-link <?= $currentPage === 'users_admin' ? 'active' : '' ?>">
-                        <i class="bi bi-people"></i>
-                        <span>Usuarios</span>
-                    </a>
-                </li>
-                <li class="sidebar-nav-item">
-                    <a href="audit_logs.php" class="sidebar-nav-link <?= $currentPage === 'audit_logs' ? 'active' : '' ?>">
+                    <a href="soporte_admin.php?page=auditoria" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'auditoria') ? 'active' : '' ?>">
                         <i class="bi bi-journal-text"></i>
                         <span>Auditoría</span>
                     </a>
                 </li>
                 <li class="sidebar-nav-item">
-                    <a href="reports.php" class="sidebar-nav-link <?= $currentPage === 'reports' ? 'active' : '' ?>">
-                        <i class="bi bi-file-spreadsheet"></i>
-                        <span>Reportes</span>
+                    <a href="soporte_admin.php?page=notificaciones" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'notificaciones') ? 'active' : '' ?>">
+                        <i class="bi bi-envelope-at"></i>
+                        <span>Notificaciones</span>
                     </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($canViewDenuncias): ?>
+                <?php if ($isAdmin): ?>
                 <li class="sidebar-nav-item">
-                    <a href="denuncias_admin.php" class="sidebar-nav-link <?= $currentPage === 'denuncias_admin' ? 'active' : '' ?>">
-                        <i class="bi bi-shield-exclamation"></i>
-                        <span>Panel Denuncias</span>
-                        <span class="badge alert">Ley Karin</span>
+                    <a href="soporte_admin.php?page=usuarios" class="sidebar-nav-link <?= (isset($_GET['page']) && $_GET['page'] === 'usuarios') ? 'active' : '' ?>">
+                        <i class="bi bi-people"></i>
+                        <span>Usuarios</span>
                     </a>
                 </li>
                 <?php endif; ?>
             </ul>
         </div>
-        <?php endif; ?>
         
-        <!-- Enlaces Externos -->
+        <!-- Navegación -->
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Enlaces</div>
+            <div class="sidebar-section-title">Navegación</div>
             <ul class="sidebar-nav">
                 <li class="sidebar-nav-item">
                     <a href="index.php" class="sidebar-nav-link">
@@ -610,7 +625,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 <h6><?= htmlspecialchars($user['name']) ?></h6>
                 <span><?= ucfirst($user['role']) ?></span>
             </div>
-            <a href="logout.php" class="sidebar-logout" title="Cerrar sesión">
+            <a href="cerrar_sesion.php" class="sidebar-logout" title="Cerrar sesión">
                 <i class="bi bi-box-arrow-left"></i>
             </a>
         </div>

@@ -4,7 +4,7 @@
  */
 require_once '../includes/bootstrap.php';
 
-requireAuth('login.php?redirect=profile.php');
+requireAuth('iniciar_sesion.php?redirect=perfil.php');
 $user = getCurrentUser();
 
 $message = '';
@@ -217,7 +217,7 @@ $roleColors = ['admin' => 'danger', 'soporte' => 'warning', 'social' => 'info', 
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <!-- Profile Header -->
     <div class="profile-header">

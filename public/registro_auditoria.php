@@ -7,7 +7,7 @@ require_once '../includes/bootstrap.php';
 
 $user = isLoggedIn() ? getCurrentUser() : null;
 if (!$user || $user['role'] !== 'admin') {
-    header('Location: login.php');
+    header('Location: iniciar_sesion.php');
     exit;
 }
 
@@ -191,7 +191,7 @@ $actionMeta = [
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -314,7 +314,7 @@ $actionMeta = [
                                 <button type="submit" class="btn btn-primary flex-grow-1">
                                     <i class="bi bi-search me-1"></i>Filtrar
                                 </button>
-                                <a href="audit_logs.php" class="btn btn-outline-secondary">
+                                <a href="registro_auditoria.php" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-lg"></i>
                                 </a>
                             </div>

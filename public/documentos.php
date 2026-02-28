@@ -4,7 +4,7 @@
  */
 require_once '../includes/bootstrap.php';
 
-requireAuth('login.php?redirect=documents.php');
+requireAuth('iniciar_sesion.php?redirect=documentos.php');
 $user = getCurrentUser();
 
 $isAdmin = in_array($user['role'], ['admin', 'soporte']);
@@ -268,7 +268,7 @@ function formatFileSize($bytes) {
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <!-- Page Header -->
     <div class="page-header">
@@ -319,7 +319,7 @@ function formatFileSize($bytes) {
                         <h6 class="mb-0">Categorías</h6>
                     </div>
                     <div class="list-group list-group-flush">
-                        <a href="documents.php" class="list-group-item list-group-item-action <?= empty($category) ? 'active' : '' ?>">
+                        <a href="documentos.php" class="list-group-item list-group-item-action <?= empty($category) ? 'active' : '' ?>">
                             <i class="bi bi-grid me-2"></i>Todas
                         </a>
                         <?php foreach ($categories as $catKey => $cat): ?>

@@ -6,7 +6,7 @@ require_once '../includes/bootstrap.php';
 
 // Detectar origen para el botón volver
 $fromIntranet = isset($_GET['from']) && $_GET['from'] === 'intranet';
-$backUrl = $fromIntranet ? 'intranet_dashboard.php' : 'soporte.php';
+$backUrl = $fromIntranet ? 'panel_intranet.php' : 'soporte.php';
 $backText = $fromIntranet ? 'Volver a Intranet' : 'Volver a Soporte TI';
 
 $ticket = null;

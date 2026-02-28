@@ -5,7 +5,7 @@
  */
 require_once '../includes/bootstrap.php';
 
-requireAuth('login.php');
+requireAuth('iniciar_sesion.php');
 $user = getCurrentUser();
 
 $success = '';
@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             // Enviar notificación por correo al equipo de soporte y confirmación al usuario
             try {
-                require_once __DIR__ . '/../includes/MailService.php';
+                require_once __DIR__ . '/../includes/ServicioCorreo.php';
                 $mailService = new MailService();
                 $ticketData = [
                     'id' => $ticketId,
@@ -394,7 +394,7 @@ $pageTitle = 'Soporte TI';
     </style>
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
     
     <!-- Hero Section -->
     <div class="support-hero">
@@ -753,7 +753,7 @@ $pageTitle = 'Soporte TI';
             `;
             
             try {
-                const res = await fetch(`api/ticket_detail.php?id=${ticketId}`);
+                const res = await fetch(`api/detalle_ticket.php?id=${ticketId}`);
                 const data = await res.json();
                 
                 if (data.error) {

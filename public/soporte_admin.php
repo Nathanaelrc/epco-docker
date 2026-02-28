@@ -6,7 +6,7 @@
 require_once '../includes/bootstrap.php';
 
 // Verificar autenticación
-requireAuth('login.php?redirect=soporte_admin.php');
+requireAuth('iniciar_sesion.php?redirect=soporte_admin.php');
 
 $user = getCurrentUser();
 
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ticketStmt->execute([$ticketId]);
                     $ticketData = $ticketStmt->fetch();
                     if ($ticketData) {
-                        require_once __DIR__ . '/../includes/MailService.php';
+                        require_once __DIR__ . '/../includes/ServicioCorreo.php';
                         $mailService = new MailService();
                         $mailService->sendTicketAssignedNotification($ticketData, $assignee['name'], $assignee['email']);
                     }
@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ticketStmt->execute([$ticketId]);
                 $ticketData = $ticketStmt->fetch();
                 if ($ticketData && !empty($ticketData['user_email'])) {
-                    require_once __DIR__ . '/../includes/MailService.php';
+                    require_once __DIR__ . '/../includes/ServicioCorreo.php';
                     $mailService = new MailService();
                     $ticketData['subject'] = $ticketData['title'];
                     $ticketData['resolution'] = $resolution;
@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $techStmt->execute([$assignTo]);
                 $techData = $techStmt->fetch();
                 if ($techData && !empty($techData['email'])) {
-                    require_once __DIR__ . '/../includes/MailService.php';
+                    require_once __DIR__ . '/../includes/ServicioCorreo.php';
                     $mailService = new MailService();
                     $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
                     $ticketStmt->execute([$ticketId]);
@@ -229,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ticketStmt->execute([$ticketId]);
                 $ticketData = $ticketStmt->fetch();
                 if ($ticketData && !empty($ticketData['user_email'])) {
-                    require_once __DIR__ . '/../includes/MailService.php';
+                    require_once __DIR__ . '/../includes/ServicioCorreo.php';
                     $mailService = new MailService();
                     $ticketData['subject'] = $ticketData['title'];
                     $ticketData['resolution'] = $resolution;
@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ticketStmt->execute([$ticketId]);
             $ticketData = $ticketStmt->fetch();
             if ($ticketData && !empty($user['email'])) {
-                require_once __DIR__ . '/../includes/MailService.php';
+                require_once __DIR__ . '/../includes/ServicioCorreo.php';
                 $mailService = new MailService();
                 $mailService->sendTicketAssignedNotification($ticketData, $user['name'], $user['email']);
             }
@@ -454,7 +454,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Enviar notificación por correo
             try {
-                require_once __DIR__ . '/../includes/MailService.php';
+                require_once __DIR__ . '/../includes/ServicioCorreo.php';
                 $mailService = new MailService();
                 $ticketData = [
                     'id' => $ticketId,
@@ -609,7 +609,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $testEmail = sanitize($_POST['test_email'] ?? '');
         if (filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
             try {
-                require_once __DIR__ . '/../includes/MailService.php';
+                require_once __DIR__ . '/../includes/ServicioCorreo.php';
                 $mailService = new MailService();
                 $testTicket = [
                     'id' => 0,
@@ -1764,7 +1764,7 @@ unset($tp);
     </style>
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar_soporte.php'; ?>
+    <?php include '../includes/barra_lateral_soporte.php'; ?>
     
     <!-- Main Content -->
     <main class="main-content">
@@ -1987,7 +1987,7 @@ unset($tp);
                                 <?php foreach ($laneTickets as $t): 
                                     $hasAttachments = ($t['attachment_count'] ?? 0) > 0 || ($t['comment_attachments'] ?? 0) > 0;
                                 ?>
-                                <tr onclick="window.location='ticket_detail.php?id=<?= $t['id'] ?>&from=dashboard'" class="ticket-row" data-ticket-id="<?= $t['id'] ?>" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
+                                <tr onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=dashboard'" class="ticket-row" data-ticket-id="<?= $t['id'] ?>" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
                                     <td><span class="ticket-link"><?= $t['ticket_number'] ?></span></td>
                                     <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
                                     <td>
@@ -2162,7 +2162,7 @@ unset($tp);
                         <?php if (empty($tickets)): ?>
                         <tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
                         <?php else: foreach ($tickets as $t): ?>
-                        <tr style="cursor: pointer;" onclick="window.location='ticket_detail.php?id=<?= $t['id'] ?>&from=tickets'" class="ticket-row-hover" data-ticket-id="<?= $t['id'] ?>">
+                        <tr style="cursor: pointer;" onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'" class="ticket-row-hover" data-ticket-id="<?= $t['id'] ?>">
                             <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
                             <td><?= htmlspecialchars(substr($t['title'], 0, 35)) ?><?= strlen($t['title']) > 35 ? '...' : '' ?></td>
                             <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
@@ -2266,7 +2266,7 @@ unset($tp);
                         </thead>
                         <tbody>
                         <?php foreach ($tickets as $t): ?>
-                        <tr onclick="window.location='ticket_detail.php?id=<?= $t['id'] ?>&from=mis_tickets'" data-ticket-id="<?= $t['id'] ?>" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
+                        <tr onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" data-ticket-id="<?= $t['id'] ?>" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
                             <td><span class="sn-link"><?= $t['ticket_number'] ?></span></td>
                             <td class="text-nowrap"><?= date('Y-m-d H:i', strtotime($t['created_at'])) ?></td>
                             <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
@@ -3148,7 +3148,7 @@ unset($tp);
                             ?>
                             <tr>
                                 <td>
-                                    <a href="ticket_detail.php?id=<?= $t['id'] ?>&from=sla" class="text-decoration-none fw-bold"><?= $t['ticket_number'] ?></a>
+                                    <a href="detalle_ticket.php?id=<?= $t['id'] ?>&from=sla" class="text-decoration-none fw-bold"><?= $t['ticket_number'] ?></a>
                                     <div class="small text-muted text-truncate" style="max-width:150px;"><?= htmlspecialchars($t['title']) ?></div>
                                 </td>
                                 <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>

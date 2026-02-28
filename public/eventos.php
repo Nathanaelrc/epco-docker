@@ -6,7 +6,7 @@ require_once '../includes/bootstrap.php';
 
 $user = isLoggedIn() ? getCurrentUser() : null;
 if (!$user) {
-    header('Location: login.php');
+    header('Location: iniciar_sesion.php');
     exit;
 }
 
@@ -217,7 +217,7 @@ $dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     </style>
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <div class="container py-4">
         <?php if ($message): ?>

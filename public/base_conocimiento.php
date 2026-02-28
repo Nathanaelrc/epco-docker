@@ -85,7 +85,7 @@ if (isset($_GET['helpful'])) {
     $helpful = $_GET['helpful'] === 'yes' ? 'helpful_yes' : 'helpful_no';
     $stmt = $pdo->prepare("UPDATE knowledge_base SET $helpful = $helpful + 1 WHERE id = ?");
     $stmt->execute([$articleId]);
-    header('Location: knowledge_base.php?article=' . $articleId . '&thanks=1');
+    header('Location: base_conocimiento.php?article=' . $articleId . '&thanks=1');
     exit;
 }
 
@@ -242,7 +242,7 @@ $categories = [
 </head>
 <body class="<?= $user ? 'has-sidebar' : '' ?>">
     <?php if ($user): ?>
-        <?php include '../includes/sidebar.php'; ?>
+        <?php include '../includes/barra_lateral.php'; ?>
     <?php else: ?>
         <!-- Topbar público para usuarios no logueados (igual que soporte.php) -->
         <div class="epco-topbar">
@@ -259,7 +259,7 @@ $categories = [
                     Base de Conocimiento
                 </span>
                 
-                <a href="login.php" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
+                <a href="iniciar_sesion.php" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
                     <i class="bi bi-box-arrow-in-right"></i>
                     <span class="d-none d-sm-inline">Iniciar Sesión</span>
                 </a>
@@ -324,7 +324,7 @@ $categories = [
         <div class="container position-relative">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-3">
-                    <li class="breadcrumb-item"><a href="knowledge_base.php" class="text-white-50">Base de Conocimiento</a></li>
+                    <li class="breadcrumb-item"><a href="base_conocimiento.php" class="text-white-50">Base de Conocimiento</a></li>
                     <li class="breadcrumb-item"><a href="?category=<?= $article['category'] ?>" class="text-white-50"><?= $categories[$article['category']]['name'] ?? 'General' ?></a></li>
                     <li class="breadcrumb-item active text-white"><?= htmlspecialchars($article['title']) ?></li>
                 </ol>
@@ -401,7 +401,7 @@ $categories = [
                     </div>
                     <div class="card-body">
                         <p class="text-muted small">Si no encontraste la solución, crea un ticket de soporte.</p>
-                        <a href="ticket_create.php" class="btn btn-primary w-100">
+                        <a href="crear_ticket.php" class="btn btn-primary w-100">
                             <i class="bi bi-plus-lg me-2"></i>Crear Ticket
                         </a>
                     </div>
@@ -455,7 +455,7 @@ $categories = [
                         <h6 class="mb-0">Categorías</h6>
                     </div>
                     <div class="list-group list-group-flush">
-                        <a href="knowledge_base.php" class="list-group-item list-group-item-action <?= empty($category) ? 'active' : '' ?>">
+                        <a href="base_conocimiento.php" class="list-group-item list-group-item-action <?= empty($category) ? 'active' : '' ?>">
                             <i class="bi bi-grid me-2"></i>Todas
                         </a>
                         <?php foreach ($categories as $catKey => $cat): ?>

@@ -6,7 +6,7 @@
 require_once '../includes/bootstrap.php';
 
 // Verificar autenticación
-requireAuth('login.php?redirect=denuncias_admin.php');
+requireAuth('iniciar_sesion.php?redirect=denuncias_admin.php');
 
 $user = getCurrentUser();
 
@@ -444,7 +444,7 @@ if (in_array($page, ['detalle', 'editar']) && isset($_GET['id'])) {
     </style>
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar_denuncias.php'; ?>
+    <?php include '../includes/barra_lateral_denuncias.php'; ?>
     
     <!-- Main Content -->
     <main class="main-content">

@@ -72,7 +72,7 @@ function hasRole($roles) {
 /**
  * Requerir autenticación
  */
-function requireAuth($redirect = 'login.php') {
+function requireAuth($redirect = 'iniciar_sesion.php') {
     if (!isLoggedIn()) {
         header("Location: $redirect");
         exit;

@@ -7,7 +7,7 @@ require_once '../includes/bootstrap.php';
 
 $user = isLoggedIn() ? getCurrentUser() : null;
 if (!$user || !in_array($user['role'], ['admin', 'soporte'])) {
-    header('Location: login.php');
+    header('Location: iniciar_sesion.php');
     exit;
 }
 
@@ -279,7 +279,7 @@ $statsLogs = $pdo->query("SELECT COUNT(*) FROM activity_logs")->fetchColumn();
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">

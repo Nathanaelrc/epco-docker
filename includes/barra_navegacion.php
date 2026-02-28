@@ -9,7 +9,7 @@ if (!isset($user)) {
 }
 
 if (!$user) {
-    header('Location: login.php');
+    header('Location: iniciar_sesion.php');
     exit;
 }
 
@@ -122,7 +122,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <div class="container">
         <div class="header-top d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                <a href="intranet_dashboard.php" class="header-logo text-decoration-none">EPCO</a>
+                <a href="panel_intranet.php" class="header-logo text-decoration-none">EPCO</a>
                 <span class="navbar-badge d-none d-sm-inline">Intranet</span>
             </div>
             <div class="user-menu">
@@ -140,15 +140,15 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                         <?= strtoupper(substr($user['name'], 0, 1)) ?>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="profile.php"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="search.php"><i class="bi bi-search me-2"></i>Búsqueda</a></li>
+                        <li><a class="dropdown-item" href="perfil.php"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+                        <li><a class="dropdown-item" href="buscar.php"><i class="bi bi-search me-2"></i>Búsqueda</a></li>
                         <?php if ($isAdminOrSoporte): ?>
                         <li><hr class="dropdown-divider"></li>
                         <li class="dropdown-header">Administración</li>
                         <li><a class="dropdown-item" href="soporte_admin.php"><i class="bi bi-speedometer2 me-2"></i>Panel Soporte</a></li>
-                        <li><a class="dropdown-item" href="users_admin.php"><i class="bi bi-people me-2"></i>Usuarios</a></li>
-                        <li><a class="dropdown-item" href="audit_logs.php"><i class="bi bi-journal-text me-2"></i>Auditoría</a></li>
-                        <li><a class="dropdown-item" href="reports.php"><i class="bi bi-file-spreadsheet me-2"></i>Reportes</a></li>
+                        <li><a class="dropdown-item" href="admin_usuarios.php"><i class="bi bi-people me-2"></i>Usuarios</a></li>
+                        <li><a class="dropdown-item" href="registro_auditoria.php"><i class="bi bi-journal-text me-2"></i>Auditoría</a></li>
+                        <li><a class="dropdown-item" href="reportes.php"><i class="bi bi-file-spreadsheet me-2"></i>Reportes</a></li>
                         <?php endif; ?>
                         <?php if ($canViewDenuncias): ?>
                         <li><hr class="dropdown-divider"></li>
@@ -156,7 +156,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                         <li><a class="dropdown-item" href="denuncias_admin.php"><i class="bi bi-shield-exclamation me-2"></i>Panel Denuncias</a></li>
                         <?php endif; ?>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión</a></li>
+                        <li><a class="dropdown-item text-danger" href="cerrar_sesion.php"><i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión</a></li>
                     </ul>
                 </div>
             </div>
@@ -165,28 +165,28 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <nav class="header-nav">
         <div class="container">
             <div class="d-flex flex-wrap">
-                <a href="intranet_dashboard.php" class="nav-link <?= $currentPage === 'intranet_dashboard' ? 'active' : '' ?>">
+                <a href="panel_intranet.php" class="nav-link <?= $currentPage === 'intranet_dashboard' ? 'active' : '' ?>">
                     <i class="bi bi-house-door"></i><span class="d-none d-sm-inline">Inicio</span>
                 </a>
-                <a href="documents.php" class="nav-link <?= $currentPage === 'documents' ? 'active' : '' ?>">
+                <a href="documentos.php" class="nav-link <?= $currentPage === 'documents' ? 'active' : '' ?>">
                     <i class="bi bi-folder"></i><span class="d-none d-sm-inline">Documentos</span>
                 </a>
-                <a href="knowledge_base.php" class="nav-link <?= $currentPage === 'knowledge_base' ? 'active' : '' ?>">
+                <a href="base_conocimiento.php" class="nav-link <?= $currentPage === 'knowledge_base' ? 'active' : '' ?>">
                     <i class="bi bi-book"></i><span class="d-none d-sm-inline">Conocimiento</span>
                 </a>
-                <a href="events.php" class="nav-link <?= $currentPage === 'events' ? 'active' : '' ?>">
+                <a href="eventos.php" class="nav-link <?= $currentPage === 'events' ? 'active' : '' ?>">
                     <i class="bi bi-calendar-event"></i><span class="d-none d-sm-inline">Calendario</span>
                 </a>
                 <a href="intranet_soporte.php" class="nav-link <?= $currentPage === 'intranet_soporte' || $currentPage === 'soporte' ? 'active' : '' ?>">
                     <i class="bi bi-headset"></i><span class="d-none d-sm-inline">Soporte</span>
                 </a>
                 <?php if ($canManageNews): ?>
-                <a href="news_admin.php" class="nav-link <?= $currentPage === 'news_admin' ? 'active' : '' ?>">
+                <a href="admin_noticias.php" class="nav-link <?= $currentPage === 'news_admin' ? 'active' : '' ?>">
                     <i class="bi bi-newspaper"></i><span class="d-none d-sm-inline">Noticias</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canManageBulletins): ?>
-                <a href="bulletin_admin.php" class="nav-link <?= $currentPage === 'bulletin_admin' ? 'active' : '' ?>">
+                <a href="admin_boletines.php" class="nav-link <?= $currentPage === 'bulletin_admin' ? 'active' : '' ?>">
                     <i class="bi bi-pin-angle"></i><span class="d-none d-sm-inline">Boletines</span>
                 </a>
                 <?php endif; ?>

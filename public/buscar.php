@@ -201,7 +201,7 @@ $statusLabels = [
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
 
     <!-- Search Header -->
     <div class="search-header">
@@ -313,7 +313,7 @@ $statusLabels = [
         <div class="mb-4">
             <h5 class="mb-3"><i class="bi bi-folder me-2"></i>Documentos</h5>
             <?php foreach ($results['documents'] as $doc): ?>
-            <a href="documents.php?download=<?= $doc['id'] ?>" class="card result-card mb-2 text-decoration-none">
+            <a href="documentos.php?download=<?= $doc['id'] ?>" class="card result-card mb-2 text-decoration-none">
                 <div class="card-body d-flex align-items-center">
                     <div class="result-type-icon bg-success bg-opacity-10 text-success me-3">
                         <i class="bi bi-file-earmark"></i>
@@ -337,7 +337,7 @@ $statusLabels = [
         <div class="mb-4">
             <h5 class="mb-3"><i class="bi bi-book me-2"></i>Base de Conocimiento</h5>
             <?php foreach ($results['knowledge'] as $kb): ?>
-            <a href="knowledge_base.php?article=<?= $kb['id'] ?>" class="card result-card mb-2 text-decoration-none">
+            <a href="base_conocimiento.php?article=<?= $kb['id'] ?>" class="card result-card mb-2 text-decoration-none">
                 <div class="card-body d-flex align-items-center">
                     <div class="result-type-icon bg-warning bg-opacity-10 text-warning me-3">
                         <i class="bi bi-lightbulb"></i>
@@ -360,7 +360,7 @@ $statusLabels = [
         <div class="mb-4">
             <h5 class="mb-3"><i class="bi bi-people me-2"></i>Usuarios</h5>
             <?php foreach ($results['users'] as $u): ?>
-            <a href="users_admin.php?search=<?= urlencode($u['email']) ?>" class="card result-card mb-2 text-decoration-none">
+            <a href="admin_usuarios.php?search=<?= urlencode($u['email']) ?>" class="card result-card mb-2 text-decoration-none">
                 <div class="card-body d-flex align-items-center">
                     <div class="result-type-icon bg-danger bg-opacity-10 text-danger me-3">
                         <i class="bi bi-person"></i>

@@ -9,7 +9,7 @@ if (!isset($user)) {
 }
 
 if (!$user) {
-    header('Location: login.php');
+    header('Location: iniciar_sesion.php');
     exit;
 }
 
@@ -468,12 +468,12 @@ $denunciasStats = $pdo->query("
                     <?= strtoupper(substr($user['name'], 0, 1)) ?>
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="profile.php"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+                    <li><a class="dropdown-item" href="perfil.php"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
                     <!-- Intranet oculta temporalmente
-                    <li><a class="dropdown-item" href="intranet_dashboard.php"><i class="bi bi-house me-2"></i>Intranet</a></li>
+                    <li><a class="dropdown-item" href="panel_intranet.php"><i class="bi bi-house me-2"></i>Intranet</a></li>
                     -->
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión</a></li>
+                    <li><a class="dropdown-item text-danger" href="cerrar_sesion.php"><i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>
@@ -600,7 +600,7 @@ $denunciasStats = $pdo->query("
             <ul class="sidebar-nav">
                 <!-- Intranet oculta temporalmente
                 <li class="sidebar-nav-item">
-                    <a href="intranet_dashboard.php" class="sidebar-nav-link">
+                    <a href="panel_intranet.php" class="sidebar-nav-link">
                         <i class="bi bi-house"></i>
                         <span>Intranet</span>
                     </a>
@@ -634,7 +634,7 @@ $denunciasStats = $pdo->query("
                 <h6><?= htmlspecialchars($user['name']) ?></h6>
                 <span><?= ucfirst($user['role']) ?></span>
             </div>
-            <a href="logout.php" class="sidebar-logout" title="Cerrar sesión">
+            <a href="cerrar_sesion.php" class="sidebar-logout" title="Cerrar sesión">
                 <i class="bi bi-box-arrow-left"></i>
             </a>
         </div>

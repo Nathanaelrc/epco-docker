@@ -4,7 +4,7 @@
  * Página dedicada para ver y gestionar un ticket individual
  */
 require_once '../includes/bootstrap.php';
-requireAuth('login.php?redirect=ticket_detail.php');
+requireAuth('iniciar_sesion.php?redirect=detalle_ticket.php');
 
 $user = getCurrentUser();
 if (!in_array($user['role'], ['admin', 'soporte'])) {
@@ -47,7 +47,7 @@ if (isset($_GET['msg'])) {
 // ========== PROCESAR ACCIONES POST ==========
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    $redirectBase = "ticket_detail.php?id={$ticketId}";
+    $redirectBase = "detalle_ticket.php?id={$ticketId}";
     
     // Actualizar ticket (estado, asignación, prioridad, resolución)
     if ($action === 'update_ticket_work') {
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $techStmt->execute([$assignTo]);
                     $techData = $techStmt->fetch();
                     if ($techData && !empty($techData['email'])) {
-                        require_once __DIR__ . '/../includes/MailService.php';
+                        require_once __DIR__ . '/../includes/ServicioCorreo.php';
                         $mailService = new MailService();
                         $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
                         $ticketStmt->execute([$ticketId]);
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ticketStmt->execute([$ticketId]);
                     $ticketData = $ticketStmt->fetch();
                     if ($ticketData && !empty($ticketData['user_email'])) {
-                        require_once __DIR__ . '/../includes/MailService.php';
+                        require_once __DIR__ . '/../includes/ServicioCorreo.php';
                         $mailService = new MailService();
                         $ticketData['subject'] = $ticketData['title'];
                         $ticketData['resolution'] = $resolution;

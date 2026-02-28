@@ -5,12 +5,12 @@
  */
 require_once '../includes/bootstrap.php';
 
-requireAuth('login.php');
+requireAuth('iniciar_sesion.php');
 $user = getCurrentUser();
 
 // Solo admin y social pueden acceder
 if (!in_array($user['role'], ['admin', 'social'])) {
-    header('Location: intranet_dashboard.php');
+    header('Location: panel_intranet.php');
     exit;
 }
 
@@ -189,7 +189,7 @@ if (isset($_GET['edit'])) {
     </style>
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../includes/barra_lateral.php'; ?>
     
     <!-- Header -->
     <div class="page-header">
@@ -199,7 +199,7 @@ if (isset($_GET['edit'])) {
                     <h1 class="fw-bold mb-2"><i class="bi bi-pin-angle me-2"></i>Gestión de Boletines</h1>
                     <p class="mb-0 opacity-75">Administra los comunicados del boletín interno</p>
                 </div>
-                <a href="intranet_dashboard.php" class="btn btn-outline-light">
+                <a href="panel_intranet.php" class="btn btn-outline-light">
                     <i class="bi bi-arrow-left me-2"></i>Volver
                 </a>
             </div>
@@ -353,7 +353,7 @@ if (isset($_GET['edit'])) {
                                 <i class="bi bi-<?= $editBulletin ? 'check-lg' : 'plus-lg' ?> me-2"></i><?= $editBulletin ? 'Guardar Cambios' : 'Crear Boletín' ?>
                             </button>
                             <?php if ($editBulletin): ?>
-                            <a href="bulletin_admin.php" class="btn btn-outline-secondary">Cancelar</a>
+                            <a href="admin_boletines.php" class="btn btn-outline-secondary">Cancelar</a>
                             <?php endif; ?>
                         </div>
                     </form>
@@ -448,7 +448,7 @@ if (isset($_GET['edit'])) {
         </div>
     </div>
     
-    <?php include '../includes/footer.php'; ?>
+    <?php include '../includes/pie_pagina.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>

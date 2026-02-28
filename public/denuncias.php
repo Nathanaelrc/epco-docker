@@ -10,7 +10,7 @@ $user = isLoggedIn() ? getCurrentUser() : null;
 
 // Detectar origen para el botón volver
 $fromIntranet = isset($_GET['from']) && $_GET['from'] === 'intranet';
-$backUrl = $fromIntranet ? 'intranet_dashboard.php' : 'index.php';
+$backUrl = $fromIntranet ? 'panel_intranet.php' : 'index.php';
 $denunciaCreateUrl = $fromIntranet ? 'denuncia_create.php?from=intranet' : 'denuncia_create.php';
 $denunciaSeguimientoUrl = $fromIntranet ? 'denuncia_seguimiento.php?from=intranet' : 'denuncia_seguimiento.php';
 ?>
@@ -593,7 +593,7 @@ $denunciaSeguimientoUrl = $fromIntranet ? 'denuncia_seguimiento.php?from=intrane
                 Portal de Integridad
             </span>
             
-            <a href="login.php?redirect=denuncias_admin" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
+            <a href="iniciar_sesion.php?redirect=denuncias_admin" class="btn btn-light btn-sm d-flex align-items-center gap-2" style="border-radius: 10px; font-weight: 600;">
                 <i class="bi bi-box-arrow-in-right"></i>
                 <span class="d-none d-sm-inline">Iniciar Sesión</span>
             </a>
