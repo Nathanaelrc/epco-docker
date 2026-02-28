@@ -1837,12 +1837,12 @@ unset($tp);
                 .lane-header .lane-title { font-weight:700; font-size:0.9rem; color:#1e293b; display:flex; align-items:center; gap:10px; }
                 .lane-header .lane-title i { font-size:1.1rem; color:var(--lane-color); }
                 .lane-header .lane-count { background:var(--lane-color); color:#fff; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:20px; min-width:28px; text-align:center; }
-                .lane-body { max-height:720px; overflow-y:auto; padding:10px; background:#f8fafc; }
+                .lane-body { height:580px; overflow-y:auto; padding:10px; background:#f8fafc; }
                 .lane-body::-webkit-scrollbar { width:6px; }
                 .lane-body::-webkit-scrollbar-track { background:transparent; }
                 .lane-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
                 .lane-body::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
-                .lane-empty { text-align:center; padding:60px 20px; color:#94a3b8; font-size:0.85rem; background:#f8fafc; }
+                .lane-empty { text-align:center; padding:60px 20px; color:#94a3b8; font-size:0.85rem; background:#f8fafc; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; }
                 .lane-empty i { font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.5; }
                 
                 /* Ticket Cards dentro de las lanes */
@@ -1864,12 +1864,12 @@ unset($tp);
                 .ticket-mini-priority.baja { background:#16a34a; }
                 
                 /* Colores de lanes */
-                .lane-abierto { --lane-color:#3b82f6; --lane-color-dark:#2563eb; }
-                .lane-en_proceso { --lane-color:#f59e0b; --lane-color-dark:#d97706; }
-                .lane-pendiente { --lane-color:#64748b; --lane-color-dark:#475569; }
-                .lane-en_pausa { --lane-color:#8b5cf6; --lane-color-dark:#7c3aed; }
-                .lane-resuelto { --lane-color:#22c55e; --lane-color-dark:#16a34a; }
-                .lane-cerrado { --lane-color:#1e293b; --lane-color-dark:#0f172a; }
+                .lane-abierto { --lane-color:#3b82f6; }
+                .lane-en_proceso { --lane-color:#f59e0b; }
+                .lane-pendiente { --lane-color:#64748b; }
+                .lane-en_pausa { --lane-color:#8b5cf6; }
+                .lane-resuelto { --lane-color:#22c55e; }
+                .lane-cerrado { --lane-color:#1e293b; }
             </style>
             <div class="row g-3" id="dashStatusLanes">
                 <?php
