@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     priority ENUM('baja', 'media', 'alta', 'urgente') NOT NULL DEFAULT 'media',
     title VARCHAR(200) NOT NULL,
     description TEXT NOT NULL,
-    status ENUM('abierto', 'asignado', 'en_proceso', 'pendiente', 'resuelto', 'cerrado') DEFAULT 'abierto',
+    status ENUM('abierto', 'asignado', 'en_proceso', 'pendiente', 'en_pausa', 'resuelto', 'cerrado') DEFAULT 'abierto',
     assigned_to INT DEFAULT NULL,
     assigned_by INT DEFAULT NULL,
     resolution TEXT DEFAULT NULL,

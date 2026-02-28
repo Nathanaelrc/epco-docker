@@ -63,6 +63,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $currentTicket = $currentStmt->fetch();
         
         if ($currentTicket) {
+            // Gestión SLA: pausar/reanudar al cambiar a/desde en_pausa o pendiente
+            $pauseStatuses = ['en_pausa', 'pendiente'];
+            $oldStatus = $currentTicket['status'];
+            if (in_array($newStatus, $pauseStatuses) && !in_array($oldStatus, $pauseStatuses)) {
+                $pdo->prepare('UPDATE tickets SET sla_paused_at = NOW() WHERE id = ?')->execute([$ticketId]);
+            } elseif (!in_array($newStatus, $pauseStatuses) && in_array($oldStatus, $pauseStatuses) && $currentTicket['sla_paused_at']) {
+                $pdo->prepare('UPDATE tickets SET sla_paused_minutes = sla_paused_minutes + TIMESTAMPDIFF(MINUTE, sla_paused_at, NOW()), sla_paused_at = NULL WHERE id = ?')->execute([$ticketId]);
+            }
+            
             $stmt = $pdo->prepare('UPDATE tickets SET status = ?, resolution = ?, assigned_to = ?, priority = ?, updated_at = NOW() WHERE id = ?');
             $stmt->execute([$newStatus, $resolution, $assignTo, $priority, $ticketId]);
             
@@ -595,6 +604,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                                         <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>Abierto</option>
                                         <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
                                         <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                                        <option value="en_pausa" <?= $t['status'] === 'en_pausa' ? 'selected' : '' ?>>En Pausa</option>
                                         <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>Resuelto</option>
                                         <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
                                     </select>

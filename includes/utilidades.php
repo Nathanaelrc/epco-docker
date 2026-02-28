@@ -426,13 +426,14 @@ function changeTicketStatus($ticketId, $newStatus, $resolution = null) {
             $extraFields = ', closed_at = NOW()';
             break;
         case 'pendiente':
-            // Pausar SLA cuando está pendiente
+        case 'en_pausa':
+            // Pausar SLA cuando está pendiente o en pausa
             $extraFields = ', sla_paused_at = NOW()';
             break;
     }
     
-    // Si volvemos de pendiente, calcular tiempo pausado
-    if ($oldStatus === 'pendiente' && $newStatus !== 'pendiente') {
+    // Si volvemos de pendiente/en_pausa, calcular tiempo pausado
+    if (in_array($oldStatus, ['pendiente', 'en_pausa']) && !in_array($newStatus, ['pendiente', 'en_pausa'])) {
         $stmt = $pdo->prepare("
             UPDATE tickets SET 
                 sla_paused_minutes = sla_paused_minutes + TIMESTAMPDIFF(MINUTE, sla_paused_at, NOW()),
