@@ -688,7 +688,7 @@ ROW;
                     <!-- ===== BOT&Oacute;N DE ACCI&Oacute;N ===== -->
                     <tr>
                         <td style="padding: 15px 40px 35px;" align="center">
-                            <a href="{$appUrl}/soporte_admin.php?page=tickets" class="btn-action" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.3px;">
+                            <a href="{$appUrl}/login.php?redirect=soporte_admin" class="btn-action" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.3px;">
                                 Ver en Panel de Soporte
                             </a>
                         </td>
@@ -758,7 +758,7 @@ DESCRIPCIÓN
 
 ───────────────────────────────────────────────
 Ver en Panel de Soporte:
-{$appUrl}/soporte_admin.php?page=tickets
+{$appUrl}/login.php?redirect=soporte_admin
 
 Correo automático · No responder a este mensaje
 TEXT;
@@ -969,7 +969,7 @@ TEXT;
                     <!-- BOTÓN -->
                     <tr>
                         <td style="padding: 20px 40px 30px;" align="center">
-                            <a href="{$appUrl}/soporte_admin" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                            <a href="{$appUrl}/login.php?redirect=soporte_admin" style="display: inline-block; background-color: #0c5a8a; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-size: 14px; font-weight: 600;">
                                 Ir al Panel de Soporte
                             </a>
                         </td>
@@ -1361,7 +1361,7 @@ DESCRIPCIÓN
 Plazo de resolución SLA: {$slaLabel}
 
 Ir al Panel de Soporte:
-{$appUrl}/soporte_admin
+{$appUrl}/login.php?redirect=soporte_admin
 
 Correo automático · No responder a este mensaje
 TEXT;

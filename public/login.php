@@ -5,6 +5,21 @@
 require_once '../includes/bootstrap.php';
 require_once '../includes/auth.php';
 
+// Si ya está logueado, redirigir automáticamente
+if (isLoggedIn()) {
+    $redirect = $_GET['redirect'] ?? null;
+    
+    if ($redirect) {
+        $redirect = str_replace('.php', '', $redirect);
+        header("Location: $redirect");
+    } elseif ($_SESSION['user_role'] === 'soporte') {
+        header("Location: soporte_admin");
+    } else {
+        header("Location: intranet_dashboard");
+    }
+    exit;
+}
+
 $error = '';
 $success = '';
 
@@ -20,18 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Registrar login exitoso
             logActivity($_SESSION['user_id'], 'login', 'users', $_SESSION['user_id'], 'Inicio de sesión exitoso');
             
-            // Redirección según rol
-            $role = $_SESSION['user_role'];
+            // Redirección: primero verificar si hay un redirect específico
+            $redirect = $_GET['redirect'] ?? null;
             
-            if ($role === 'soporte') {
-                // Usuarios de soporte van directo al panel de soporte
-                header("Location: soporte_admin");
-            } else {
-                // Otros usuarios van a la intranet o al redirect solicitado
-                $redirect = $_GET['redirect'] ?? 'intranet_dashboard';
-                // Asegurar que no tenga .php para URLs limpias
+            if ($redirect) {
+                // Si hay redirect específico, usarlo (puede venir del enlace del correo)
                 $redirect = str_replace('.php', '', $redirect);
                 header("Location: $redirect");
+            } elseif ($_SESSION['user_role'] === 'soporte') {
+                // Si es soporte sin redirect, ir al panel de soporte
+                header("Location: soporte_admin");
+            } else {
+                // Otros usuarios van a la intranet
+                header("Location: intranet_dashboard");
             }
             exit;
         } else {
