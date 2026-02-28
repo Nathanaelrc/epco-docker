@@ -232,13 +232,15 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPCO - <?= htmlspecialchars($t['ticket_number']) ?></title>
     <link rel="icon" type="image/png" href="img/Logo01.png">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        * { font-family: 'Barlow', sans-serif; }
         :root {
             --primary-dark: #0c5a8a;
-            --primary-soft: #e0f2fe;
+            --primary-light: #094a72;
+            --primary-soft: #e8f4fc;
             --gray-50: #f8fafc;
             --gray-100: #f1f5f9;
             --gray-200: #e2e8f0;
@@ -246,59 +248,99 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
             --gray-700: #334155;
             --gray-900: #0f172a;
         }
-        * { font-family: 'Barlow', sans-serif; }
-        body { background: var(--gray-50); }
+        body { background: var(--gray-100); margin: 0; }
         
         /* Header del ticket */
         .ticket-header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #0c5a8a 100%);
-            color: white;
-            padding: 16px 24px;
+            background: white;
+            padding: 18px 0;
+            border-bottom: 1px solid var(--gray-200);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .ticket-header .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
         }
-        .ticket-header .ticket-id {
-            font-size: 1.2rem;
+        .ticket-id-badge {
+            font-size: 1.1rem;
             font-weight: 700;
+            color: var(--primary-dark);
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+        }
+        .ticket-title-main {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+        .header-meta {
+            color: var(--gray-500);
+            font-size: 0.82rem;
+        }
+        .header-meta strong { color: var(--gray-700); }
+        
+        /* Contenedor centrado */
+        .page-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
         }
         
         /* Secciones */
         .section-title {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.08em;
             color: var(--gray-500);
             margin-bottom: 12px;
         }
         .info-label {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: var(--gray-500);
             margin-bottom: 2px;
+            font-weight: 500;
         }
         
         /* Cards */
         .detail-card {
-            background: #fff;
+            background: white;
             border: 1px solid var(--gray-200);
             border-radius: 8px;
             overflow: hidden;
         }
         .detail-card .card-section {
-            padding: 16px 20px;
+            padding: 18px 22px;
             border-bottom: 1px solid var(--gray-200);
         }
         .detail-card .card-section:last-child {
             border-bottom: none;
         }
+        .card-section-header {
+            padding: 16px 22px;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+        }
+        .card-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0;
+        }
         
         /* Comentarios */
         .comment-item {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 16px;
         }
         .comment-avatar {
@@ -316,15 +358,30 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
             padding: 10px 14px;
             border-radius: 8px;
             font-size: 0.85rem;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         
         /* Toast */
         .msg-banner {
-            padding: 10px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 24px;
             font-size: 0.85rem;
             font-weight: 500;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            border-radius: 6px;
+            margin-top: 16px;
+        }
+        
+        /* Botones tema */
+        .btn-primary { background: var(--primary-dark); border-color: var(--primary-dark); }
+        .btn-primary:hover { background: var(--primary-light); border-color: var(--primary-light); }
+        .btn-outline-primary { color: var(--primary-dark); border-color: var(--primary-dark); }
+        .btn-outline-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+        
+        /* Form focus */
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 0.2rem rgba(12, 90, 138, 0.15);
         }
     </style>
 </head>
@@ -332,39 +389,48 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
     
     <!-- Header del Ticket -->
     <div class="ticket-header">
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            <a href="<?= htmlspecialchars($returnUrl) ?>" class="btn btn-sm btn-outline-light" title="Volver">
-                <i class="bi bi-arrow-left me-1"></i>Volver
-            </a>
-            <span class="ticket-id"><?= htmlspecialchars($t['ticket_number']) ?></span>
-            <span class="badge bg-<?= $statusColors[$t['status']] ?> py-1 px-2"><?= $statusLabels[$t['status']] ?></span>
-            <span class="badge bg-<?= $priorityColors[$t['priority']] ?> py-1 px-2"><?= ucfirst($t['priority']) ?></span>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <small class="text-white-50"><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></small>
-            <?php if ($t['assigned_name']): ?>
-            <small class="text-white-50">| Asignado a: <strong class="text-white"><?= htmlspecialchars($t['assigned_name']) ?></strong></small>
-            <?php endif; ?>
+        <div class="header-inner">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <a href="<?= htmlspecialchars($returnUrl) ?>" class="btn btn-sm btn-outline-secondary" title="Volver">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </a>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="ticket-id-badge"><?= htmlspecialchars($t['ticket_number']) ?></span>
+                        <span class="badge bg-<?= $statusColors[$t['status']] ?> py-1 px-2"><?= $statusLabels[$t['status']] ?></span>
+                        <span class="badge bg-<?= $priorityColors[$t['priority']] ?> py-1 px-2"><?= ucfirst($t['priority']) ?></span>
+                    </div>
+                    <h1 class="ticket-title-main"><?= htmlspecialchars($t['title']) ?></h1>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-3 header-meta">
+                <span><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></span>
+                <?php if ($t['assigned_name']): ?>
+                <span>Asignado a: <strong><?= htmlspecialchars($t['assigned_name']) ?></strong></span>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
     
     <!-- Mensaje flash -->
     <?php if ($message): ?>
-    <div class="msg-banner bg-<?= $messageType === 'success' ? 'success' : 'danger' ?> text-white">
+    <div class="msg-banner alert alert-<?= $messageType === 'success' ? 'success' : 'danger' ?> mb-0">
         <?= htmlspecialchars($message) ?>
     </div>
     <?php endif; ?>
     
-    <div class="container-fluid p-4">
+    <div class="page-content">
         <div class="row g-4">
             
             <!-- ========== COLUMNA IZQUIERDA: Información ========== -->
-            <div class="col-lg-4">
+            <div class="col-lg-5">
                 <div class="detail-card">
                     
                     <!-- Información General -->
+                    <div class="card-section-header">
+                        <h2 class="card-section-title">Información del Ticket</h2>
+                    </div>
                     <div class="card-section">
-                        <div class="section-title">Información del Ticket</div>
                         <div class="mb-3">
                             <div class="info-label">Título</div>
                             <p class="mb-0 fw-semibold" style="font-size: 0.95rem;"><?= htmlspecialchars($t['title']) ?></p>
@@ -500,7 +566,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                                             <textarea name="description" class="form-control form-control-sm" rows="3"><?= htmlspecialchars($t['description']) ?></textarea>
                                         </div>
                                         <div class="col-12 text-end">
-                                            <button type="submit" class="btn btn-dark btn-sm">Guardar Datos</button>
+                                            <button type="submit" class="btn btn-primary btn-sm">Guardar Datos</button>
                                         </div>
                                     </div>
                                 </form>
@@ -511,10 +577,13 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
             </div>
             
             <!-- ========== COLUMNA DERECHA: Área de Trabajo ========== -->
-            <div class="col-lg-8">
+            <div class="col-lg-7">
                 
                 <!-- Panel de Trabajo -->
                 <div class="detail-card mb-4">
+                    <div class="card-section-header">
+                        <h2 class="card-section-title">Panel de Trabajo</h2>
+                    </div>
                     <div class="card-section">
                         <form method="POST">
                             <input type="hidden" name="action" value="update_ticket_work">
@@ -578,10 +647,10 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                 
                 <!-- Actividad / Historial -->
                 <div class="detail-card" id="actividad">
-                    <div class="card-section py-2">
-                        <div class="section-title mb-0">
-                            Actividad / Notas de Trabajo
-                            <span class="badge bg-secondary ms-1"><?= count($comments) ?></span>
+                    <div class="card-section-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <h2 class="card-section-title mb-0">Actividad</h2>
+                            <span class="badge bg-secondary"><?= count($comments) ?></span>
                         </div>
                     </div>
                     

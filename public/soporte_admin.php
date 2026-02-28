@@ -89,6 +89,11 @@ if (isset($_GET['msg'])) {
             $message = 'Ticket eliminado correctamente';
             $messageType = 'success';
             break;
+        case 'bulk_deleted':
+            $count = (int)($_GET['count'] ?? 0);
+            $message = "{$count} ticket" . ($count > 1 ? 's' : '') . " eliminado" . ($count > 1 ? 's' : '') . " correctamente";
+            $messageType = 'success';
+            break;
     }
 }
 
@@ -333,6 +338,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             logActivity($user['id'], 'ticket_deleted', 'tickets', $ticketId, "Ticket {$delTicket['ticket_number']} eliminado: {$delTicket['title']}");
             
             $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=ticket_deleted';
+            header("Location: $redirectUrl");
+            exit;
+        }
+    }
+    
+    // Eliminar tickets en masa
+    if ($action === 'bulk_delete_tickets') {
+        $ids = $_POST['ticket_ids'] ?? [];
+        if (is_array($ids) && count($ids) > 0) {
+            $deleted = 0;
+            foreach ($ids as $tid) {
+                $tid = (int)$tid;
+                $stmt = $pdo->prepare('SELECT ticket_number, title FROM tickets WHERE id = ?');
+                $stmt->execute([$tid]);
+                $delTicket = $stmt->fetch();
+                if ($delTicket) {
+                    $ticketDir = __DIR__ . '/uploads/tickets/' . $delTicket['ticket_number'] . '/';
+                    if (is_dir($ticketDir)) {
+                        $files = glob($ticketDir . '*');
+                        foreach ($files as $file) { if (is_file($file)) unlink($file); }
+                        @rmdir($ticketDir);
+                    }
+                    $pdo->prepare('DELETE FROM ticket_comments WHERE ticket_id = ?')->execute([$tid]);
+                    $pdo->prepare('DELETE FROM ticket_history WHERE ticket_id = ?')->execute([$tid]);
+                    $pdo->prepare('DELETE FROM ticket_attachments WHERE ticket_id = ?')->execute([$tid]);
+                    $pdo->prepare('DELETE FROM ticket_surveys WHERE ticket_id = ?')->execute([$tid]);
+                    $pdo->prepare('DELETE FROM tickets WHERE id = ?')->execute([$tid]);
+                    logActivity($user['id'], 'ticket_deleted', 'tickets', $tid, "Ticket {$delTicket['ticket_number']} eliminado (masivo)");
+                    $deleted++;
+                }
+            }
+            $redirectUrl = $_SERVER['PHP_SELF'] . '?page=' . $page . ($filter ? '&filter=' . $filter : '') . '&msg=bulk_deleted&count=' . $deleted;
             header("Location: $redirectUrl");
             exit;
         }
@@ -1761,6 +1798,21 @@ unset($tp);
         .sla-progress-bar { height: 6px; border-radius: 3px; background: var(--gray-100); overflow: hidden; margin-top: 8px; }
         .sla-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
         .sla-gauge { position: relative; width: 120px; height: 60px; margin: 0 auto; }
+        
+        /* Barra de acciones masivas */
+        .bulk-action-bar {
+            background: white;
+            border: 1px solid var(--primary-dark);
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(12, 90, 138, 0.12);
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .bulk-action-bar form { margin: 0; }
+        .ticket-check { cursor: pointer; }
+        tr.selected-row { background: var(--primary-soft) !important; }
     </style>
 </head>
 <body class="has-sidebar">
@@ -2145,6 +2197,20 @@ unset($tp);
                 <div></div>
                 <a href="?page=nuevo_ticket" class="btn btn-dark"><i class="bi bi-plus-lg me-2"></i>Nuevo Ticket</a>
             </div>
+            
+            <!-- Barra de acciones masivas -->
+            <div id="bulkBar" class="bulk-action-bar" style="display:none;">
+                <form method="POST" id="bulkDeleteForm" onsubmit="return confirm('¿Eliminar los tickets seleccionados? Esta acción no se puede deshacer.');">
+                    <input type="hidden" name="action" value="bulk_delete_tickets">
+                    <div id="bulkIdsContainer"></div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span id="bulkCount" class="fw-semibold">0 seleccionados</span>
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar Seleccionados</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            
             <div class="card-custom">
                 <div class="card-header-custom">
                     <h5 class="card-title-custom"><i class="bi bi-ticket-detailed me-2"></i>Gestión de Tickets</h5>
@@ -2156,20 +2222,24 @@ unset($tp);
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead><tr><th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Asignado</th><th>Fecha</th></tr></thead>
+                    <table class="table mb-0" id="ticketsTable">
+                        <thead><tr>
+                            <th style="width:40px;"><input type="checkbox" class="form-check-input" id="selectAllTickets" onchange="toggleSelectAll(this, 'ticketsTable')" title="Seleccionar todos"></th>
+                            <th>Ticket</th><th>Título</th><th>Usuario</th><th>Categoría</th><th>Prioridad</th><th>Estado</th><th>Evidencia</th><th>Asignado</th><th>Fecha</th>
+                        </tr></thead>
                         <tbody>
                         <?php if (empty($tickets)): ?>
-                        <tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
+                        <tr><td colspan="10" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
                         <?php else: foreach ($tickets as $t): ?>
-                        <tr style="cursor: pointer;" onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'" class="ticket-row-hover" data-ticket-id="<?= $t['id'] ?>">
-                            <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
-                            <td><?= htmlspecialchars(substr($t['title'], 0, 35)) ?><?= strlen($t['title']) > 35 ? '...' : '' ?></td>
-                            <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
-                            <td><span class="badge bg-light text-dark"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></td>
-                            <td><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
-                            <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
-                            <td class="text-center">
+                        <tr style="cursor: pointer;" class="ticket-row-hover" data-ticket-id="<?= $t['id'] ?>">
+                            <td onclick="event.stopPropagation();"><input type="checkbox" class="form-check-input ticket-check" value="<?= $t['id'] ?>" onchange="updateBulkBar()"></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'"><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'"><?= htmlspecialchars(substr($t['title'], 0, 35)) ?><?= strlen($t['title']) > 35 ? '...' : '' ?></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'"><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'"><span class="badge bg-light text-dark"><?= $categoryLabels[$t['category']] ?? $t['category'] ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'"><span class="badge bg-<?= $priorityColors[$t['priority']] ?>"><?= ucfirst($t['priority']) ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'"><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'" class="text-center">
                                 <?php 
                                     $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
                                 ?>
@@ -2179,8 +2249,8 @@ unset($tp);
                                     <span class="badge bg-light text-muted">No</span>
                                 <?php endif; ?>
                             </td>
-                            <td><span class="small text-muted"><?= $t['assigned_name'] ?? '-' ?></span></td>
-                            <td class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'"><span class="small text-muted"><?= $t['assigned_name'] ?? '-' ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=tickets'" class="small text-muted"><?= date('d/m H:i', strtotime($t['created_at'])) ?></td>
                         </tr>
                         <?php endforeach; endif; ?>
                         </tbody>
@@ -2246,6 +2316,19 @@ unset($tp);
                 </div>
             </div>
             
+            <!-- Barra de acciones masivas Mis Tickets -->
+            <div id="bulkBarMy" class="bulk-action-bar" style="display:none;">
+                <form method="POST" id="bulkDeleteFormMy" onsubmit="return confirm('¿Eliminar los tickets seleccionados? Esta acción no se puede deshacer.');">
+                    <input type="hidden" name="action" value="bulk_delete_tickets">
+                    <div id="bulkIdsContainerMy"></div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span id="bulkCountMy" class="fw-semibold">0 seleccionados</span>
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar Seleccionados</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            
             <!-- Tabla unificada de tickets -->
             <?php if (!empty($tickets)): ?>
             <div class="sn-overview-card">
@@ -2253,6 +2336,7 @@ unset($tp);
                     <table class="table sn-table mb-0" id="myTicketsTable">
                         <thead>
                             <tr>
+                                <th style="width:40px;"><input type="checkbox" class="form-check-input" id="selectAllMyTickets" onchange="toggleSelectAll(this, 'myTicketsTable')" title="Seleccionar todos"></th>
                                 <th>Número</th>
                                 <th>Creado</th>
                                 <th>Descripción</th>
@@ -2266,23 +2350,24 @@ unset($tp);
                         </thead>
                         <tbody>
                         <?php foreach ($tickets as $t): ?>
-                        <tr onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" data-ticket-id="<?= $t['id'] ?>" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
-                            <td><span class="sn-link"><?= $t['ticket_number'] ?></span></td>
-                            <td class="text-nowrap"><?= date('Y-m-d H:i', strtotime($t['created_at'])) ?></td>
-                            <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
-                            <td>
+                        <tr data-ticket-id="<?= $t['id'] ?>" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
+                            <td onclick="event.stopPropagation();"><input type="checkbox" class="form-check-input ticket-check" value="<?= $t['id'] ?>" onchange="updateBulkBar()"></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;"><span class="sn-link"><?= $t['ticket_number'] ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;" class="text-nowrap"><?= date('Y-m-d H:i', strtotime($t['created_at'])) ?></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="user-info-avatar" style="width:26px;height:26px;font-size:0.65rem;"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div>
                                     <span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span>
                                 </div>
                             </td>
-                            <td><span class="small"><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></span></td>
-                            <td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;"><span class="small"><?= $categoryLabels[$t['category']] ?? ucfirst($t['category']) ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;">
                                 <span class="sn-priority-dot <?= $t['priority'] ?>"></span>
                                 <span class="small"><?= ucfirst($t['priority']) ?></span>
                             </td>
-                            <td><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
-                            <td class="text-center">
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;"><span class="badge bg-<?= $statusColors[$t['status']] ?>"><?= $statusLabels[$t['status']] ?></span></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;" class="text-center">
                                 <?php 
                                 $hasEvidence = (($t['attachment_count'] ?? 0) > 0) || (($t['comment_attachments'] ?? 0) > 0) || is_dir(__DIR__ . '/uploads/tickets/' . $t['ticket_number']);
                                 ?>
@@ -2292,7 +2377,7 @@ unset($tp);
                                 <span class="badge bg-light text-muted">—</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="text-nowrap small text-muted"><?= date('Y-m-d H:i', strtotime($t['updated_at'] ?? $t['created_at'])) ?></td>
+                            <td onclick="window.location='detalle_ticket.php?id=<?= $t['id'] ?>&from=mis_tickets'" style="cursor:pointer;" class="text-nowrap small text-muted"><?= date('Y-m-d H:i', strtotime($t['updated_at'] ?? $t['created_at'])) ?></td>
                         </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -4778,6 +4863,81 @@ tr:nth-child(even){background:#f8fafc}
     }
     updateChileTime();
     setInterval(updateChileTime, 1000);
+    </script>
+
+    <!-- Script de selección masiva de tickets -->
+    <script>
+    function toggleSelectAll(master, tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const checks = table.querySelectorAll('tbody .ticket-check');
+        checks.forEach(cb => {
+            const row = cb.closest('tr');
+            if (row && row.style.display !== 'none') {
+                cb.checked = master.checked;
+                row.classList.toggle('selected-row', master.checked);
+            }
+        });
+        updateBulkBar();
+    }
+
+    function updateBulkBar() {
+        const allChecked = document.querySelectorAll('.ticket-check:checked');
+        const count = allChecked.length;
+        
+        // Actualizar ambas barras (la que esté visible)
+        const bars = [
+            { bar: document.getElementById('bulkBar'), count: document.getElementById('bulkCount'), container: document.getElementById('bulkIdsContainer') },
+            { bar: document.getElementById('bulkBarMy'), count: document.getElementById('bulkCountMy'), container: document.getElementById('bulkIdsContainerMy') }
+        ];
+        
+        bars.forEach(b => {
+            if (!b.bar) return;
+            b.bar.style.display = count > 0 ? 'block' : 'none';
+            if (b.count) b.count.textContent = count + ' seleccionado' + (count !== 1 ? 's' : '');
+            if (b.container) {
+                b.container.innerHTML = '';
+                allChecked.forEach(cb => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ticket_ids[]';
+                    input.value = cb.value;
+                    b.container.appendChild(input);
+                });
+            }
+        });
+
+        // Actualizar estado de los selectAll
+        ['ticketsTable', 'myTicketsTable'].forEach(tid => {
+            const table = document.getElementById(tid);
+            if (!table) return;
+            const master = table.querySelector('thead .form-check-input');
+            if (!master) return;
+            const visibleChecks = [...table.querySelectorAll('tbody .ticket-check')].filter(cb => cb.closest('tr').style.display !== 'none');
+            const checkedVisible = visibleChecks.filter(cb => cb.checked);
+            master.checked = visibleChecks.length > 0 && checkedVisible.length === visibleChecks.length;
+            master.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visibleChecks.length;
+        });
+
+        // Resaltar filas
+        document.querySelectorAll('.ticket-check').forEach(cb => {
+            const row = cb.closest('tr');
+            if (row) row.classList.toggle('selected-row', cb.checked);
+        });
+    }
+
+    function clearSelection() {
+        document.querySelectorAll('.ticket-check').forEach(cb => {
+            cb.checked = false;
+            const row = cb.closest('tr');
+            if (row) row.classList.remove('selected-row');
+        });
+        ['selectAllTickets', 'selectAllMyTickets'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.checked = false; el.indeterminate = false; }
+        });
+        updateBulkBar();
+    }
     </script>
 
 </body>
