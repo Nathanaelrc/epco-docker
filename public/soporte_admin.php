@@ -94,6 +94,142 @@ if (isset($_GET['msg'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    
+    // ========== FUNCIONES AJAX ==========
+    if ($isAjax) {
+        // Limpiar cualquier output previo y prevenir output accidental
+        while (ob_get_level()) ob_end_clean();
+        ob_start();
+        header('Content-Type: application/json; charset=UTF-8');
+        
+        // Función para responder JSON limpio
+        function jsonResponse($data) {
+            ob_end_clean();
+            echo json_encode($data, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        
+        try {
+        
+        // Actualizar ticket desde panel de trabajo (AJAX)
+        if ($action === 'update_ticket_work') {
+            $ticketId = (int)$_POST['ticket_id'];
+            $newStatus = sanitize($_POST['new_status'] ?? '');
+            $resolution = sanitize($_POST['resolution'] ?? '');
+            $assignTo = !empty($_POST['assign_to']) ? (int)$_POST['assign_to'] : null;
+            $priority = sanitize($_POST['priority'] ?? '');
+            
+            $currentStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+            $currentStmt->execute([$ticketId]);
+            $currentTicket = $currentStmt->fetch();
+            
+            $changes = [];
+            
+            $stmt = $pdo->prepare('UPDATE tickets SET status = ?, resolution = ?, assigned_to = ?, priority = ?, updated_at = NOW() WHERE id = ?');
+            $stmt->execute([$newStatus, $resolution, $assignTo, $priority, $ticketId]);
+            
+            if ($currentTicket['status'] !== $newStatus) $changes[] = "Estado: {$newStatus}";
+            if ($currentTicket['priority'] !== $priority) $changes[] = "Prioridad: {$priority}";
+            if ($currentTicket['assigned_to'] != $assignTo) $changes[] = "Asignación actualizada";
+            
+            logActivity($user['id'], 'ticket_updated', 'tickets', $ticketId, implode(', ', $changes) ?: 'Ticket actualizado');
+            
+            // Enviar correos si aplica
+            if ($assignTo && $currentTicket['assigned_to'] != $assignTo) {
+                try {
+                    $techStmt = $pdo->prepare('SELECT name, email FROM users WHERE id = ?');
+                    $techStmt->execute([$assignTo]);
+                    $techData = $techStmt->fetch();
+                    if ($techData && !empty($techData['email'])) {
+                        require_once __DIR__ . '/../includes/MailService.php';
+                        $mailService = new MailService();
+                        $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+                        $ticketStmt->execute([$ticketId]);
+                        $ticketData = $ticketStmt->fetch();
+                        $mailService->sendTicketAssignedNotification($ticketData, $techData['name'], $techData['email']);
+                    }
+                } catch (Exception $e) {}
+            }
+            
+            if (in_array($newStatus, ['resuelto', 'cerrado']) && !in_array($currentTicket['status'], ['resuelto', 'cerrado'])) {
+                try {
+                    $ticketStmt = $pdo->prepare('SELECT * FROM tickets WHERE id = ?');
+                    $ticketStmt->execute([$ticketId]);
+                    $ticketData = $ticketStmt->fetch();
+                    if ($ticketData && !empty($ticketData['user_email'])) {
+                        require_once __DIR__ . '/../includes/MailService.php';
+                        $mailService = new MailService();
+                        $ticketData['subject'] = $ticketData['title'];
+                        $ticketData['resolution'] = $resolution;
+                        $ticketData['status'] = $newStatus;
+                        $mailService->sendTicketClosedNotification($ticketData, $user['name']);
+                    }
+                } catch (Exception $e) {}
+            }
+            
+            // Obtener datos actualizados
+            $stmt = $pdo->prepare('SELECT t.*, u.name as assigned_name FROM tickets t LEFT JOIN users u ON t.assigned_to = u.id WHERE t.id = ?');
+            $stmt->execute([$ticketId]);
+            $updatedTicket = $stmt->fetch();
+            
+            jsonResponse(['success' => true, 'message' => 'Ticket actualizado', 'ticket' => $updatedTicket]);
+        }
+        
+        // Agregar comentario (AJAX)
+        if ($action === 'add_comment') {
+            $ticketId = (int)$_POST['ticket_id'];
+            $comment = sanitize($_POST['comment'] ?? '');
+            $isInternal = isset($_POST['is_internal']) ? 1 : 0;
+            
+            if (!empty($comment)) {
+                $stmt = $pdo->prepare('INSERT INTO ticket_comments (ticket_id, user_id, user_name, comment, is_internal, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+                $stmt->execute([$ticketId, $user['id'], $user['name'], $comment, $isInternal]);
+                
+                $pdo->prepare('UPDATE tickets SET updated_at = NOW() WHERE id = ?')->execute([$ticketId]);
+                logActivity($user['id'], 'comment_added', 'tickets', $ticketId, 'Comentario agregado');
+                
+                jsonResponse(['success' => true, 'message' => 'Comentario agregado', 'comment' => [
+                    'user_name' => $user['name'],
+                    'comment' => $comment,
+                    'is_internal' => $isInternal,
+                    'created_at' => date('d/m H:i')
+                ]]);
+            } else {
+                jsonResponse(['success' => false, 'message' => 'El comentario no puede estar vacío']);
+            }
+        }
+        
+        // Actualizar datos del ticket (edit section) (AJAX)
+        if ($action === 'update_ticket') {
+            $ticketId = (int)$_POST['ticket_id'];
+            $title = sanitize($_POST['title'] ?? '');
+            $description = sanitize($_POST['description'] ?? '');
+            $category = sanitize($_POST['category'] ?? '');
+            $userName = sanitize($_POST['user_name'] ?? '');
+            $userEmail = sanitize($_POST['user_email'] ?? '');
+            
+            if (!empty($title) && !empty($description)) {
+                $stmt = $pdo->prepare('UPDATE tickets SET title = ?, description = ?, category = ?, user_name = ?, user_email = ?, updated_at = NOW() WHERE id = ?');
+                $stmt->execute([$title, $description, $category, $userName, $userEmail, $ticketId]);
+                logActivity($user['id'], 'ticket_updated', 'tickets', $ticketId, 'Datos del ticket editados');
+                
+                jsonResponse(['success' => true, 'message' => 'Datos actualizados']);
+            } else {
+                jsonResponse(['success' => false, 'message' => 'Título y descripción son requeridos']);
+            }
+        }
+        
+        // Respuesta por defecto para AJAX no manejado
+        jsonResponse(['success' => false, 'message' => 'Acción no reconocida']);
+        } catch (Exception $e) {
+            ob_end_clean();
+            echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        }
+        exit;
+    }
+    
+    // ========== PROCESAMIENTO POST TRADICIONAL (no AJAX) ==========
     
     // Asignar ticket (admin y soporte pueden asignar)
     if ($action === 'assign_ticket') {
@@ -1985,7 +2121,7 @@ unset($tp);
                                 <?php foreach ($laneTickets as $t): 
                                     $hasAttachments = ($t['attachment_count'] ?? 0) > 0 || ($t['comment_attachments'] ?? 0) > 0;
                                 ?>
-                                <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
+                                <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row" data-ticket-id="<?= $t['id'] ?>" data-search="<?= strtolower($t['ticket_number'] . ' ' . htmlspecialchars($t['title']) . ' ' . ($t['user_name'] ?? '') . ' ' . ($t['assigned_name'] ?? '')) ?>">
                                     <td><span class="ticket-link"><?= $t['ticket_number'] ?></span></td>
                                     <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
                                     <td>
@@ -2160,7 +2296,7 @@ unset($tp);
                         <?php if (empty($tickets)): ?>
                         <tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-inbox" style="font-size:2.5rem"></i><p class="mt-2 mb-0">No hay tickets</p></td></tr>
                         <?php else: foreach ($tickets as $t): ?>
-                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover">
+                        <tr style="cursor: pointer;" onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" class="ticket-row-hover" data-ticket-id="<?= $t['id'] ?>">
                             <td><span class="ticket-number"><?= $t['ticket_number'] ?></span></td>
                             <td><?= htmlspecialchars(substr($t['title'], 0, 35)) ?><?= strlen($t['title']) > 35 ? '...' : '' ?></td>
                             <td><div class="user-info"><div class="user-info-avatar"><?= strtoupper(substr($t['user_name'] ?? 'U', 0, 1)) ?></div><span class="small"><?= htmlspecialchars($t['user_name'] ?? '-') ?></span></div></td>
@@ -2264,7 +2400,7 @@ unset($tp);
                         </thead>
                         <tbody>
                         <?php foreach ($tickets as $t): ?>
-                        <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
+                        <tr onclick="new bootstrap.Modal(document.getElementById('ticketModal<?= $t['id'] ?>')).show()" data-ticket-id="<?= $t['id'] ?>" data-status="<?= $t['status'] ?>" data-priority="<?= $t['priority'] ?>">
                             <td><span class="sn-link"><?= $t['ticket_number'] ?></span></td>
                             <td class="text-nowrap"><?= date('Y-m-d H:i', strtotime($t['created_at'])) ?></td>
                             <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($t['title']) ?></td>
@@ -2882,7 +3018,7 @@ unset($tp);
                                 <div class="stat-label">SLA Respuesta</div>
                                 <small class="text-muted">Promedio: <?= $slaStats['avg_response'] ?>h</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399);"><i class="bi bi-chat-dots text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-chat-dots"></i></div>
                         </div>
                     </div>
                 </div>
@@ -2894,7 +3030,7 @@ unset($tp);
                                 <div class="stat-label">SLA Asignación</div>
                                 <small class="text-muted">Promedio: <?= $slaStats['avg_assignment'] ?>h</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);"><i class="bi bi-person-check text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-person-check"></i></div>
                         </div>
                     </div>
                 </div>
@@ -2906,7 +3042,7 @@ unset($tp);
                                 <div class="stat-label">SLA Resolución</div>
                                 <small class="text-muted">Promedio: <?= $slaStats['avg_resolution'] ?>h</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);"><i class="bi bi-check2-circle text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
                         </div>
                     </div>
                 </div>
@@ -2918,7 +3054,7 @@ unset($tp);
                                 <div class="stat-label">Tiempo de Trabajo</div>
                                 <small class="text-muted">Promedio por ticket</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);"><i class="bi bi-hourglass-split text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3420,7 +3556,7 @@ tr:nth-child(even){background:#f8fafc}
                                 <div class="stat-label">Total Tickets</div>
                                 <small class="text-muted"><?= $ticketMetrics['creados_mes'] ?> este mes · <?= $ticketMetrics['creados_semana'] ?> esta semana</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);"><i class="bi bi-ticket-perforated text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-ticket-perforated"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3428,11 +3564,11 @@ tr:nth-child(even){background:#f8fafc}
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="stat-value" style="color: #16a34a;"><?= number_format($ticketMetrics['resueltos']) ?></div>
+                                <div class="stat-value"><?= number_format($ticketMetrics['resueltos']) ?></div>
                                 <div class="stat-label">Tickets Resueltos</div>
                                 <small class="text-muted"><?= $ticketMetrics['resueltos_mes'] ?> este mes · <?= $ticketMetrics['resueltos_semana'] ?> esta semana</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="bi bi-check-circle text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3440,11 +3576,11 @@ tr:nth-child(even){background:#f8fafc}
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="stat-value" style="color: #0ea5e9;"><?= $ticketMetrics['tasa_resolucion'] ?>%</div>
+                                <div class="stat-value"><?= $ticketMetrics['tasa_resolucion'] ?>%</div>
                                 <div class="stat-label">Tasa de Resolución</div>
                                 <small class="text-muted"><?= $ticketMetrics['tasa_resolucion_mes'] ?>% este mes · <?= $ticketMetrics['pendientes'] ?> pendientes</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);"><i class="bi bi-graph-up-arrow text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-graph-up-arrow"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3452,11 +3588,11 @@ tr:nth-child(even){background:#f8fafc}
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="stat-value" style="color: #dc2626;"><?= $ticketMetrics['urgentes_abiertos'] ?></div>
+                                <div class="stat-value"><?= $ticketMetrics['urgentes_abiertos'] ?></div>
                                 <div class="stat-label">Urgentes Abiertos</div>
                                 <small class="text-muted"><?= $reOpenedCount ?> reabiertos (30 días)</small>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);"><i class="bi bi-exclamation-triangle text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3728,7 +3864,7 @@ tr:nth-child(even){background:#f8fafc}
                                 <div class="stat-value"><?= number_format($auditStats['total']) ?></div>
                                 <div class="stat-label">Total Registros</div>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1, #4f46e5);"><i class="bi bi-journal-text text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3739,7 +3875,7 @@ tr:nth-child(even){background:#f8fafc}
                                 <div class="stat-value"><?= $auditStats['today'] ?></div>
                                 <div class="stat-label">Registros Hoy</div>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399);"><i class="bi bi-calendar-check text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3750,7 +3886,7 @@ tr:nth-child(even){background:#f8fafc}
                                 <div class="stat-value"><?= $auditStats['week'] ?></div>
                                 <div class="stat-label">Últimos 7 días</div>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);"><i class="bi bi-graph-up text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
                         </div>
                     </div>
                 </div>
@@ -3761,7 +3897,7 @@ tr:nth-child(even){background:#f8fafc}
                                 <div class="stat-value"><?= $auditStats['unique_users'] ?></div>
                                 <div class="stat-label">Usuarios Activos</div>
                             </div>
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);"><i class="bi bi-people text-white"></i></div>
+                            <div class="stat-icon"><i class="bi bi-people"></i></div>
                         </div>
                     </div>
                 </div>
@@ -4415,7 +4551,7 @@ tr:nth-child(even){background:#f8fafc}
             <div class="row g-4 mb-4">
                 <div class="col-lg-3 col-md-6">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                        <div class="stat-icon">
                             <i class="bi bi-envelope"></i>
                         </div>
                         <div class="stat-number"><?= $notifStats['total'] ?></div>
@@ -4424,7 +4560,7 @@ tr:nth-child(even){background:#f8fafc}
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <div class="stat-icon">
                             <i class="bi bi-check-circle"></i>
                         </div>
                         <div class="stat-number"><?= $notifStats['active'] ?></div>
@@ -4433,7 +4569,7 @@ tr:nth-child(even){background:#f8fafc}
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <div class="stat-icon">
                             <i class="bi bi-ticket-perforated"></i>
                         </div>
                         <div class="stat-number"><?= $notifStats['ticket_created'] ?></div>
@@ -4442,7 +4578,7 @@ tr:nth-child(even){background:#f8fafc}
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <div class="stat-icon">
                             <i class="bi bi-arrow-repeat"></i>
                         </div>
                         <div class="stat-number"><?= $notifStats['ticket_updated'] ?></div>
@@ -4727,7 +4863,7 @@ tr:nth-child(even){background:#f8fafc}
                             <!-- Sección: Información General -->
                             <div class="p-3 border-bottom">
                                 <h6 class="text-uppercase fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
-                                    <i class="bi bi-info-circle me-1"></i>Información del Ticket
+                                    Información del Ticket
                                 </h6>
                                 
                                 <div class="mb-3">
@@ -4750,7 +4886,7 @@ tr:nth-child(even){background:#f8fafc}
                             <!-- Sección: Solicitante -->
                             <div class="p-3 border-bottom">
                                 <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
-                                    <i class="bi bi-person me-1"></i>Solicitante
+                                    Solicitante
                                 </h6>
                                 <div class="d-flex align-items-center gap-2 p-2 rounded" style="background: #f1f5f9;">
                                     <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: var(--primary-soft); color: var(--primary-dark); font-weight: 600;">
@@ -4766,7 +4902,7 @@ tr:nth-child(even){background:#f8fafc}
                             <!-- Sección: Descripción -->
                             <div class="p-3 border-bottom">
                                 <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
-                                    <i class="bi bi-text-left me-1"></i>Descripción
+                                    Descripción
                                 </h6>
                                 <div class="p-2 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0; max-height: 150px; overflow-y: auto;">
                                     <p class="mb-0" style="font-size: 0.85rem; line-height: 1.5; white-space: pre-line;"><?= htmlspecialchars($t['description']) ?></p>
@@ -4776,7 +4912,7 @@ tr:nth-child(even){background:#f8fafc}
                             <!-- Sección: Fechas -->
                             <div class="p-3 border-bottom">
                                 <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
-                                    <i class="bi bi-calendar3 me-1"></i>Fechas
+                                    Fechas
                                 </h6>
                                 <div class="d-flex flex-column gap-1">
                                     <div class="d-flex justify-content-between">
@@ -4797,7 +4933,7 @@ tr:nth-child(even){background:#f8fafc}
                             <!-- Sección: Archivos Adjuntos -->
                             <div class="p-3">
                                 <h6 class="text-uppercase fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
-                                    <i class="bi bi-paperclip me-1"></i>Adjuntos (<?= $totalEvidence ?>)
+                                    Adjuntos (<?= $totalEvidence ?>)
                                 </h6>
                                 <?php if ($totalEvidence > 0): ?>
                                     <?php if (count($evidenceImages) > 0): ?>
@@ -4845,7 +4981,7 @@ tr:nth-child(even){background:#f8fafc}
                             
                             <!-- Panel de Trabajo Superior -->
                             <div class="p-3" style="background: #fff; border-bottom: 1px solid #e2e8f0;">
-                                <form method="POST" id="ticketWorkForm<?= $t['id'] ?>">
+                                <form class="ajax-form" data-ticket-id="<?= $t['id'] ?>" id="ticketWorkForm<?= $t['id'] ?>">
                                     <input type="hidden" name="action" value="update_ticket_work">
                                     <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
                                     
@@ -4853,20 +4989,20 @@ tr:nth-child(even){background:#f8fafc}
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-4">
                                             <label class="form-label fw-semibold" style="font-size: 0.75rem;">
-                                                <i class="bi bi-flag me-1"></i>Estado
+                                                Estado
                                             </label>
                                             <select name="new_status" class="form-select form-select-sm" style="font-size: 0.85rem;">
-                                                <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>🔵 Abierto</option>
-                                                <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>🟡 En Proceso</option>
-                                                <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>⏳ Pendiente</option>
-                                                <option value="en_pausa" <?= $t['status'] === 'en_pausa' ? 'selected' : '' ?>>⏸️ En Pausa</option>
-                                                <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>✅ Resuelto</option>
-                                                <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>⬛ Cerrado</option>
+                                                <option value="abierto" <?= $t['status'] === 'abierto' ? 'selected' : '' ?>>Abierto</option>
+                                                <option value="en_proceso" <?= $t['status'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
+                                                <option value="pendiente" <?= $t['status'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                                                <option value="en_pausa" <?= $t['status'] === 'en_pausa' ? 'selected' : '' ?>>En Pausa</option>
+                                                <option value="resuelto" <?= $t['status'] === 'resuelto' ? 'selected' : '' ?>>Resuelto</option>
+                                                <option value="cerrado" <?= $t['status'] === 'cerrado' ? 'selected' : '' ?>>Cerrado</option>
                                             </select>
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-semibold" style="font-size: 0.75rem;">
-                                                <i class="bi bi-person-check me-1"></i>Asignado a
+                                                Asignado a
                                             </label>
                                             <select name="assign_to" class="form-select form-select-sm" style="font-size: 0.85rem;">
                                                 <option value="">Sin asignar</option>
@@ -4877,13 +5013,13 @@ tr:nth-child(even){background:#f8fafc}
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-semibold" style="font-size: 0.75rem;">
-                                                <i class="bi bi-arrow-up-circle me-1"></i>Prioridad
+                                                Prioridad
                                             </label>
                                             <select name="priority" class="form-select form-select-sm" style="font-size: 0.85rem;">
-                                                <option value="baja" <?= $t['priority'] === 'baja' ? 'selected' : '' ?>>🟢 Baja</option>
-                                                <option value="media" <?= $t['priority'] === 'media' ? 'selected' : '' ?>>🔵 Media</option>
-                                                <option value="alta" <?= $t['priority'] === 'alta' ? 'selected' : '' ?>>🟠 Alta</option>
-                                                <option value="urgente" <?= $t['priority'] === 'urgente' ? 'selected' : '' ?>>🔴 Urgente</option>
+                                                <option value="baja" <?= $t['priority'] === 'baja' ? 'selected' : '' ?>>Baja</option>
+                                                <option value="media" <?= $t['priority'] === 'media' ? 'selected' : '' ?>>Media</option>
+                                                <option value="alta" <?= $t['priority'] === 'alta' ? 'selected' : '' ?>>Alta</option>
+                                                <option value="urgente" <?= $t['priority'] === 'urgente' ? 'selected' : '' ?>>Urgente</option>
                                             </select>
                                         </div>
                                     </div>
@@ -4891,7 +5027,7 @@ tr:nth-child(even){background:#f8fafc}
                                     <!-- Fila 2: Resolución / Notas de Trabajo -->
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold" style="font-size: 0.75rem;">
-                                            <i class="bi bi-journal-text me-1"></i>Notas de Resolución / Trabajo
+                                            Notas de Resolución / Trabajo
                                         </label>
                                         <textarea name="resolution" class="form-control" rows="3" placeholder="Escribe aquí las notas de trabajo, solución aplicada o información relevante..." style="font-size: 0.85rem;"><?= htmlspecialchars($t['resolution'] ?? '') ?></textarea>
                                     </div>
@@ -4900,17 +5036,17 @@ tr:nth-child(even){background:#f8fafc}
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <div class="d-flex gap-2">
                                             <button type="submit" class="btn btn-primary btn-sm">
-                                                <i class="bi bi-check-lg me-1"></i>Actualizar Ticket
+                                                Actualizar Ticket
                                             </button>
-                                            <button type="button" class="btn btn-success btn-sm" onclick="resolveAndClose<?= $t['id'] ?>()">
-                                                <i class="bi bi-check-circle me-1"></i>Resolver y Cerrar
+                                            <button type="button" class="btn btn-success btn-sm" onclick="resolveAndCloseTicket(<?= $t['id'] ?>)">
+                                                Resolver y Cerrar
                                             </button>
                                         </div>
                                         <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este ticket? Esta acción no se puede deshacer.')">
                                             <input type="hidden" name="action" value="delete_ticket">
                                             <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
                                             <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                <i class="bi bi-trash me-1"></i>Eliminar
+                                                Eliminar
                                             </button>
                                         </form>
                                     </div>
@@ -4922,12 +5058,12 @@ tr:nth-child(even){background:#f8fafc}
                                 <button class="btn btn-link w-100 text-start d-flex justify-content-between align-items-center py-2 px-3 text-decoration-none collapsed" 
                                         type="button" data-bs-toggle="collapse" data-bs-target="#editSection<?= $t['id'] ?>" 
                                         style="background: #f8fafc; color: #64748b; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">
-                                    <span><i class="bi bi-pencil me-1"></i>EDITAR DATOS DEL TICKET</span>
+                                    <span>EDITAR DATOS DEL TICKET</span>
                                     <i class="bi bi-chevron-down"></i>
                                 </button>
                                 <div class="collapse" id="editSection<?= $t['id'] ?>">
                                     <div class="p-3" style="background: #fff;">
-                                        <form method="POST">
+                                        <form class="ajax-form" data-ticket-id="<?= $t['id'] ?>">
                                             <input type="hidden" name="action" value="update_ticket">
                                             <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
                                             <div class="row g-2">
@@ -4958,7 +5094,7 @@ tr:nth-child(even){background:#f8fafc}
                                                     <textarea name="description" class="form-control form-control-sm" rows="3"><?= htmlspecialchars($t['description']) ?></textarea>
                                                 </div>
                                                 <div class="col-12 text-end">
-                                                    <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-save me-1"></i>Guardar Datos</button>
+                                                    <button type="submit" class="btn btn-dark btn-sm">Guardar Datos</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -4970,7 +5106,7 @@ tr:nth-child(even){background:#f8fafc}
                             <div class="flex-grow-1 d-flex flex-column" style="background: #f8fafc;">
                                 <div class="px-3 py-2" style="background: #fff; border-bottom: 1px solid #e2e8f0;">
                                     <h6 class="mb-0 text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 1px; color: #64748b;">
-                                        <i class="bi bi-chat-square-text me-1"></i>Actividad / Notas de Trabajo
+                                        Actividad / Notas de Trabajo
                                         <span class="badge bg-secondary ms-1"><?= count($comments) ?></span>
                                     </h6>
                                 </div>
@@ -5032,13 +5168,13 @@ tr:nth-child(even){background:#f8fafc}
                                 
                                 <!-- Agregar Comentario -->
                                 <div class="p-3 border-top" style="background: #fff;">
-                                    <form method="POST">
+                                    <form class="ajax-form comment-form" data-ticket-id="<?= $t['id'] ?>">
                                         <input type="hidden" name="action" value="add_comment">
                                         <input type="hidden" name="ticket_id" value="<?= $t['id'] ?>">
                                         <div class="d-flex gap-2">
                                             <textarea name="comment" class="form-control form-control-sm" rows="2" placeholder="Agregar nota de trabajo..." required style="font-size: 0.85rem;"></textarea>
                                             <div class="d-flex flex-column gap-1">
-                                                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send"></i></button>
+                                                <button type="submit" class="btn btn-primary btn-sm">Enviar</button>
                                                 <div class="form-check" title="Nota interna">
                                                     <input type="checkbox" name="is_internal" class="form-check-input" id="internal<?= $t['id'] ?>" style="margin: 0;">
                                                     <label class="form-check-label visually-hidden" for="internal<?= $t['id'] ?>">Interno</label>
@@ -5057,17 +5193,6 @@ tr:nth-child(even){background:#f8fafc}
             </div>
         </div>
     </div>
-    
-    <script>
-    function resolveAndClose<?= $t['id'] ?>() {
-        const form = document.getElementById('ticketWorkForm<?= $t['id'] ?>');
-        form.querySelector('[name="new_status"]').value = 'resuelto';
-        if (!form.querySelector('[name="resolution"]').value.trim()) {
-            form.querySelector('[name="resolution"]').value = 'Ticket resuelto por el equipo de soporte.';
-        }
-        form.submit();
-    }
-    </script>
     <?php endforeach; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -5207,9 +5332,20 @@ tr:nth-child(even){background:#f8fafc}
         </div>
     </div>
 
+    <!-- Toast para notificaciones -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+        <div id="ajaxToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="ajaxToastMessage">
+                    Operación completada
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
     <script>
     function openLightbox(src, title) {
-        // Cerrar cualquier modal abierto primero
         document.querySelectorAll('.modal.show').forEach(function(m) {
             var inst = bootstrap.Modal.getInstance(m);
             if (inst) inst.hide();
@@ -5223,6 +5359,224 @@ tr:nth-child(even){background:#f8fafc}
             modal.show();
         }, 300);
     }
+    
+    // Función para mostrar toast
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('ajaxToast');
+        const toastMessage = document.getElementById('ajaxToastMessage');
+        toast.className = 'toast align-items-center border-0 text-bg-' + type;
+        toastMessage.textContent = message;
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+    }
+    
+    // Funciones de resolver y cerrar para cada ticket
+    function resolveAndCloseTicket(ticketId) {
+        const form = document.getElementById('ticketWorkForm' + ticketId);
+        form.querySelector('[name="new_status"]').value = 'resuelto';
+        if (!form.querySelector('[name="resolution"]').value.trim()) {
+            form.querySelector('[name="resolution"]').value = 'Ticket resuelto por el equipo de soporte.';
+        }
+        // Disparar el submit del formulario (será manejado por AJAX)
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+    
+    // Agregar comentario a la UI
+    function addCommentToUI(ticketId, comment) {
+        const modal = document.getElementById('ticketModal' + ticketId);
+        const commentsList = modal.querySelector('.flex-grow-1.p-3');
+        const emptyState = commentsList.querySelector('.text-center.py-4');
+        if (emptyState) emptyState.remove();
+        
+        const isInternal = comment.is_internal == 1;
+        const initial = (comment.user_name || 'S').charAt(0).toUpperCase();
+        
+        const commentHtml = `
+            <div class="d-flex gap-2 mb-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                     style="width: 32px; height: 32px; background: ${isInternal ? '#fef3c7' : 'var(--primary-soft)'}; 
+                            color: ${isInternal ? '#92400e' : 'var(--primary-dark)'}; font-weight: 600; font-size: 0.75rem;">
+                    ${initial}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            <span class="fw-semibold" style="font-size: 0.8rem;">${comment.user_name || 'Sistema'}</span>
+                            ${isInternal ? '<span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;"><i class="bi bi-lock-fill me-1"></i>Interno</span>' : ''}
+                        </div>
+                        <small class="text-muted" style="font-size: 0.7rem;">${comment.created_at}</small>
+                    </div>
+                    <div class="p-2 rounded" style="background: ${isInternal ? '#fef9c3' : '#f1f5f9'}; font-size: 0.85rem;">
+                        ${comment.comment.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            </div>
+        `;
+        commentsList.insertAdjacentHTML('beforeend', commentHtml);
+        commentsList.scrollTop = commentsList.scrollHeight;
+        
+        // Actualizar contador de comentarios
+        const badge = modal.querySelector('.badge.bg-secondary');
+        if (badge) badge.textContent = parseInt(badge.textContent) + 1;
+    }
+    
+    // Mapas de colores para actualizar badges dinámicamente
+    const statusColors = {abierto:'primary', asignado:'info', en_proceso:'warning', pendiente:'secondary', en_pausa:'info', resuelto:'success', cerrado:'dark'};
+    const statusLabels = {abierto:'Abierto', asignado:'Asignado', en_proceso:'En Proceso', pendiente:'Pendiente', en_pausa:'En Pausa', resuelto:'Resuelto', cerrado:'Cerrado'};
+    const priorityColors = {urgente:'danger', alta:'warning', media:'info', baja:'secondary'};
+    
+    // Actualizar fila(s) del ticket en el dashboard/tabla sin eliminarla
+    function updateTicketRow(ticketId, ticket) {
+        document.querySelectorAll('tr[data-ticket-id="' + ticketId + '"]').forEach(function(row) {
+            // Actualizar badge de estado
+            const statusBadges = row.querySelectorAll('.badge');
+            statusBadges.forEach(function(badge) {
+                const label = badge.textContent.trim();
+                if (Object.values(statusLabels).includes(label)) {
+                    badge.className = 'badge bg-' + (statusColors[ticket.status] || 'secondary');
+                    badge.textContent = statusLabels[ticket.status] || ticket.status;
+                }
+            });
+            // Actualizar status-badge (kanban)
+            const statusBadge = row.querySelector('.status-badge');
+            if (statusBadge) {
+                statusBadge.className = 'status-badge ' + ticket.status;
+                statusBadge.textContent = statusLabels[ticket.status] || ticket.status;
+            }
+            // Actualizar badge de prioridad
+            const prioBadges = row.querySelectorAll('.badge');
+            prioBadges.forEach(function(badge) {
+                const priLabels = ['Urgente','Alta','Media','Baja'];
+                if (priLabels.includes(badge.textContent.trim())) {
+                    badge.className = 'badge bg-' + (priorityColors[ticket.priority] || 'secondary');
+                    badge.textContent = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+                }
+            });
+            // Actualizar priority-badge (kanban)
+            const prioBadge = row.querySelector('.priority-badge');
+            if (prioBadge) {
+                prioBadge.className = 'priority-badge ' + ticket.priority;
+                prioBadge.textContent = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+            }
+            // Actualizar asignado
+            const assignedCells = row.querySelectorAll('td');
+            if (assignedCells.length >= 8) {
+                // Buscar celda de asignado (generalmente la penúltima o ante-penúltima)
+                const assignedCell = assignedCells[assignedCells.length - 2];
+                if (assignedCell && !assignedCell.querySelector('.badge') && !assignedCell.classList.contains('text-center')) {
+                    const span = assignedCell.querySelector('span') || assignedCell;
+                    span.textContent = ticket.assigned_name || 'Sin asignar';
+                }
+            }
+            // Actualizar data attributes
+            if (row.dataset.status !== undefined) row.dataset.status = ticket.status;
+            if (row.dataset.priority !== undefined) row.dataset.priority = ticket.priority;
+        });
+    }
+    
+    // Actualizar header del modal con nuevos badges
+    function updateModalHeader(ticketId, ticket) {
+        const modal = document.getElementById('ticketModal' + ticketId);
+        if (!modal) return;
+        // Buscar badges en el header del modal
+        const headerBadges = modal.querySelectorAll('.modal-header .badge, .modal-title .badge');
+        headerBadges.forEach(function(badge) {
+            const txt = badge.textContent.trim();
+            if (Object.values(statusLabels).includes(txt)) {
+                badge.className = 'badge bg-' + (statusColors[ticket.status] || 'secondary');
+                badge.textContent = statusLabels[ticket.status] || ticket.status;
+            }
+            const priLabels = ['Urgente','Alta','Media','Baja'];
+            if (priLabels.includes(txt)) {
+                badge.className = 'badge bg-' + (priorityColors[ticket.priority] || 'secondary');
+                badge.textContent = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+            }
+        });
+    }
+    
+    // Manejar todos los formularios AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.ajax-form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const ticketId = form.dataset.ticketId;
+                const action = formData.get('action');
+                
+                // Indicador de carga
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
+                }
+                
+                fetch('soporte_admin.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.text();
+                })
+                .then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch(e) {
+                        console.error('Respuesta no JSON:', text.substring(0, 500));
+                        throw new Error('Respuesta inválida del servidor');
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        
+                        // Si es comentario, agregarlo a la UI
+                        if (action === 'add_comment' && data.comment) {
+                            addCommentToUI(ticketId, data.comment);
+                            form.querySelector('textarea[name="comment"]').value = '';
+                            const checkbox = form.querySelector('input[name="is_internal"]');
+                            if (checkbox) checkbox.checked = false;
+                        }
+                        
+                        // Si se actualizó el ticket, actualizar badges en la fila y modal
+                        if (action === 'update_ticket_work' && data.ticket) {
+                            updateTicketRow(ticketId, data.ticket);
+                            updateModalHeader(ticketId, data.ticket);
+                        }
+                        
+                        // Si se editaron datos del ticket
+                        if (action === 'update_ticket' && data.success) {
+                            // Los datos editados (título, etc) se reflejarán en el próximo refresh
+                        }
+                        
+                    } else {
+                        showToast(data.message || 'Error al procesar', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error de conexión', 'danger');
+                })
+                .finally(() => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        // Restaurar texto del botón según acción
+                        if (action === 'update_ticket_work') {
+                            submitBtn.innerHTML = 'Actualizar Ticket';
+                        } else if (action === 'add_comment') {
+                            submitBtn.innerHTML = 'Enviar';
+                        } else if (action === 'update_ticket') {
+                            submitBtn.innerHTML = 'Guardar Datos';
+                        }
+                    }
+                });
+            });
+        });
+    });
     </script>
 </body>
 </html>

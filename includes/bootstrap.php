@@ -13,9 +13,13 @@ mb_http_output('UTF-8');
 // =============================================
 // HEADERS DE SEGURIDAD HTTP
 // =============================================
+$isAjaxRequest = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
 if (!headers_sent()) {
-    // Content-Type con charset
-    header('Content-Type: text/html; charset=UTF-8');
+    // Content-Type: solo enviar text/html para peticiones normales
+    if (!$isAjaxRequest) {
+        header('Content-Type: text/html; charset=UTF-8');
+    }
     
     // Prevenir clickjacking
     header('X-Frame-Options: SAMEORIGIN');
