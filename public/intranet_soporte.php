@@ -77,6 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             $destination = $ticketDir . $newFileName;
                             
                             if (move_uploaded_file($tmpName, $destination)) {
+                                // Comprimir imagen automáticamente
+                                comprimirImagenSubida($destination);
                                 $uploadedFiles[] = $newFileName;
                             }
                         }

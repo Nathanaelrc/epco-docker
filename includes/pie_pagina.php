@@ -1,36 +1,27 @@
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS (diferido) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
     
-    <!-- Animaciones GSAP globales -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Animar elementos con clase fade-in
-            gsap.to('.fade-in', {
-                opacity: 1,
-                y: 0,
-                duration: 0.8,
-                stagger: 0.2,
-                ease: 'power2.out'
-            });
-            
-            // Animar elementos slide-in
-            gsap.to('.slide-in-left', {
-                opacity: 1,
-                x: 0,
-                duration: 0.8,
-                stagger: 0.15,
-                ease: 'power2.out'
-            });
-            
-            gsap.to('.slide-in-right', {
-                opacity: 1,
-                x: 0,
-                duration: 0.8,
-                stagger: 0.15,
-                ease: 'power2.out'
-            });
-        });
-    </script>
+    <!-- Animaciones CSS nativas (reemplaza GSAP ~60KB) -->
+    <style>
+        .fade-in, .slide-in-left, .slide-in-right {
+            animation: epcoFadeIn 0.8s ease-out forwards;
+        }
+        .slide-in-left { animation-name: epcoSlideLeft; }
+        .slide-in-right { animation-name: epcoSlideRight; }
+        
+        @keyframes epcoFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes epcoSlideLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes epcoSlideRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
 </body>
 </html>

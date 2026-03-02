@@ -41,11 +41,16 @@ $faqs = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Preconnect CDNs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <title>EPCO - Soporte TI</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="img/Logo01.png">
-    <link rel="shortcut icon" type="image/png" href="img/Logo01.png">
+    <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
+    <link rel="shortcut icon" type="image/webp" href="img/Logo01.webp">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -116,7 +121,7 @@ $faqs = [
         /* ========== HEADER PRINCIPAL ========== */
         .main-header {
             background: linear-gradient(135deg, rgba(3,105,161,0.75) 0%, rgba(7,89,133,0.8) 50%, rgba(3,105,161,0.75) 100%),
-                        url('img/Puerto01.jpeg') center/cover no-repeat;
+                        url('<?= WEBP_SUPPORT ? "img/Puerto01.webp" : "img/Puerto01.jpeg" ?>') center/cover no-repeat;
             position: relative;
             overflow: hidden;
         }
@@ -666,7 +671,10 @@ $faqs = [
             <div class="container">
                 <div class="row align-items-center">
                     <div class="col-lg-7">
-                        <img src="img/Logo01.png" alt="Logo EPCO" class="header-logo mb-3" style="width: 100px; height: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3));">
+                        <picture>
+                            <source srcset="img/Logo01.webp" type="image/webp">
+                            <img src="img/Logo01.png" alt="Logo EPCO" class="header-logo mb-3" style="width: 100px; height: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3));" loading="eager" width="100" height="100">
+                        </picture>
                         <div class="header-badge">
                             <i class="bi bi-building"></i>
                             <span>Empresa Portuaria Coquimbo</span>
@@ -1000,7 +1008,7 @@ $faqs = [
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
     
     <script>
         // FAQ toggle

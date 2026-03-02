@@ -32,8 +32,8 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Habilitar mod_rewrite de Apache
-RUN a2enmod rewrite
+# Habilitar módulos de Apache necesarios
+RUN a2enmod rewrite expires headers deflate
 
 # Configurar Apache - DocumentRoot apunta a /public
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public

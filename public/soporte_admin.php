@@ -20,7 +20,7 @@ if (!in_array($user['role'], ['admin', 'soporte'])) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>EPCO - Acceso Denegado</title>
-        <link rel="icon" type="image/png" href="img/Logo01.png">
+        <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
         <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -523,6 +523,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $destination = $ticketDir . $newFileName;
                             
                             if (move_uploaded_file($tmpName, $destination)) {
+                                // Comprimir imagen automáticamente
+                                comprimirImagenSubida($destination);
                                 $uploadedFiles[] = $newFileName;
                             }
                         }
@@ -1383,7 +1385,7 @@ unset($tp);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPCO - Admin Soporte TI</title>
-    <link rel="icon" type="image/png" href="img/Logo01.png">
+    <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">

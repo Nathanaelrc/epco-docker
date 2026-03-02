@@ -88,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $destination = $ticketDir . $newFileName;
                         
                         if (move_uploaded_file($tmpName, $destination)) {
+                            // Comprimir imagen automáticamente si es una imagen
+                            comprimirImagenSubida($destination);
                             $uploadedFiles[] = $newFileName;
                         }
                     }
@@ -143,8 +145,13 @@ $pageTitle = 'Crear Ticket';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Preconnect CDNs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <title>EPCO - Nuevo Ticket de Soporte</title>
-    <link rel="icon" type="image/png" href="img/Logo01.png">
+    <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -214,7 +221,7 @@ $pageTitle = 'Crear Ticket';
         /* ========== HERO HEADER ========== */
         .main-header {
             background: linear-gradient(135deg, rgba(3,105,161,0.75) 0%, rgba(7,89,133,0.8) 50%, rgba(3,105,161,0.75) 100%),
-                        url('img/Puerto01.jpeg') center/cover no-repeat;
+                        url('<?= WEBP_SUPPORT ? "img/Puerto01.webp" : "img/Puerto01.jpeg" ?>') center/cover no-repeat;
             position: relative;
             overflow: hidden;
         }
@@ -500,7 +507,10 @@ $pageTitle = 'Crear Ticket';
             <i class="bi bi-arrow-left"></i>
         </a>
         <div class="topbar-brand">
-            <img src="img/Logo01.png" alt="EPCO">
+            <picture>
+                <source srcset="img/Logo01.webp" type="image/webp">
+                <img src="img/Logo01.png" alt="EPCO" loading="eager">
+            </picture>
             <span>Mesa de Ayuda</span>
         </div>
         <div></div>
@@ -618,7 +628,7 @@ $pageTitle = 'Crear Ticket';
         <?php endif; ?>
     </div><!-- /form-wrapper -->
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
     <script>
         const dropZone = document.getElementById('dropZone');
         const filePreview = document.getElementById('filePreview');

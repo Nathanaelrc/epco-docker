@@ -61,11 +61,80 @@ ErrorDocument 403 /403.php
 ErrorDocument 500 /500.php
 
 # =============================================
-# COMPRESIÓN
+# COMPRESIÓN GZIP/DEFLATE
 # =============================================
 
 <IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml application/font-woff2 application/font-woff
 </IfModule>
+
+# =============================================
+# CACHÉ DE ASSETS ESTÁTICOS
+# =============================================
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Imágenes: caché 1 año (cambian raramente)
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # CSS y JS: caché 1 mes
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    
+    # Fuentes: caché 1 año
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    
+    # HTML: no cachear (contenido dinámico PHP)
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# Headers de caché adicionales
+<IfModule mod_headers.c>
+    # Assets estáticos: caché inmutable
+    <FilesMatch "\.(webp|jpg|jpeg|png|gif|svg|ico|css|js|woff2?|ttf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    
+    # HTML/PHP: no cachear
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
+
+# =============================================
+# SOPORTE WEBP AUTOMÁTICO
+# =============================================
+
+# Servir WebP automáticamente si el navegador lo soporta
+# y existe la versión WebP del archivo
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_ACCEPT} image/webp
+    RewriteCond %{REQUEST_FILENAME} \.(jpe?g|png)$
+    RewriteCond %{REQUEST_FILENAME}.webp -f
+    RewriteRule ^(.+)\.(jpe?g|png)$ $1.webp [T=image/webp,L]
+</IfModule>
+
+# Indicar que el contenido varía según Accept (para CDNs/proxies)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpe?g|png)$">
+        Header append Vary Accept
+    </FilesMatch>
+</IfModule>
+
+# Tipo MIME para WebP
+AddType image/webp .webp
 
 AddDefaultCharset UTF-8

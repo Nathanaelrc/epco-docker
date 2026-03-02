@@ -170,7 +170,7 @@ $categories = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPCO - Base de Conocimiento<?= $article ? ' - ' . htmlspecialchars($article['title']) : '' ?></title>
-    <link rel="icon" type="image/png" href="img/Logo01.png">
+    <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -182,7 +182,7 @@ $categories = [
         .navbar-epco { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
         .page-header {
             background: linear-gradient(135deg, rgba(3,105,161,0.75) 0%, rgba(7,89,133,0.8) 50%, rgba(3,105,161,0.75) 100%),
-                        url('img/Puerto01.jpeg') center/cover no-repeat !important;
+                        url('<?= WEBP_SUPPORT ? "img/Puerto01.webp" : "img/Puerto01.jpeg" ?>') center/cover no-repeat !important;
             color: white;
             padding: 50px 0;
             position: relative;

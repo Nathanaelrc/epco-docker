@@ -14,21 +14,29 @@ if (!defined('EPCO_APP')) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $pageTitle ?? 'EPCO' ?> - Portal Corporativo</title>
     
-    <!-- Google Fonts - Barlow -->
+    <!-- Preconnect para CDNs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    
+    <!-- Favicon WebP con fallback PNG -->
+    <link rel="icon" type="image/webp" href="img/Logo01.webp">
+    <link rel="icon" type="image/png" href="img/Logo01.png">
+    
+    <!-- Google Fonts - Barlow (con display=swap para evitar bloqueo) -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GSAP - carga diferida, solo cuando se necesita -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
     
-    <!-- GSAP para animaciones -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js - carga diferida, solo páginas que lo necesitan -->
+    <?php if (!empty($needsChartJs)): ?>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <?php endif; ?>
     
     <style>
         :root {

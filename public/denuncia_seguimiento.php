@@ -66,8 +66,13 @@ $pageTitle = 'Seguimiento de Denuncias';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Preconnect CDNs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <title>EPCO - Seguimiento de Denuncias</title>
-    <link rel="icon" type="image/png" href="img/Logo01.png">
+    <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -77,7 +82,7 @@ $pageTitle = 'Seguimiento de Denuncias';
         * { font-family: 'Barlow', sans-serif; }
         body {
             background: linear-gradient(135deg, rgba(14,165,233,0.6) 0%, rgba(2,132,199,0.65) 50%, rgba(14,165,233,0.6) 100%),
-                        url('img/Puerto03.jpg') center/cover no-repeat fixed;
+                        url('<?= WEBP_SUPPORT ? "img/Puerto03.webp" : "img/Puerto03.jpg" ?>') center/cover no-repeat fixed;
             min-height: 100vh;
             position: relative;
         }
@@ -229,10 +234,11 @@ $pageTitle = 'Seguimiento de Denuncias';
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        gsap.from('.search-card', { y: 50, opacity: 0, duration: 0.8, ease: 'power3.out' });
-        gsap.from('.fade-in', { y: 30, opacity: 0, duration: 0.6, delay: 0.3, ease: 'power2.out' });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <style>
+        .search-card, .fade-in { animation: fadeSlideUp 0.8s ease-out forwards; opacity: 0; transform: translateY(30px); }
+        .fade-in { animation-delay: 0.3s; }
+        @keyframes fadeSlideUp { to { opacity: 1; transform: translateY(0); } }
+    </style>
 </body>
 </html>

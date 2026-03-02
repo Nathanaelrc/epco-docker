@@ -11,6 +11,13 @@ mb_internal_encoding('UTF-8');
 mb_http_output('UTF-8');
 
 // =============================================
+// COMPRESIÓN GZIP DE SALIDA PHP
+// =============================================
+if (!ob_get_level() && !headers_sent()) {
+    ob_start('ob_gzhandler');
+}
+
+// =============================================
 // HEADERS DE SEGURIDAD HTTP
 // =============================================
 $isAjaxRequest = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
@@ -60,6 +67,9 @@ require_once EPCO_ROOT . '/config/database.php';
 
 // Cargar helpers
 require_once EPCO_ROOT . '/includes/utilidades.php';
+
+// Cargar optimización de rendimiento (WebP, imágenes)
+require_once EPCO_ROOT . '/includes/optimizacion.php';
 
 // Cargar autenticación
 require_once EPCO_ROOT . '/includes/autenticacion.php';
