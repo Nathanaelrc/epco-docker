@@ -24,7 +24,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 ?>
 
 <!-- Sidebar Styles -->
-<link href="css/sidebar.css" rel="stylesheet">
+<link href="css/sidebar.css?v=<?= filemtime(__DIR__ . '/../public/css/sidebar.css') ?>" rel="stylesheet">
 
 <!-- Topbar minimalista -->
 <div class="epco-topbar">

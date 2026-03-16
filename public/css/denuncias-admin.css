@@ -1,12 +1,21 @@
+/* === Fuentes base === */
 * { font-family: 'Lato', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
-            body { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0ea5e9 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-            .error-card { background: white; border-radius: 20px; padding: 50px; text-align: center; max-width: 450px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); }
-            .error-icon { width: 100px; height: 100px; background: linear-gradient(135deg, #dc2626, #f87171); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; }
-            .error-icon i { font-size: 3rem; color: white; }
-* { font-family: 'Lato', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
-        :root {
+h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
+
+/* === Error/Acceso Denegado (solo cuando NO hay sidebar) === */
+body:not(.has-sidebar) {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0ea5e9 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.error-card { background: white; border-radius: 20px; padding: 50px; text-align: center; max-width: 450px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); }
+.error-icon { width: 100px; height: 100px; background: linear-gradient(135deg, #dc2626, #f87171); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; }
+.error-icon i { font-size: 3rem; color: white; }
+
+/* === Variables y Dashboard principal === */
+:root {
             --primary-dark: #0c5a8a;
             --primary-light: #094a72;
             --primary-soft: #e8f4fc;
@@ -18,9 +27,17 @@
             --gray-900: #0f172a;
             --accent-purple: #7c3aed;
         }
-        body.has-sidebar { background: var(--gray-100); }
+        body.has-sidebar {
+    background: var(--gray-100);
+    display: block;
+    min-height: 100vh;
+    align-items: initial;
+    justify-content: initial;
+    position: static;
+}
+body.has-sidebar::before { display: none; }
 
-        .main-content { min-height: calc(100vh - 60px); padding-top: 0; }
+        .main-content { min-height: calc(100vh - 60px); padding-top: 0; width: 100%; }
         .top-header {
             background: white;
             padding: 20px 30px;
@@ -35,7 +52,7 @@
         .header-title h1 { font-size: 1.4rem; font-weight: 600; color: var(--gray-900); margin: 0; letter-spacing: -0.02em; }
         .header-title p { color: var(--gray-500); font-size: 0.85rem; margin: 0; }
 
-        .content-area { padding: 30px; }
+        .content-area { padding: 30px; width: 100%; }
 
         /* Tarjetas de estadísticas */
         .stat-card {
@@ -181,3 +198,23 @@
 
         /* Badges */
         .badge { font-weight: 500; padding: 5px 10px; font-size: 0.7rem; letter-spacing: 0.02em; }
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .top-header { padding: 15px; flex-wrap: wrap; }
+    .header-title h1 { font-size: 1.1rem; }
+    .content-area { padding: 15px; }
+    .stat-card { padding: 16px; }
+    .stat-value { font-size: 1.5rem; }
+    .filter-tabs { flex-wrap: wrap; }
+    .filter-tab { padding: 6px 12px; font-size: 0.75rem; }
+    .card-header-custom { flex-direction: column; align-items: flex-start; }
+    .table th, .table td { padding: 10px 12px; font-size: 0.78rem; }
+}
+
+@media (max-width: 480px) {
+    .content-area { padding: 10px; }
+    .top-header { padding: 12px; }
+    .header-title h1 { font-size: 1rem; }
+    .table th, .table td { padding: 8px; font-size: 0.7rem; }
+}

@@ -24,7 +24,7 @@ if (!in_array($user['role'], ['admin', 'soporte'])) {
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-        <link href="css/soporte-admin.css" rel="stylesheet">
+        <link href="css/soporte-admin.css?v=2" rel="stylesheet">
     </head>
     <body>
         <div class="error-card">
@@ -1384,6 +1384,7 @@ unset($tp);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="css/soporte-admin.css?v=2" rel="stylesheet">
     
 </head>
 <body class="has-sidebar">
