@@ -235,48 +235,7 @@ $statsLogs = $pdo->query("SELECT COUNT(*) FROM activity_logs")->fetchColumn();
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        * { font-family: 'Lato', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
-        :root { --primary: #0ea5e9; --primary-light: #0284c7; }
-        body { background: #f1f5f9; min-height: 100vh; }
-        .navbar-epco { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
-        .card { border: none; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        
-        .report-card {
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .report-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        .report-card.selected {
-            border: 2px solid var(--primary);
-        }
-        .report-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-        }
-        
-        .format-btn {
-            padding: 15px 25px;
-            border-radius: 12px;
-            transition: all 0.3s;
-        }
-        .format-btn:hover {
-            transform: scale(1.02);
-        }
-        .format-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-    </style>
+    <link href="css/reportes.css" rel="stylesheet">
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">

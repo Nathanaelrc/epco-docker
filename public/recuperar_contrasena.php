@@ -142,76 +142,9 @@ if ($step === 'reset' && $token) {
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/recuperar.css" rel="stylesheet">
     <style>
-        * { font-family: 'Lato', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
-        body {
-            background: linear-gradient(135deg, rgba(14,165,233,0.6) 0%, rgba(2,132,199,0.65) 50%, rgba(14,165,233,0.6) 100%),
-                        url('<?= WEBP_SUPPORT ? "img/Puerto03.webp" : "img/Puerto03.jpg" ?>') center/cover no-repeat fixed;
-            min-height: 100vh;
-            position: relative;
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-            pointer-events: none;
-            z-index: 0;
-        }
-        .container { position: relative; z-index: 1; }
-        .reset-card {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 24px;
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-        }
-        .reset-header {
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            padding: 40px;
-            text-align: center;
-        }
-        .form-control {
-            border-radius: 12px;
-            padding: 14px 20px;
-            border: 2px solid #e5e7eb;
-        }
-        .form-control:focus {
-            border-color: #0ea5e9;
-            box-shadow: 0 0 0 4px rgba(10, 37, 64, 0.1);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            border: none;
-            border-radius: 12px;
-            padding: 14px 30px;
-            font-weight: 600;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(10, 37, 64, 0.4);
-        }
-        .input-group-text {
-            background: #f8fafc;
-            border: 2px solid #e5e7eb;
-            border-right: none;
-            border-radius: 12px 0 0 12px;
-        }
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 0 12px 12px 0;
-        }
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-        }
+        body { background: linear-gradient(135deg, rgba(14,165,233,0.6) 0%, rgba(2,132,199,0.65) 50%, rgba(14,165,233,0.6) 100%), url('<?= WEBP_SUPPORT ? "img/Puerto03.webp" : "img/Puerto03.jpg" ?>') center/cover no-repeat fixed; }
     </style>
 </head>
 <body class="d-flex align-items-center justify-content-center py-5">

@@ -16,29 +16,7 @@ $user = isLoggedIn() ? getCurrentUser() : null;
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Lato:wght@300;400;700&family=Fira+Code&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        * { font-family: 'Lato', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
-        :root { --primary: #0ea5e9; }
-        body { background: #f1f5f9; }
-        .navbar-epco { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-        .card { border: none; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .endpoint { border-left: 4px solid; padding: 20px; margin-bottom: 20px; background: white; border-radius: 0 12px 12px 0; }
-        .endpoint.get { border-color: #198754; }
-        .endpoint.post { border-color: #0d6efd; }
-        .endpoint.put { border-color: #ffc107; }
-        .endpoint.delete { border-color: #dc3545; }
-        .method-badge { font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 4px; }
-        .method-badge.get { background: #d1e7dd; color: #0f5132; }
-        .method-badge.post { background: #cfe2ff; color: #084298; }
-        .method-badge.put { background: #fff3cd; color: #664d03; }
-        .method-badge.delete { background: #f8d7da; color: #842029; }
-        pre { background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 8px; overflow-x: auto; }
-        code { font-family: 'Fira Code', monospace; font-size: 0.85rem; }
-        .sidebar { position: sticky; top: 20px; }
-        .nav-link { color: #475569; padding: 8px 15px; border-radius: 8px; }
-        .nav-link:hover, .nav-link.active { background: #e2e8f0; color: var(--primary); }
-    </style>
+    <link href="css/documentacion-api.css" rel="stylesheet">
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">

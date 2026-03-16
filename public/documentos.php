@@ -204,68 +204,7 @@ function formatFileSize($bytes) {
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        * { font-family: 'Lato', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
-        :root { --primary: #0ea5e9; --primary-light: #0284c7; }
-        body { background: #f1f5f9; min-height: 100vh; }
-        .navbar-epco { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
-        .page-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            padding: 40px 0;
-            margin-bottom: -30px;
-            position: relative;
-        }
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-        }
-        .card { border: none; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .doc-card {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .doc-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        .doc-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-        .category-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-        }
-        .upload-area {
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            background: #f8fafc;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .upload-area:hover, .upload-area.dragover {
-            border-color: var(--primary);
-            background: rgba(10,37,64,0.05);
-        }
-        .modal-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-        }
-        .modal-header .btn-close { filter: brightness(0) invert(1); }
-    </style>
+    <link href="css/documentos.css" rel="stylesheet">
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">

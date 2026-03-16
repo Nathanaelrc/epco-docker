@@ -150,71 +150,7 @@ $roleColors = ['admin' => 'danger', 'soporte' => 'warning', 'social' => 'info', 
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        * { font-family: 'Lato', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
-        :root { --primary: #0ea5e9; --primary-light: #0284c7; }
-        body { background: #f1f5f9; min-height: 100vh; }
-        .profile-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            padding: 60px 0 80px;
-            position: relative;
-        }
-        .profile-header::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-        }
-        .avatar-large {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: white;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            font-weight: 700;
-            border: 4px solid rgba(255,255,255,0.3);
-            position: relative;
-            z-index: 10;
-        }
-        .profile-content {
-            margin-top: -50px;
-            position: relative;
-            z-index: 10;
-        }
-        .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .nav-pills .nav-link {
-            color: #64748b;
-            border-radius: 10px;
-            padding: 12px 20px;
-        }
-        .nav-pills .nav-link.active {
-            background: var(--primary);
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(10,37,64,0.1);
-        }
-        .stat-mini {
-            text-align: center;
-            padding: 20px;
-        }
-        .stat-mini .number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-    </style>
+    <link href="css/perfil.css" rel="stylesheet">
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
