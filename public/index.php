@@ -21,7 +21,7 @@ $isSoporteRole = $userRole === 'soporte';
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <title>EPCO - Portal Corporativo</title>
+    <title>Empresa Portuaria Coquimbo - Portal Corporativo</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">

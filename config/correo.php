@@ -32,8 +32,8 @@ return [
         'password'    => getenv('SMTP_PASS') ?: '',
         'encryption'  => getenv('SMTP_ENCRYPTION') ?: 'tls',
         
-        'from_email'  => getenv('SMTP_FROM_EMAIL') ?: (getenv('SMTP_USER') ?: 'noreply@epco.cl'),
-        'from_name'   => getenv('SMTP_FROM_NAME') ?: 'Soporte TI - EPCO',
+        'from_email'  => getenv('SMTP_FROM_EMAIL') ?: (getenv('SMTP_USER') ?: 'noreply@puertocoquimbo.cl'),
+        'from_name'   => getenv('SMTP_FROM_NAME') ?: 'Soporte TI - Empresa Portuaria Coquimbo',
     ],
     
     // Destinatarios de notificaciones (separados por coma para múltiples)

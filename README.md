@@ -36,12 +36,12 @@ docker compose up -d --build
 
 | Usuario              | Rol       | Email              |
 |---------------------|-----------|---------------------|
-| `admin.epco`        | admin     | admin@epco.cl       |
-| `soporte.ti`        | soporte   | soporte@epco.cl     |
-| `tecnico.soporte`   | soporte   | tecnico@epco.cl     |
-| `comunicaciones.epco` | social  | social@epco.cl      |
-| `comite.etica`      | denuncia  | etica@epco.cl       |
-| `usuario.demo`      | user      | usuario@epco.cl     |
+| `admin.epco`        | admin     | admin@puertocoquimbo.cl       |
+| `soporte.ti`        | soporte   | soporte@puertocoquimbo.cl     |
+| `tecnico.soporte`   | soporte   | tecnico@puertocoquimbo.cl     |
+| `comunicaciones.epco` | social  | social@puertocoquimbo.cl      |
+| `comite.etica`      | denuncia  | etica@puertocoquimbo.cl       |
+| `usuario.demo`      | user      | usuario@puertocoquimbo.cl     |
 
 **phpMyAdmin:**
 - Usuario: `root` / Contraseña: valor de `DB_ROOT_PASSWORD` en `.env`

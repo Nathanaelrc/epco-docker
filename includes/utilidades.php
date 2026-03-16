@@ -629,8 +629,8 @@ function createTicket($data, $userId = null) {
  * @param string $fromName Nombre del remitente (opcional)
  * @return bool
  */
-function sendEmail($to, $subject, $htmlBody, $fromName = 'EPCO Intranet') {
-    $fromEmail = 'noreply@epco.cl';
+function sendEmail($to, $subject, $htmlBody, $fromName = 'Empresa Portuaria Coquimbo Intranet') {
+    $fromEmail = 'noreply@puertocoquimbo.cl';
     
     // Headers para correo HTML
     $headers = [
@@ -704,7 +704,7 @@ function notifyNewComplaint($complaint, $complaintNumber) {
     <body>
         <div class="container">
             <div class="header">
-                <h1 style="margin:0;font-size:24px;">EPCO - Canal de Denuncias</h1>
+                <h1 style="margin:0;font-size:24px;">Empresa Portuaria Coquimbo - Canal de Denuncias</h1>
                 <p style="margin:10px 0 0;opacity:0.9;">Ley 21.643 (Ley Karin)</p>
             </div>
             <div class="content">
@@ -754,7 +754,7 @@ function notifyNewComplaint($complaint, $complaintNumber) {
                 </center>
             </div>
             <div class="footer">
-                <p>Este es un mensaje automatico del sistema EPCO.<br>Por favor no responda a este correo.</p>
+                <p>Este es un mensaje automatico del sistema Empresa Portuaria Coquimbo.<br>Por favor no responda a este correo.</p>
                 <p>Fecha de notificacion: ' . date('d/m/Y H:i') . '</p>
             </div>
         </div>
@@ -763,7 +763,7 @@ function notifyNewComplaint($complaint, $complaintNumber) {
     
     $sent = 0;
     foreach ($recipients as $recipient) {
-        if (sendEmail($recipient['email'], $subject, $htmlBody, 'EPCO Denuncias')) {
+        if (sendEmail($recipient['email'], $subject, $htmlBody, 'Empresa Portuaria Coquimbo Denuncias')) {
             $sent++;
         }
     }

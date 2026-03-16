@@ -75,10 +75,10 @@ define('UPLOADS_URL', '/uploads/');
 // =============================================
 // INFORMACIÓN DE LA APLICACIÓN
 // =============================================
-define('APP_NAME', 'EPCO');
-define('APP_FULL_NAME', 'EPCO - Portal Corporativo');
+define('APP_NAME', 'Empresa Portuaria Coquimbo');
+define('APP_FULL_NAME', 'Empresa Portuaria Coquimbo - Portal Corporativo');
 define('APP_VERSION', '2.0.0');
-define('APP_COMPANY', 'EPCO');
+define('APP_COMPANY', 'Empresa Portuaria Coquimbo');
 
 // =============================================
 // CONFIGURACIÓN DE TEMA

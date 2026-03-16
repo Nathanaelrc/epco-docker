@@ -163,13 +163,24 @@ $categories = [
     'acceso' => ['name' => 'Acceso', 'icon' => 'key', 'color' => 'warning'],
     'procedimientos' => ['name' => 'Procedimientos', 'icon' => 'list-check', 'color' => 'danger'],
 ];
+
+// Conteo de artículos por categoría
+$countWhere = $isAdmin ? '1=1' : 'is_published = 1';
+$catCountStmt = $pdo->query("SELECT category, COUNT(*) as total FROM knowledge_base WHERE $countWhere GROUP BY category");
+$catCounts = [];
+$totalArticles = 0;
+while ($row = $catCountStmt->fetch()) {
+    $catCounts[$row['category']] = (int)$row['total'];
+    $totalArticles += (int)$row['total'];
+}
+$totalFeatured = count($featured);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPCO - Base de Conocimiento<?= $article ? ' - ' . htmlspecialchars($article['title']) : '' ?></title>
+    <title>Empresa Portuaria Coquimbo - Base de Conocimiento<?= $article ? ' - ' . htmlspecialchars($article['title']) : '' ?></title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -238,6 +249,52 @@ $categories = [
             border-radius: 50px;
             padding: 12px 30px;
         }
+        /* Sidebar styles */
+        .kb-cat-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-radius: 10px;
+            color: #334155;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .kb-cat-link:hover { background: #f1f5f9; color: #0369a1; }
+        .kb-cat-link.active { background: #e0f2fe; color: #0369a1; font-weight: 600; }
+        .kb-cat-icon {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+        }
+        .kb-cat-count {
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            min-width: 24px;
+            text-align: center;
+        }
+        .kb-cat-link.active .kb-cat-count { background: #0369a1; color: white; }
+        .kb-quick-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            color: #334155;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .kb-quick-link:hover { background: #f1f5f9; color: #0369a1; }
     </style>
 </head>
 <body class="<?= $user ? 'has-sidebar' : '' ?>">
@@ -450,19 +507,91 @@ $categories = [
         <div class="row g-4">
             <!-- Sidebar -->
             <div class="col-lg-3">
-                <div class="card">
-                    <div class="card-header bg-white">
-                        <h6 class="mb-0">Categorías</h6>
+                <!-- Estadísticas -->
+                <div class="card mb-3" style="overflow: hidden;">
+                    <div class="card-body p-0">
+                        <div style="background: linear-gradient(135deg, #0369a1, #075985); padding: 20px; color: white;">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bi bi-book" style="font-size: 1.3rem;"></i>
+                                <span class="fw-bold" style="font-size: 1.1rem;">Base de Conocimiento</span>
+                            </div>
+                            <p class="mb-0 opacity-75" style="font-size: 0.82rem;">Resuelve problemas por tu cuenta</p>
+                        </div>
+                        <div class="d-flex text-center border-bottom">
+                            <div class="flex-fill py-3 border-end">
+                                <div class="fw-bold text-primary" style="font-size: 1.5rem;"><?= $totalArticles ?></div>
+                                <small class="text-muted">Artículos</small>
+                            </div>
+                            <div class="flex-fill py-3">
+                                <div class="fw-bold text-warning" style="font-size: 1.5rem;"><?= $totalFeatured ?></div>
+                                <small class="text-muted">Destacados</small>
+                            </div>
+                        </div>
                     </div>
-                    <div class="list-group list-group-flush">
-                        <a href="base_conocimiento.php" class="list-group-item list-group-item-action <?= empty($category) ? 'active' : '' ?>">
-                            <i class="bi bi-grid me-2"></i>Todas
-                        </a>
-                        <?php foreach ($categories as $catKey => $cat): ?>
-                        <a href="?category=<?= $catKey ?>" class="list-group-item list-group-item-action <?= $category === $catKey ? 'active' : '' ?>">
-                            <i class="bi bi-<?= $cat['icon'] ?> me-2"></i><?= $cat['name'] ?>
-                        </a>
-                        <?php endforeach; ?>
+                </div>
+
+                <!-- Categorías -->
+                <div class="card mb-3">
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold text-muted mb-3" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-tag me-1"></i>Categorías</h6>
+                        <div class="d-flex flex-column gap-1">
+                            <a href="base_conocimiento.php" class="kb-cat-link <?= empty($category) ? 'active' : '' ?>">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="kb-cat-icon" style="background: rgba(100,116,139,0.1); color: #64748b;"><i class="bi bi-grid"></i></div>
+                                    <span>Todas</span>
+                                </div>
+                                <span class="kb-cat-count"><?= $totalArticles ?></span>
+                            </a>
+                            <?php foreach ($categories as $catKey => $cat): ?>
+                            <?php $count = $catCounts[$catKey] ?? 0; ?>
+                            <a href="?category=<?= $catKey ?>" class="kb-cat-link <?= $category === $catKey ? 'active' : '' ?>">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="kb-cat-icon" style="background: var(--bs-<?= $cat['color'] ?>); color: white;"><i class="bi bi-<?= $cat['icon'] ?>"></i></div>
+                                    <span><?= $cat['name'] ?></span>
+                                </div>
+                                <span class="kb-cat-count"><?= $count ?></span>
+                            </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accesos rápidos -->
+                <div class="card mb-3">
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold text-muted mb-3" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;"><i class="bi bi-lightning me-1"></i>Accesos Rápidos</h6>
+                        <div class="d-flex flex-column gap-2">
+                            <a href="crear_ticket.php" class="kb-quick-link">
+                                <i class="bi bi-plus-circle text-primary"></i>
+                                <span>Crear Ticket de Soporte</span>
+                            </a>
+                            <a href="soporte.php" class="kb-quick-link">
+                                <i class="bi bi-headset text-success"></i>
+                                <span>Mesa de Ayuda</span>
+                            </a>
+                            <a href="soporte.php#faq-section" class="kb-quick-link">
+                                <i class="bi bi-question-circle text-info"></i>
+                                <span>Preguntas Frecuentes</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contacto rápido -->
+                <div class="card" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; overflow: hidden;">
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold mb-2" style="font-size: 0.85rem;"><i class="bi bi-telephone me-2"></i>¿No encuentras lo que buscas?</h6>
+                        <p class="mb-3 opacity-75" style="font-size: 0.78rem;">Contacta al equipo de soporte directamente.</p>
+                        <div class="d-flex flex-column gap-2" style="font-size: 0.82rem;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-telephone-fill opacity-50"></i>
+                                <span>Interno 6479</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-envelope-fill opacity-50"></i>
+                                <span>gismodes@puertocoquimbo.cl</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -474,13 +603,18 @@ $categories = [
                 <div class="row g-3 mb-5">
                     <?php foreach ($featured as $feat): ?>
                     <div class="col-md-6">
-                        <a href="?article=<?= $feat['id'] ?>" class="card article-card h-100 text-decoration-none">
+                        <a href="?article=<?= $feat['id'] ?>" class="card article-card h-100 text-decoration-none" style="border-left: 4px solid var(--bs-<?= $categories[$feat['category']]['color'] ?? 'secondary' ?>); overflow: hidden;">
                             <div class="card-body">
-                                <span class="badge bg-<?= $categories[$feat['category']]['color'] ?? 'secondary' ?> mb-2">
-                                    <?= $categories[$feat['category']]['name'] ?? 'General' ?>
-                                </span>
-                                <h6 class="text-dark"><?= htmlspecialchars($feat['title']) ?></h6>
-                                <small class="text-muted"><?= $feat['views'] ?> vistas</small>
+                                <div class="d-flex align-items-center mb-2 gap-2">
+                                    <span class="badge bg-<?= $categories[$feat['category']]['color'] ?? 'secondary' ?>">
+                                        <i class="bi bi-<?= $categories[$feat['category']]['icon'] ?? 'info-circle' ?> me-1"></i>
+                                        <?= $categories[$feat['category']]['name'] ?? 'General' ?>
+                                    </span>
+                                    <small class="text-warning"><i class="bi bi-star-fill"></i></small>
+                                </div>
+                                <h6 class="text-dark fw-bold mb-2"><?= htmlspecialchars($feat['title']) ?></h6>
+                                <p class="text-muted small mb-2"><?= htmlspecialchars($feat['excerpt'] ?: substr(strip_tags($feat['content']), 0, 100)) ?></p>
+                                <small class="text-muted"><i class="bi bi-eye me-1"></i><?= $feat['views'] ?> vistas</small>
                             </div>
                         </a>
                     </div>
@@ -488,7 +622,7 @@ $categories = [
                 </div>
                 <?php endif; ?>
 
-                <h5 class="mb-3"><?= $search ? 'Resultados de búsqueda' : 'Todos los Artículos' ?></h5>
+                <h5 class="mb-3"><?= $search ? 'Resultados de búsqueda' : ($category ? $categories[$category]['name'] ?? 'Artículos' : 'Todos los Artículos') ?></h5>
                 
                 <?php if (empty($articles)): ?>
                 <div class="card">
@@ -499,29 +633,88 @@ $categories = [
                     </div>
                 </div>
                 <?php else: ?>
+                
+                <?php if (empty($search) && empty($category)): ?>
+                    <?php
+                    // Agrupar artículos por categoría
+                    $grouped = [];
+                    foreach ($articles as $art) {
+                        $grouped[$art['category']][] = $art;
+                    }
+                    // Ordenar categorías según el orden definido
+                    $orderedGroups = [];
+                    foreach (array_keys($categories) as $catKey) {
+                        if (isset($grouped[$catKey])) {
+                            $orderedGroups[$catKey] = $grouped[$catKey];
+                        }
+                    }
+                    ?>
+                    <?php foreach ($orderedGroups as $groupCat => $groupArticles): ?>
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-<?= $categories[$groupCat]['color'] ?? 'secondary' ?> bg-opacity-10" style="width: 36px; height: 36px;">
+                                <i class="bi bi-<?= $categories[$groupCat]['icon'] ?? 'info-circle' ?> text-<?= $categories[$groupCat]['color'] ?? 'secondary' ?>"></i>
+                            </div>
+                            <h6 class="mb-0 fw-bold"><?= $categories[$groupCat]['name'] ?? 'General' ?></h6>
+                            <span class="badge bg-<?= $categories[$groupCat]['color'] ?? 'secondary' ?> bg-opacity-10 text-<?= $categories[$groupCat]['color'] ?? 'secondary' ?> ms-1"><?= count($groupArticles) ?></span>
+                        </div>
+                        <div class="row g-3">
+                            <?php foreach ($groupArticles as $art): ?>
+                            <div class="col-md-6">
+                                <a href="?article=<?= $art['id'] ?>" class="card article-card h-100 text-decoration-none" style="border-left: 3px solid var(--bs-<?= $categories[$art['category']]['color'] ?? 'secondary' ?>);">
+                                    <div class="card-body py-3 px-3">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="bg-<?= $categories[$art['category']]['color'] ?? 'secondary' ?> bg-opacity-10 text-<?= $categories[$art['category']]['color'] ?? 'secondary' ?> rounded-3 p-2 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="bi bi-<?= $categories[$art['category']]['icon'] ?? 'info-circle' ?>"></i>
+                                            </div>
+                                            <div class="flex-grow-1 min-width-0">
+                                                <h6 class="text-dark mb-1 fw-semibold" style="font-size: 0.92rem;"><?= htmlspecialchars($art['title']) ?></h6>
+                                                <p class="text-muted mb-0" style="font-size: 0.8rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?= htmlspecialchars($art['excerpt'] ?: substr(strip_tags($art['content']), 0, 120)) ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-3 mt-2 pt-2 border-top" style="font-size: 0.75rem;">
+                                            <span class="text-muted"><i class="bi bi-eye me-1"></i><?= $art['views'] ?></span>
+                                            <span class="text-muted"><i class="bi bi-calendar3 me-1"></i><?= date('d/m/Y', strtotime($art['created_at'])) ?></span>
+                                            <?php if ($art['is_featured']): ?><span class="text-warning"><i class="bi bi-star-fill"></i></span><?php endif; ?>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                
+                <?php else: ?>
                 <div class="row g-3">
                     <?php foreach ($articles as $art): ?>
-                    <div class="col-12">
-                        <a href="?article=<?= $art['id'] ?>" class="card article-card text-decoration-none">
-                            <div class="card-body d-flex align-items-center">
-                                <div class="me-4">
-                                    <div class="bg-<?= $categories[$art['category']]['color'] ?? 'secondary' ?> bg-opacity-10 text-<?= $categories[$art['category']]['color'] ?? 'secondary' ?> rounded-circle p-3">
-                                        <i class="bi bi-<?= $categories[$art['category']]['icon'] ?? 'info-circle' ?> fs-4"></i>
+                    <div class="col-md-6">
+                        <a href="?article=<?= $art['id'] ?>" class="card article-card h-100 text-decoration-none" style="border-left: 3px solid var(--bs-<?= $categories[$art['category']]['color'] ?? 'secondary' ?>);">
+                            <div class="card-body py-3 px-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="bg-<?= $categories[$art['category']]['color'] ?? 'secondary' ?> bg-opacity-10 text-<?= $categories[$art['category']]['color'] ?? 'secondary' ?> rounded-3 p-2 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-<?= $categories[$art['category']]['icon'] ?? 'info-circle' ?>"></i>
+                                    </div>
+                                    <div class="flex-grow-1 min-width-0">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge bg-<?= $categories[$art['category']]['color'] ?? 'secondary' ?>" style="font-size: 0.7rem;"><?= $categories[$art['category']]['name'] ?? 'General' ?></span>
+                                            <?php if ($art['is_featured']): ?><span class="text-warning"><i class="bi bi-star-fill" style="font-size: 0.7rem;"></i></span><?php endif; ?>
+                                        </div>
+                                        <h6 class="text-dark mb-1 fw-semibold" style="font-size: 0.92rem;"><?= htmlspecialchars($art['title']) ?></h6>
+                                        <p class="text-muted mb-0" style="font-size: 0.8rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?= htmlspecialchars($art['excerpt'] ?: substr(strip_tags($art['content']), 0, 120)) ?></p>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h5 class="text-dark mb-1"><?= htmlspecialchars($art['title']) ?></h5>
-                                    <p class="text-muted mb-0 small"><?= htmlspecialchars($art['excerpt'] ?: substr(strip_tags($art['content']), 0, 150)) ?>...</p>
-                                </div>
-                                <div class="text-muted text-end">
-                                    <div><i class="bi bi-eye me-1"></i><?= $art['views'] ?></div>
-                                    <small><?= date('d/m/Y', strtotime($art['created_at'])) ?></small>
+                                <div class="d-flex align-items-center gap-3 mt-2 pt-2 border-top" style="font-size: 0.75rem;">
+                                    <span class="text-muted"><i class="bi bi-eye me-1"></i><?= $art['views'] ?></span>
+                                    <span class="text-muted"><i class="bi bi-calendar3 me-1"></i><?= date('d/m/Y', strtotime($art['created_at'])) ?></span>
                                 </div>
                             </div>
                         </a>
                     </div>
                     <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
+                
                 <?php endif; ?>
             </div>
         </div>

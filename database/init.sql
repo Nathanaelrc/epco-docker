@@ -447,7 +447,7 @@ CREATE TABLE IF NOT EXISTS notification_recipients (
 
 -- Insertar destinatario por defecto
 INSERT IGNORE INTO notification_recipients (email, name, event_type) VALUES
-('soporteepco@gmail.com', 'Soporte EPCO', 'all');
+('soporteepco@gmail.com', 'Soporte Empresa Portuaria Coquimbo', 'all');
 
 -- =============================================
 -- TABLA: COLA DE EMAILS
@@ -494,15 +494,15 @@ CREATE TABLE IF NOT EXISTS api_tokens (
 -- USUARIOS (Contraseña para todos: password)
 -- =============================================
 INSERT INTO users (name, username, email, password, role, department, position) VALUES 
-('Administrador EPCO', 'admin.epco', 'admin@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'TI', 'Administrador de Sistemas'),
-('Soporte TI', 'soporte.ti', 'soporte@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
-('Técnico Soporte', 'tecnico.soporte', 'tecnico@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
-('Comunicaciones', 'comunicaciones.epco', 'social@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'social', 'Comunicaciones', 'Encargado de Comunicaciones'),
-('Comité de Ética', 'comite.etica', 'etica@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'denuncia', 'Recursos Humanos', 'Encargado Ley Karin'),
-('Usuario Demo', 'usuario.demo', 'usuario@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Colaborador'),
-('María González', 'maria.gonzalez', 'maria.gonzalez@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Administración', 'Asistente Administrativo'),
-('Carlos Pérez', 'carlos.perez', 'carlos.perez@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Operador Portuario'),
-('Ana López', 'ana.lopez', 'ana.lopez@epco.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Finanzas', 'Analista Financiero');
+('Administrador Empresa Portuaria Coquimbo', 'admin.epco', 'admin@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'TI', 'Administrador de Sistemas'),
+('Soporte TI', 'soporte.ti', 'soporte@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
+('Técnico Soporte', 'tecnico.soporte', 'tecnico@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
+('Comunicaciones', 'comunicaciones.epco', 'social@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'social', 'Comunicaciones', 'Encargado de Comunicaciones'),
+('Comité de Ética', 'comite.etica', 'etica@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'denuncia', 'Recursos Humanos', 'Encargado Ley Karin'),
+('Usuario Demo', 'usuario.demo', 'usuario@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Colaborador'),
+('María González', 'maria.gonzalez', 'maria.gonzalez@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Administración', 'Asistente Administrativo'),
+('Carlos Pérez', 'carlos.perez', 'carlos.perez@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Operador Portuario'),
+('Ana López', 'ana.lopez', 'ana.lopez@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Finanzas', 'Analista Financiero');
 
 -- =============================================
 -- CONFIGURACIÓN SLA (tiempos en minutos)
@@ -517,7 +517,7 @@ INSERT INTO sla_settings (priority, first_response_minutes, assignment_minutes, 
 -- NOTICIAS
 -- =============================================
 INSERT INTO news (title, excerpt, content, author_id, category, is_published, is_featured) VALUES 
-('Bienvenidos al nuevo Portal EPCO', 
+('Bienvenidos al nuevo Portal Empresa Portuaria Coquimbo', 
  'Conoce todas las nuevas funcionalidades del portal corporativo',
  '<p>Nos complace presentar el nuevo portal corporativo de EPCO, diseñado para mejorar la comunicación interna y facilitar el acceso a recursos importantes.</p><p>Este portal incluye nuevas funcionalidades como gestión de documentos, calendario de eventos y un sistema de soporte técnico integrado.</p><h3>Nuevas funcionalidades:</h3><ul><li>Sistema de tickets para soporte TI</li><li>Base de conocimiento</li><li>Calendario de eventos</li><li>Noticias corporativas</li><li>Canal de denuncias Ley Karin</li></ul>', 
  1, 'general', 1, 1),
@@ -532,7 +532,7 @@ INSERT INTO news (title, excerpt, content, author_id, category, is_published, is
  '<p>Se realizará una capacitación obligatoria sobre la Ley 21.643 (Ley Karin) para todos los colaboradores.</p><p>La capacitación abordará los procedimientos de denuncia, derechos y deberes de los trabajadores.</p><h3>Contenido:</h3><ul><li>Marco legal y alcances</li><li>Tipos de acoso y violencia laboral</li><li>Procedimientos de denuncia</li><li>Protección al denunciante</li><li>Sanciones aplicables</li></ul>', 
  1, 'capacitacion', 1, 1),
  
-('EPCO desarrolló con éxito su programa de visitas educativas 2025',
+('Empresa Portuaria Coquimbo desarrolló con éxito su programa de visitas educativas 2025',
  'Más de 500 estudiantes visitaron nuestras instalaciones',
  '<p>Empresa Portuaria Coquimbo desarrolló exitosamente su programa de visitas educativas durante el primer trimestre de 2025.</p><p>Más de 500 estudiantes de la región participaron en recorridos guiados por las instalaciones portuarias, conociendo la operación y la importancia del puerto para la economía regional.</p>',
  1, 'general', 1, 1),
@@ -579,9 +579,9 @@ INSERT INTO knowledge_base (title, slug, content, excerpt, category, tags, autho
 </ol>
 <h3>Impresoras disponibles:</h3>
 <ul>
-<li><strong>EPCO-PISO1-HP</strong> - Impresora HP LaserJet (Piso 1)</li>
-<li><strong>EPCO-PISO2-XEROX</strong> - Xerox WorkCentre (Piso 2)</li>
-<li><strong>EPCO-RECEPCION</strong> - HP OfficeJet (Recepción)</li>
+<li><strong>EPC-PISO1-HP</strong> - Impresora HP LaserJet (Piso 1)</li>
+<li><strong>EPC-PISO2-XEROX</strong> - Xerox WorkCentre (Piso 2)</li>
+<li><strong>EPC-RECEPCION</strong> - HP OfficeJet (Recepción)</li>
 </ul>',
 'Instrucciones para conectar tu equipo a las impresoras de red', 'hardware',
 'impresora,printer,red,network,HP,Xerox', 1, 1, 0),
@@ -628,7 +628,7 @@ Nombre Apellido
 Cargo
 Empresa Portuaria Coquimbo
 Teléfono: +56 XX XXX XXXX
-Email: nombre@epco.cl
+Email: nombre@puertocoquimbo.cl
 </pre>',
 'Cómo añadir y personalizar tu firma de correo electrónico', 'software',
 'outlook,correo,firma,email,microsoft', 1, 1, 0),
@@ -650,7 +650,349 @@ Email: nombre@epco.cl
 <li><strong>BI Dashboard</strong> - Reportes y análisis</li>
 </ul>',
 'Procedimiento para solicitar acceso a los sistemas corporativos', 'acceso',
-'acceso,permisos,sistemas,solicitud', 1, 1, 0);
+'acceso,permisos,sistemas,solicitud', 1, 1, 0),
+
+-- Artículos adicionales de resolución de problemas y emergencias
+
+('Qué hacer si tu computador no enciende', 'computador-no-enciende',
+'<h2>Guía de emergencia: PC no enciende</h2>
+<p>Si tu computador no enciende al presionar el botón de encendido, sigue estos pasos en orden antes de contactar a soporte.</p>
+
+<h3>1. Verificaciones rápidas</h3>
+<ul>
+<li>Comprueba que el cable de poder esté firmemente conectado al equipo y a la corriente</li>
+<li>Verifica que el enchufe tenga electricidad (prueba otro dispositivo en el mismo enchufe)</li>
+<li>Si es notebook, conecta el cargador y espera 5 minutos antes de intentar encender</li>
+<li>Revisa que el interruptor trasero de la fuente de poder (si existe) esté en posición ON (I)</li>
+</ul>
+
+<h3>2. Reinicio eléctrico</h3>
+<ol>
+<li>Desconecta el cable de poder del computador</li>
+<li>Si es notebook, retira la batería (si es removible)</li>
+<li>Mantén presionado el botón de encendido por <strong>15 segundos</strong></li>
+<li>Vuelve a conectar el cable de poder / batería</li>
+<li>Intenta encender normalmente</li>
+</ol>
+
+<h3>3. Si el equipo enciende pero no muestra imagen</h3>
+<ul>
+<li>Verifica que el cable del monitor esté bien conectado (HDMI, DisplayPort o VGA)</li>
+<li>Prueba con otro cable o puerto de video si están disponibles</li>
+<li>Si usas docking station, prueba conectando el monitor directo al equipo</li>
+</ul>
+
+<h3>4. Si nada funciona</h3>
+<div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 8px; margin: 10px 0;">
+<strong>Crea un ticket de soporte con prioridad URGENTE</strong> si necesitas el equipo para funciones críticas, o con prioridad ALTA para situaciones normales. Incluye:
+<ul>
+<li>Modelo del equipo y número de inventario (etiqueta en la parte inferior)</li>
+<li>¿Hace algún sonido al intentar encender? (pitidos, ventilador girando)</li>
+<li>¿Se enciende alguna luz LED en el equipo?</li>
+</ul>
+</div>',
+'Pasos de emergencia cuando tu computador de escritorio o notebook no enciende', 'hardware',
+'computador,no enciende,emergencia,encendido,pantalla negra,notebook', 1, 1, 1),
+
+('Mi computador está muy lento — Soluciones rápidas', 'computador-lento-soluciones',
+'<h2>Soluciones para un computador lento</h2>
+<p>Un equipo lento afecta tu productividad. Aquí tienes pasos que puedes hacer por tu cuenta antes de crear un ticket.</p>
+
+<h3>1. Reinicia el computador</h3>
+<p>Puede parecer obvio, pero un reinicio completo soluciona la mayoría de los problemas de rendimiento. Usa <strong>Inicio → Reiniciar</strong> (no solo cerrar tapa en notebooks).</p>
+
+<h3>2. Cierra programas que no estés usando</h3>
+<ol>
+<li>Presiona <strong>Ctrl + Shift + Esc</strong> para abrir el Administrador de Tareas</li>
+<li>En la pestaña <strong>Procesos</strong>, ordena por "Memoria" o "CPU"</li>
+<li>Cierra los programas que consuman muchos recursos y que no necesites</li>
+<li><strong>No cierres</strong> procesos del sistema o que no reconozcas</li>
+</ol>
+
+<h3>3. Libera espacio en disco</h3>
+<ol>
+<li>Presiona <strong>Win + E</strong> para abrir el explorador de archivos</li>
+<li>Revisa si el disco C: tiene menos del 10% de espacio libre (barra roja)</li>
+<li>Vacía la Papelera de reciclaje</li>
+<li>Elimina archivos en la carpeta Descargas que ya no necesites</li>
+</ol>
+
+<h3>4. Verifica las actualizaciones</h3>
+<ol>
+<li>Ve a <strong>Configuración → Windows Update</strong></li>
+<li>Si hay actualizaciones pendientes, instálalas y reinicia</li>
+</ol>
+
+<h3>5. Si el problema persiste</h3>
+<p>Crea un ticket de soporte indicando:</p>
+<ul>
+<li>¿Desde cuándo está lento?</li>
+<li>¿Ocurre con algún programa específico?</li>
+<li>¿Instalaste algo recientemente?</li>
+</ul>',
+'Pasos que puedes seguir por tu cuenta cuando tu computador funciona lento', 'software',
+'lento,rendimiento,memoria,cpu,lentitud,performance', 1, 1, 1),
+
+('Problemas con el correo Outlook — Guía de solución', 'problemas-correo-outlook',
+'<h2>Solución de problemas comunes en Outlook</h2>
+
+<h3>Outlook no abre o se congela al iniciar</h3>
+<ol>
+<li>Cierra Outlook completamente desde el Administrador de Tareas (Ctrl+Shift+Esc)</li>
+<li>Mantén presionada la tecla <strong>Ctrl</strong> mientras haces doble clic en el icono de Outlook</li>
+<li>Aparecerá un diálogo preguntando si deseas iniciar en <strong>Modo Seguro</strong> → haz clic en Sí</li>
+<li>Si funciona en modo seguro, el problema es un complemento. Ve a Archivo → Opciones → Complementos → deshabilita los complementos uno a uno</li>
+</ol>
+
+<h3>No llegan correos nuevos</h3>
+<ol>
+<li>Verifica tu conexión a internet</li>
+<li>Presiona <strong>F9</strong> o haz clic en "Enviar y recibir todas las carpetas"</li>
+<li>Revisa la barra inferior: si dice "Trabajando sin conexión", haz clic en la pestaña <strong>Enviar y Recibir</strong> → desactiva "Trabajar sin conexión"</li>
+<li>Revisa que tu buzón no esté lleno (se muestra un aviso en la parte superior)</li>
+</ol>
+
+<h3>No puedo enviar correos</h3>
+<ul>
+<li>Verifica que la dirección del destinatario sea correcta</li>
+<li>Revisa la carpeta <strong>Bandeja de salida</strong> (si hay correos atascados, elimínalos y reintenta)</li>
+<li>Si el archivo adjunto supera los 25 MB, usa OneDrive para compartirlo</li>
+</ul>
+
+<h3>La firma de correo no aparece</h3>
+<p>Ve a <strong>Archivo → Opciones → Correo → Firmas</strong> y verifica que tu firma esté seleccionada para "Nuevos mensajes" y "Respuestas/Reenvíos".</p>',
+'Guía para resolver los problemas más comunes de Microsoft Outlook', 'software',
+'outlook,correo,email,no abre,congela,firma,enviar,recibir', 1, 1, 0),
+
+('No tengo internet — Diagnóstico paso a paso', 'sin-internet-diagnostico',
+'<h2>Sin conexión a internet: Diagnóstico rápido</h2>
+<p>Sigue estos pasos en orden para diagnosticar y posiblemente resolver la falta de internet.</p>
+
+<h3>Paso 1: ¿Es solo tu equipo?</h3>
+<p>Pregunta a un compañero cercano si tiene internet. Si nadie tiene, es un problema de red general → crea un ticket con prioridad <strong>URGENTE</strong> indicando el área afectada.</p>
+
+<h3>Paso 2: Verifica la conexión física</h3>
+<ul>
+<li><strong>Cable de red:</strong> Revisa que el cable Ethernet esté firmemente conectado al equipo y a la roseta de pared. Debe hacer "clic" al insertarse.</li>
+<li><strong>WiFi:</strong> Verifica que el WiFi esté habilitado. Haz clic en el icono de red en la barra de tareas y comprueba que estás conectado a la red corporativa.</li>
+</ul>
+
+<h3>Paso 3: Reinicia la conexión de red</h3>
+<ol>
+<li>Haz clic derecho en el icono de red (esquina inferior derecha)</li>
+<li>Selecciona <strong>"Solucionar problemas de red"</strong> o <strong>"Diagnósticos de red"</strong></li>
+<li>Sigue las instrucciones del asistente</li>
+</ol>
+
+<h3>Paso 4: Reinicio rápido de red</h3>
+<ol>
+<li>Presiona <strong>Win + R</strong>, escribe <code>cmd</code> y presiona Enter</li>
+<li>Escribe: <code>ipconfig /release</code> y presiona Enter</li>
+<li>Luego escribe: <code>ipconfig /renew</code> y presiona Enter</li>
+<li>Cierra la ventana e intenta navegar nuevamente</li>
+</ol>
+
+<h3>Paso 5: Si nada funciona</h3>
+<p>Reinicia el computador completamente y vuelve a intentar. Si persiste, crea un ticket indicando:</p>
+<ul>
+<li>Tu ubicación exacta (piso, oficina)</li>
+<li>Si estás conectado por cable o WiFi</li>
+<li>Si otros equipos cercanos tienen el mismo problema</li>
+</ul>',
+'Guía paso a paso para diagnosticar problemas de conexión a internet', 'red',
+'internet,sin conexión,wifi,ethernet,red,cable,diagnóstico', 1, 1, 1),
+
+('Cómo actuar ante un ciberataque o correo sospechoso', 'ciberataque-correo-sospechoso',
+'<h2>Protocolo ante amenazas de seguridad informática</h2>
+
+<div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 8px; margin: 10px 0;">
+<strong>⚠ IMPORTANTE:</strong> Si sospechas que tu equipo fue comprometido, <strong>NO lo apagues</strong> ni borres nada. Desconéctalo de la red (desenchufa el cable o desactiva WiFi) e informa inmediatamente a TI.
+</div>
+
+<h3>Cómo reconocer un correo sospechoso (phishing)</h3>
+<ul>
+<li>El remitente tiene un dominio extraño o con errores de ortografía</li>
+<li>Te piden urgentemente hacer clic en un enlace o descargar un archivo</li>
+<li>Solicitan contraseñas, datos bancarios o información personal</li>
+<li>El saludo es genérico ("Estimado usuario" en vez de tu nombre)</li>
+<li>Contiene errores gramaticales o de formato inusuales</li>
+</ul>
+
+<h3>¿Qué hacer si recibes un correo sospechoso?</h3>
+<ol>
+<li><strong>NO hagas clic</strong> en ningún enlace ni descargues archivos adjuntos</li>
+<li><strong>NO respondas</strong> al correo</li>
+<li><strong>NO reenvíes</strong> el correo a otros compañeros</li>
+<li>Reporta el correo: haz clic derecho → <strong>"Informar de phishing"</strong> o <strong>"Correo no deseado"</strong></li>
+<li>Crea un ticket de soporte adjuntando una captura de pantalla del correo</li>
+</ol>
+
+<h3>¿Qué hacer si hiciste clic en un enlace sospechoso?</h3>
+<ol>
+<li><strong>Desconecta tu equipo de la red</strong> inmediatamente (desenchufa el cable o desactiva WiFi)</li>
+<li>No cierres el navegador (el equipo de seguridad puede necesitar la información)</li>
+<li>Llama al <strong>interno 6479</strong> (emergencias TI) e informa lo ocurrido</li>
+<li>Cambia tu contraseña desde otro dispositivo si ingresaste credenciales</li>
+</ol>
+
+<h3>Señales de que tu equipo podría estar comprometido</h3>
+<ul>
+<li>Ventanas emergentes inusuales o publicidad que no aparecía antes</li>
+<li>El equipo está extremadamente lento sin razón aparente</li>
+<li>Programas se abren o cierran solos</li>
+<li>Tu navegador fue cambiado sin tu autorización</li>
+<li>Archivos encriptados o con extensiones extrañas (.locked, .encrypted)</li>
+</ul>',
+'Protocolo de acción ante correos sospechosos, phishing y posibles ciberataques', 'procedimientos',
+'seguridad,phishing,virus,malware,ciberataque,correo sospechoso,ransomware', 1, 1, 1),
+
+('Cómo usar Microsoft Teams correctamente', 'guia-microsoft-teams',
+'<h2>Guía rápida de Microsoft Teams</h2>
+
+<h3>Iniciar una reunión</h3>
+<ol>
+<li>Abre Microsoft Teams</li>
+<li>Haz clic en <strong>Calendario</strong> en la barra lateral izquierda</li>
+<li>Clic en <strong>"Nueva reunión"</strong> (esquina superior derecha)</li>
+<li>Agrega título, participantes, fecha y hora</li>
+<li>Haz clic en <strong>"Enviar"</strong> para programar o <strong>"Reunirse ahora"</strong> para iniciar inmediatamente</li>
+</ol>
+
+<h3>Compartir pantalla en una reunión</h3>
+<ol>
+<li>Durante la reunión, haz clic en el icono <strong>↑ (flecha arriba)</strong> o <strong>"Compartir contenido"</strong></li>
+<li>Elige qué compartir: pantalla completa, ventana específica o PowerPoint</li>
+<li>Si aparece un error de permisos, cierra Teams y ábrelo como <strong>Administrador</strong> (clic derecho → Ejecutar como administrador)</li>
+</ol>
+
+<h3>Problemas de audio</h3>
+<ul>
+<li><strong>No me escuchan:</strong> Verifica que el micrófono correcto esté seleccionado (clic en ⋯ → Configuración del dispositivo)</li>
+<li><strong>No escucho:</strong> Comprueba que el altavoz/auricular correcto esté seleccionado y el volumen no esté en silencio</li>
+<li><strong>Eco o retroalimentación:</strong> Usa auriculares para evitar que el micrófono capte el sonido del altavoz</li>
+</ul>
+
+<h3>Chat y archivos</h3>
+<ul>
+<li>Puedes arrastrar archivos directamente a la ventana de chat para compartirlos</li>
+<li>Los archivos compartidos en un canal se guardan en SharePoint y puedes acceder desde la pestaña <strong>"Archivos"</strong></li>
+<li>Usa <strong>@nombre</strong> para mencionar a alguien específico en un mensaje</li>
+</ul>',
+'Guía práctica para usar Microsoft Teams: reuniones, audio y pantalla compartida', 'software',
+'teams,reunión,videollamada,pantalla,audio,micrófono,compartir', 1, 1, 0),
+
+('Procedimiento de emergencia: Pérdida de archivos', 'emergencia-perdida-archivos',
+'<h2>Qué hacer si perdiste archivos importantes</h2>
+
+<div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin: 10px 0;">
+<strong>⏰ El tiempo es clave:</strong> Mientras antes informes, mayores son las probabilidades de recuperar los archivos. No intentes instalar programas de recuperación por tu cuenta.
+</div>
+
+<h3>Paso 1: Revisa la Papelera de reciclaje</h3>
+<p>Abre la Papelera de reciclaje en el escritorio. Si encuentras el archivo, haz clic derecho → <strong>"Restaurar"</strong>. El archivo volverá a su ubicación original.</p>
+
+<h3>Paso 2: Busca versiones anteriores</h3>
+<ol>
+<li>Navega a la carpeta donde estaba el archivo</li>
+<li>Haz clic derecho en la carpeta → <strong>"Propiedades"</strong></li>
+<li>Ve a la pestaña <strong>"Versiones anteriores"</strong></li>
+<li>Si aparecen versiones, selecciona una fecha anterior y haz clic en <strong>"Restaurar"</strong></li>
+</ol>
+
+<h3>Paso 3: Si era un archivo de OneDrive o SharePoint</h3>
+<ol>
+<li>Ingresa a <strong>onedrive.com</strong> o <strong>sharepoint.com</strong></li>
+<li>Ve a la <strong>Papelera de reciclaje</strong> del sitio (menú lateral izquierdo)</li>
+<li>Los archivos eliminados se mantienen por 93 días</li>
+</ol>
+
+<h3>Paso 4: Crea un ticket de soporte</h3>
+<p>Si no pudiste recuperar el archivo, crea un ticket inmediatamente indicando:</p>
+<ul>
+<li>Nombre exacto del archivo y su ubicación</li>
+<li>Fecha aproximada de la última vez que lo viste</li>
+<li>¿Lo eliminaste tú o desapareció solo?</li>
+<li>¿Estaba en una carpeta compartida o local?</li>
+</ul>
+
+<h3>Prevención: Cómo evitar perder archivos</h3>
+<ul>
+<li>Guarda tus archivos importantes en <strong>OneDrive</strong> (se respaldan automáticamente)</li>
+<li>No guardes archivos críticos solo en el escritorio o disco local</li>
+<li>Usa las carpetas compartidas del departamento para documentos de trabajo</li>
+</ul>',
+'Procedimiento de emergencia paso a paso para recuperar archivos eliminados o perdidos', 'procedimientos',
+'archivos,recuperar,perdidos,eliminados,papelera,backup,respaldo', 1, 1, 0),
+
+('Cómo conectarte a la red WiFi corporativa', 'conectar-wifi-corporativa',
+'<h2>Conexión a la red WiFi de Empresa Portuaria Coquimbo</h2>
+
+<h3>Red disponible</h3>
+<table style="width:100%; border-collapse: collapse; margin: 15px 0;">
+<tr style="background: #f0f9ff;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Nombre de red</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">EPC-Corporativa</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Tipo de seguridad</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">WPA2-Enterprise</td></tr>
+<tr style="background: #f0f9ff;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Autenticación</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">Credenciales de dominio (mismo usuario y contraseña de Windows)</td></tr>
+</table>
+
+<h3>Pasos para conectarse</h3>
+<ol>
+<li>Haz clic en el <strong>icono de WiFi</strong> en la barra de tareas (esquina inferior derecha)</li>
+<li>Busca la red <strong>"EPC-Corporativa"</strong> y haz clic en <strong>"Conectar"</strong></li>
+<li>Ingresa tu <strong>usuario de dominio</strong> (el mismo que usas para iniciar sesión en Windows)</li>
+<li>Ingresa tu <strong>contraseña de Windows</strong></li>
+<li>Si aparece un certificado de seguridad, haz clic en <strong>"Conectar"</strong></li>
+<li>Marca la casilla <strong>"Conectar automáticamente"</strong> para no tener que repetir el proceso</li>
+</ol>
+
+<h3>Red para visitantes</h3>
+<p>Para visitantes o dispositivos personales, usar la red <strong>"EPC-Visitantes"</strong>. Solicita la contraseña del día en recepción.</p>
+
+<h3>Problemas frecuentes</h3>
+<ul>
+<li><strong>"No se puede conectar a esta red":</strong> Olvida la red (clic derecho → Olvidar), reinicia WiFi e intenta nuevamente</li>
+<li><strong>Conexión intermitente:</strong> Verifica que no estés al límite del área de cobertura. Las zonas de bodega y muelle pueden tener señal limitada</li>
+<li><strong>Contraseña rechazada:</strong> Si cambiaste tu contraseña de Windows recientemente, debes ingresar la nueva contraseña</li>
+</ul>',
+'Instrucciones para conectarte a la red WiFi corporativa y solución de problemas', 'red',
+'wifi,inalámbrico,wireless,conexión,corporativa,visitantes', 1, 1, 0),
+
+('Guía de emergencia: Pantalla azul (BSOD)', 'pantalla-azul-bsod',
+'<h2>Pantalla Azul de Windows (BSOD): Qué hacer</h2>
+<p>La "pantalla azul de la muerte" (BSOD) indica un error crítico del sistema. No te preocupes, generalmente tiene solución.</p>
+
+<div style="background: #f0f9ff; border-left: 4px solid #0369a1; padding: 15px; border-radius: 8px; margin: 10px 0;">
+<strong>Lo más importante:</strong> Anota o toma foto del <strong>código de error</strong> que aparece en pantalla (ej: DRIVER_IRQL_NOT_LESS_OR_EQUAL, KERNEL_DATA_INPAGE_ERROR).
+</div>
+
+<h3>Si ocurre una sola vez</h3>
+<ol>
+<li>Espera a que el equipo se reinicie automáticamente (puede tardar 1-2 minutos)</li>
+<li>Si no se reinicia solo, mantén presionado el botón de encendido por 10 segundos</li>
+<li>Enciende nuevamente y trabaja normalmente</li>
+<li>Si no vuelve a ocurrir en las próximas horas, fue un error aislado</li>
+</ol>
+
+<h3>Si ocurre repetidamente</h3>
+<ol>
+<li>Anota la hora exacta y qué estabas haciendo cuando ocurrió</li>
+<li>Toma foto de la pantalla azul (el código de error es muy útil para diagnóstico)</li>
+<li>Crea un ticket de soporte con prioridad <strong>ALTA</strong> adjuntando la foto</li>
+<li>Indica si el error ocurre al usar un programa específico o de forma aleatoria</li>
+</ol>
+
+<h3>Causas comunes</h3>
+<ul>
+<li><strong>Actualización reciente de Windows</strong> que causó conflicto</li>
+<li><strong>Driver de hardware</strong> incompatible o desactualizado</li>
+<li><strong>Disco duro dañado</strong> o con sectores defectuosos</li>
+<li><strong>Memoria RAM</strong> defectuosa</li>
+<li><strong>Sobrecalentamiento</strong> del equipo</li>
+</ul>
+
+<h3>Mientras esperas al técnico</h3>
+<p>Si necesitas seguir trabajando urgentemente, intenta usar <strong>Office Online</strong> (portal.office.com) desde un equipo prestado o tu celular para acceder a tus archivos de OneDrive.</p>',
+'Qué hacer cuando aparece una pantalla azul de error en tu computador Windows', 'hardware',
+'pantalla azul,BSOD,error,crash,reinicio,windows,blue screen', 1, 1, 0);
 
 -- =============================================
 -- EVENTOS
@@ -664,11 +1006,11 @@ INSERT INTO events (title, description, event_type, start_date, end_date, all_da
  0, 'Sala de Reuniones Principal', '#0a2540', 1, 1),
 
 ('Día de la empresa', 
- 'Celebración del aniversario de EPCO con actividades para todos los colaboradores.', 
+ 'Celebración del aniversario de Empresa Portuaria Coquimbo con actividades para todos los colaboradores.', 
  'corporate', 
  DATE_ADD(CURDATE(), INTERVAL 30 DAY), 
  DATE_ADD(CURDATE(), INTERVAL 30 DAY), 
- 1, 'Instalaciones EPCO', '#22c55e', 1, 1),
+ 1, 'Instalaciones Empresa Portuaria Coquimbo', '#22c55e', 1, 1),
 
 ('Capacitación Ciberseguridad', 
  'Capacitación sobre buenas prácticas de ciberseguridad y protección de datos.', 
@@ -733,22 +1075,22 @@ INSERT INTO tickets (
     category, priority, title, description, status,
     sla_response_target, sla_resolution_target, created_at
 ) VALUES 
-('TK-2026-0001', 6, 'Usuario Demo', 'usuario@epco.cl', 'Operaciones',
+('TK-2026-0001', 6, 'Usuario Demo', 'usuario@puertocoquimbo.cl', 'Operaciones',
  'software', 'media', 'Problema con Microsoft Office', 
  'Excel se cierra inesperadamente al abrir archivos grandes. El problema comenzó después de la última actualización de Windows.', 
  'abierto', 480, 2880, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
 
-('TK-2026-0002', 7, 'María González', 'maria.gonzalez@epco.cl', 'Administración',
+('TK-2026-0002', 7, 'María González', 'maria.gonzalez@puertocoquimbo.cl', 'Administración',
  'hardware', 'alta', 'Monitor no enciende', 
  'El monitor de mi estación de trabajo no enciende desde esta mañana. Ya verifiqué los cables y están bien conectados.', 
  'asignado', 240, 1440, DATE_SUB(NOW(), INTERVAL 5 HOUR)),
 
-('TK-2026-0003', 8, 'Carlos Pérez', 'carlos.perez@epco.cl', 'Operaciones',
+('TK-2026-0003', 8, 'Carlos Pérez', 'carlos.perez@puertocoquimbo.cl', 'Operaciones',
  'red', 'urgente', 'Sin acceso a internet', 
  'Todo el departamento de Operaciones quedó sin acceso a internet desde las 9:00 AM. Necesitamos conexión para las operaciones del puerto.', 
  'en_proceso', 60, 240, DATE_SUB(NOW(), INTERVAL 1 HOUR)),
 
-('TK-2026-0004', 9, 'Ana López', 'ana.lopez@epco.cl', 'Finanzas',
+('TK-2026-0004', 9, 'Ana López', 'ana.lopez@puertocoquimbo.cl', 'Finanzas',
  'acceso', 'media', 'Solicitud de acceso a SAP', 
  'Necesito acceso al módulo de reportes financieros de SAP para generar los informes mensuales.', 
  'abierto', 480, 2880, DATE_SUB(NOW(), INTERVAL 30 MINUTE));
@@ -796,7 +1138,7 @@ INSERT INTO ticket_comments (ticket_id, user_id, user_name, comment, is_internal
 -- DOCUMENTOS
 -- =============================================
 INSERT INTO documents (title, description, file_path, file_type, category, uploaded_by, is_public) VALUES
-('Manual de Usuario - Portal EPCO', 'Guía completa de uso del portal corporativo', '/uploads/documents/manual_portal_epco.pdf', 'application/pdf', 'Manuales', 1, 1),
+('Manual de Usuario - Portal Empresa Portuaria Coquimbo', 'Guía completa de uso del portal corporativo', '/uploads/documents/manual_portal_epc.pdf', 'application/pdf', 'Manuales', 1, 1),
 ('Política de Seguridad Informática', 'Políticas y procedimientos de seguridad de la información', '/uploads/documents/politica_seguridad.pdf', 'application/pdf', 'Políticas', 1, 1),
 ('Reglamento Interno', 'Reglamento interno de orden, higiene y seguridad', '/uploads/documents/reglamento_interno.pdf', 'application/pdf', 'Reglamentos', 1, 1),
 ('Protocolo Ley Karin', 'Protocolo de prevención y denuncia según Ley 21.643', '/uploads/documents/protocolo_ley_karin.pdf', 'application/pdf', 'Protocolos', 1, 1);

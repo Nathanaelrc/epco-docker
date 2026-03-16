@@ -24,7 +24,7 @@ $denunciaSeguimientoUrl = $fromIntranet ? 'denuncia_seguimiento.php?from=intrane
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <title>EPCO - Portal de Integridad</title>
+    <title>Empresa Portuaria Coquimbo - Portal de Integridad</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
@@ -611,7 +611,7 @@ $denunciaSeguimientoUrl = $fromIntranet ? 'denuncia_seguimiento.php?from=intrane
             <div class="container text-center">
                 <picture>
                     <source srcset="img/Logo01.webp" type="image/webp">
-                    <img src="img/Logo01.png" alt="Logo EPCO" class="header-logo mb-3" style="width: 100px; height: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3));" loading="eager" width="100" height="100">
+                    <img src="img/Logo01.png" alt="Logo Empresa Portuaria Coquimbo" class="header-logo mb-3" style="width: 100px; height: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3));" loading="eager" width="100" height="100">
                 </picture>
                 <div class="header-badge">
                     <i class="bi bi-building"></i>
@@ -909,7 +909,7 @@ $denunciaSeguimientoUrl = $fromIntranet ? 'denuncia_seguimiento.php?from=intrane
     <footer class="site-footer">
         <div class="container">
             <p class="mb-2">
-                <strong>EPCO</strong> - Portal de Integridad
+                <strong>Empresa Portuaria Coquimbo</strong> - Portal de Integridad
             </p>
             <p class="small text-white-50 mb-0">
                 © <?= date('Y') ?> Todos los derechos reservados | 

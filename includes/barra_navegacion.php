@@ -41,15 +41,23 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     }
     
     .header-logo {
-        font-size: 1.8rem;
-        font-weight: 800;
-        letter-spacing: -1px;
-        color: white;
+        display: inline-flex;
+        align-items: center;
         text-decoration: none;
     }
     
     .header-logo:hover {
-        color: white;
+        opacity: 0.9;
+    }
+    
+    .navbar-logo-horizontal {
+        height: 45px;
+        width: auto;
+    }
+    
+    .navbar-logo-vertical {
+        height: 40px;
+        width: auto;
     }
     
     .header-nav {
@@ -111,8 +119,8 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             padding: 12px 15px;
             font-size: 0.9rem;
         }
-        .header-logo {
-            font-size: 1.4rem;
+        .navbar-logo-vertical {
+            height: 35px;
         }
     }
 </style>
@@ -122,7 +130,10 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
     <div class="container">
         <div class="header-top d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                <a href="panel_intranet.php" class="header-logo text-decoration-none">EPCO</a>
+                <a href="panel_intranet.php" class="header-logo text-decoration-none">
+                    <img src="img/Logo%20Horizontal%20Blanco%201.png" alt="Empresa Portuaria Coquimbo" class="navbar-logo-horizontal d-none d-md-inline-block">
+                    <img src="img/Logo%20Vertical.Blanco%20(1)%201.png" alt="Empresa Portuaria Coquimbo" class="navbar-logo-vertical d-inline-block d-md-none">
+                </a>
                 <span class="navbar-badge d-none d-sm-inline">Intranet</span>
             </div>
             <div class="user-menu">

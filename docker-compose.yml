@@ -40,7 +40,7 @@ services:
       - SMTP_PASS=uonf zgkc sfzq xgbc
       - SMTP_ENCRYPTION=tls
       - SMTP_FROM_EMAIL=soporteepco@gmail.com
-      - SMTP_FROM_NAME=Soporte TI - EPCO
+      - SMTP_FROM_NAME=Soporte TI - Empresa Portuaria Coquimbo
       # Relay interno (microservicio de correo)
       - SMTP_RELAY_HOST=mailrelay
       - SMTP_RELAY_PORT=25

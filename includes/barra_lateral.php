@@ -457,7 +457,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 <i class="bi bi-building"></i>
             </div>
             <div class="sidebar-brand-text">
-                <h4>EPCO</h4>
+                <h4>Empresa Portuaria Coquimbo</h4>
                 <span>Intranet</span>
             </div>
         </div>

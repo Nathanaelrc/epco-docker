@@ -47,17 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $emailBody = "
                 <h2>Recuperación de Contraseña</h2>
                 <p>Hola {$user['name']},</p>
-                <p>Has solicitado restablecer tu contraseña en el Portal EPCO.</p>
+                <p>Has solicitado restablecer tu contraseña en el Portal Empresa Portuaria Coquimbo.</p>
                 <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
                 <p><a href='{$resetUrl}'>{$resetUrl}</a></p>
                 <p>Este enlace expirará en 1 hora.</p>
                 <p>Si no solicitaste este cambio, ignora este mensaje.</p>
                 <br>
-                <p>Saludos,<br>Portal EPCO</p>
+                <p>Saludos,<br>Portal Empresa Portuaria Coquimbo</p>
             ";
             
             $stmt = $pdo->prepare('INSERT INTO email_queue (to_email, to_name, subject, body, template) VALUES (?, ?, ?, ?, ?)');
-            $stmt->execute([$user['email'], $user['name'], 'Recuperación de Contraseña - EPCO', $emailBody, 'password_reset']);
+            $stmt->execute([$user['email'], $user['name'], 'Recuperación de Contraseña - Empresa Portuaria Coquimbo', $emailBody, 'password_reset']);
             
             logActivity(null, 'password_reset_requested', 'users', $user['id'], "Solicitud de recuperación de contraseña para {$user['email']}");
         }
@@ -137,7 +137,7 @@ if ($step === 'reset' && $token) {
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <title>EPCO - Recuperar Contraseña</title>
+    <title>Empresa Portuaria Coquimbo - Recuperar Contraseña</title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -219,7 +219,7 @@ if ($step === 'reset' && $token) {
             <div class="col-md-5">
                 <div class="reset-card">
                     <div class="reset-header">
-                        <h1 class="text-white fw-bold mb-2" style="font-size: 2.5rem;">EPCO</h1>
+                        <h1 class="text-white fw-bold mb-2" style="font-size: 2.5rem;">Empresa Portuaria Coquimbo</h1>
                         <p class="text-white-50 mb-0">Portal Corporativo</p>
                     </div>
                     

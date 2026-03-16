@@ -102,7 +102,7 @@ $areas = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPCO - Intranet</title>
+    <title>Empresa Portuaria Coquimbo - Intranet</title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -734,7 +734,7 @@ $areas = [
                             Bienvenido, <span class="welcome-name"><?= htmlspecialchars($user['name']) ?></span>
                         </h1>
                         <p class="mt-3 opacity-75" style="font-size: 1.1rem;">
-                            Accede a todos los recursos y herramientas de EPCO desde un solo lugar.
+                            Accede a todos los recursos y herramientas de Empresa Portuaria Coquimbo desde un solo lugar.
                         </p>
                         
                         <div class="quick-stats">
@@ -1047,7 +1047,7 @@ $areas = [
                 'content' => $n['content'],
                 'image_url' => $n['image_url'],
                 'news_url' => $n['news_url'] ?? '',
-                'author_name' => $n['author_name'] ?? 'EPCO',
+                'author_name' => $n['author_name'] ?? 'Empresa Portuaria Coquimbo',
                 'created_at' => $n['created_at']
             ];
         }, $news)) ?>;
@@ -1058,7 +1058,7 @@ $areas = [
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                    <span class="fw-bold">EPCO</span> - Portal Corporativo
+                    <span class="fw-bold">Empresa Portuaria Coquimbo</span> - Portal Corporativo
                     <br><small class="opacity-75">© <?= date('Y') ?> Todos los derechos reservados</small>
                 </div>
                 <div class="col-md-6 text-center text-md-end footer-links">

@@ -46,7 +46,7 @@ $faqs = [
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <title>EPCO - Soporte TI</title>
+    <title>Empresa Portuaria Coquimbo - Soporte TI</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
@@ -673,7 +673,7 @@ $faqs = [
                     <div class="col-lg-7">
                         <picture>
                             <source srcset="img/Logo01.webp" type="image/webp">
-                            <img src="img/Logo01.png" alt="Logo EPCO" class="header-logo mb-3" style="width: 100px; height: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3));" loading="eager" width="100" height="100">
+                            <img src="img/Logo01.png" alt="Logo Empresa Portuaria Coquimbo" class="header-logo mb-3" style="width: 100px; height: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3));" loading="eager" width="100" height="100">
                         </picture>
                         <div class="header-badge">
                             <i class="bi bi-building"></i>
@@ -903,7 +903,7 @@ $faqs = [
     <footer class="site-footer">
         <div class="container">
             <p class="mb-2">
-                <strong>EPCO</strong> - Centro de Soporte TI
+                <strong>Empresa Portuaria Coquimbo</strong> - Centro de Soporte TI
             </p>
             <p class="small text-white-50 mb-0">
                 © <?= date('Y') ?> Todos los derechos reservados | 
@@ -915,30 +915,51 @@ $faqs = [
     <!-- Modal Consultar Ticket -->
     <div class="modal fade" id="consultarTicketModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
-                    <h5 class="modal-title text-white"><i class="bi bi-search me-2"></i>Consultar Estado de Ticket</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <!-- Formulario de búsqueda -->
-                    <p class="text-muted mb-3">Ingresa tu código de seguimiento para consultar el estado de tu ticket.</p>
-                    <form id="consultarTicketForm" onsubmit="buscarTicket(event)">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Código de Ticket</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light"><i class="bi bi-ticket-perforated"></i></span>
-                                <input type="text" name="ticket_number" id="ticketNumberInput" class="form-control form-control-lg" placeholder="Ej: TK-20260129-A1B2C" required style="border-radius: 0 10px 10px 0;">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden; border: none;">
+                <!-- Header con estilo portuario -->
+                <div class="modal-header border-0 position-relative" style="background: linear-gradient(135deg, #0a2540 0%, #0369a1 50%, #075985 100%); padding: 28px 30px 24px; min-height: 110px;">
+                    <div class="position-absolute w-100 h-100 top-0 start-0" style="background: url('img/Puerto01.webp') center/cover no-repeat; opacity: 0.12;"></div>
+                    <div class="position-relative">
+                        <div class="d-flex align-items-center mb-1">
+                            <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 14px;">
+                                <i class="bi bi-search" style="font-size: 1.2rem; color: #7dd3fc;"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title text-white fw-bold mb-0" style="font-size: 1.2rem;">Seguimiento de Ticket</h5>
+                                <small style="color: rgba(255,255,255,0.6);">Mesa de Ayuda — Soporte TI</small>
                             </div>
                         </div>
-                        <button type="submit" id="btnBuscarTicket" class="btn btn-lg w-100 text-white" style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px;">
-                            <i class="bi bi-search me-2"></i>Consultar Ticket
-                        </button>
-                    </form>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-relative" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Búsqueda -->
+                    <div style="padding: 24px 28px; background: linear-gradient(180deg, #f0f9ff 0%, #fff 100%);">
+                        <p class="text-muted mb-3" style="font-size: 0.92rem;">Ingresa el código que recibiste al crear tu ticket para consultar su estado actual.</p>
+                        <form id="consultarTicketForm" onsubmit="buscarTicket(event)">
+                            <div class="d-flex gap-2">
+                                <div class="input-group flex-grow-1" style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                                    <span class="input-group-text border-0" style="background: #0369a1; color: white; padding: 0 14px;">
+                                        <i class="bi bi-ticket-perforated"></i>
+                                    </span>
+                                    <input type="text" name="ticket_number" id="ticketNumberInput" class="form-control border-0 py-3"
+                                           placeholder="Ej: TK-20260316-A1B2C" required style="font-size: 1rem; font-weight: 500;">
+                                </div>
+                                <button type="submit" id="btnBuscarTicket" class="btn text-white px-4"
+                                        style="background: linear-gradient(135deg, #0369a1, #075985); border-radius: 12px; white-space: nowrap;">
+                                    <i class="bi bi-search me-1"></i> Buscar
+                                </button>
+                            </div>
+                            <div class="d-flex align-items-center mt-2 gap-2">
+                                <i class="bi bi-info-circle text-muted" style="font-size: 0.8rem;"></i>
+                                <small class="text-muted" style="font-size: 0.78rem;">El código fue enviado a tu correo al crear el ticket. Formato: TK-AAAAMMDD-XXXXX</small>
+                            </div>
+                        </form>
+                    </div>
                     
                     <!-- Resultado de la búsqueda -->
-                    <div id="ticketResultado" class="mt-4" style="display:none;">
-                        <hr>
+                    <div id="ticketResultado" style="display:none; padding: 0 28px 24px;">
+                        <hr class="mt-0">
                         <!-- Error -->
                         <div id="ticketError" class="alert alert-danger rounded-3" style="display:none;">
                             <i class="bi bi-exclamation-circle me-2"></i><span id="ticketErrorMsg"></span>
@@ -961,27 +982,27 @@ $faqs = [
                             
                             <div class="row g-3 mb-3">
                                 <div class="col-md-4">
-                                    <div class="p-3 bg-light rounded-3">
-                                        <p class="text-muted small mb-1">Categoría</p>
+                                    <div class="p-3 rounded-3" style="background: #f0f9ff;">
+                                        <p class="text-muted small mb-1"><i class="bi bi-tag me-1"></i>Categoría</p>
                                         <p class="fw-semibold mb-0" id="tkCategory"></p>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="p-3 bg-light rounded-3">
-                                        <p class="text-muted small mb-1">Prioridad</p>
+                                    <div class="p-3 rounded-3" style="background: #fef3c7;">
+                                        <p class="text-muted small mb-1"><i class="bi bi-flag me-1"></i>Prioridad</p>
                                         <p class="fw-semibold mb-0" id="tkPriorityText"></p>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="p-3 bg-light rounded-3">
-                                        <p class="text-muted small mb-1">Asignado a</p>
+                                    <div class="p-3 rounded-3" style="background: #f0fdf4;">
+                                        <p class="text-muted small mb-1"><i class="bi bi-person me-1"></i>Asignado a</p>
                                         <p class="fw-semibold mb-0" id="tkAssigned"></p>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="mb-3">
-                                <p class="text-muted small mb-1">Descripción</p>
+                                <p class="text-muted small mb-1"><i class="bi bi-card-text me-1"></i>Descripción</p>
                                 <div class="p-3 bg-light rounded-3">
                                     <p class="mb-0" id="tkDescription"></p>
                                 </div>

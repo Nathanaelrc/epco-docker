@@ -19,7 +19,7 @@ if (!in_array($user['role'], ['admin', 'soporte'])) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>EPCO - Acceso Denegado</title>
+        <title>Empresa Portuaria Coquimbo - Acceso Denegado</title>
         <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
         <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1384,7 +1384,7 @@ unset($tp);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPCO - Admin Soporte TI</title>
+    <title>Empresa Portuaria Coquimbo - Admin Soporte TI</title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2846,7 +2846,7 @@ unset($tp);
                     html += `<tr><td>${t.numero}</td><td>${t.titulo}</td><td>${t.estado}</td><td>${t.prioridad}</td><td>${t.categoria}</td><td>${t.solicitante}</td><td>${t.creado}</td></tr>`;
                 });
                 html += `</tbody></table></div>
-                <div class="footer">EPCO - Sistema de Soporte TI · Reporte generado automáticamente · ${reportData.fecha_generacion}</div>
+                <div class="footer">Empresa Portuaria Coquimbo - Sistema de Soporte TI · Reporte generado automáticamente · ${reportData.fecha_generacion}</div>
                 </body></html>`;
                 
                 const blob = new Blob([html], { type: 'text/html' });
@@ -4417,7 +4417,7 @@ tr:nth-child(even){background:#f8fafc}
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Informe de Auditoría - EPCO</title>
+<title>Informe de Auditoría - Empresa Portuaria Coquimbo</title>
 <style>
     body { font-family: Arial, sans-serif; margin: 40px; color: #1d2939; font-size: 12px; }
     h1 { color: #0c5a8a; font-size: 22px; border-bottom: 3px solid #0c5a8a; padding-bottom: 10px; }

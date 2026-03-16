@@ -89,7 +89,7 @@ if ($resource === 'health') {
 
 // Versión de la API
 if ($resource === 'version') {
-    successResponse(['version' => '1.0.0', 'name' => 'EPCO API']);
+    successResponse(['version' => '1.0.0', 'name' => 'Empresa Portuaria Coquimbo API']);
 }
 
 // ============== TICKETS ==============

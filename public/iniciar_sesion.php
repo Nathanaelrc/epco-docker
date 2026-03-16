@@ -91,7 +91,7 @@ $pageTitle = 'Iniciar Sesión';
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <title>EPCO - Iniciar Sesión</title>
+    <title>Empresa Portuaria Coquimbo - Iniciar Sesión</title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -180,7 +180,7 @@ $pageTitle = 'Iniciar Sesión';
             <div class="col-md-5">
                 <div class="login-card">
                     <div class="login-header">
-                        <h1 class="text-white fw-bold mb-2" style="font-size: 2.5rem;">EPCO</h1>
+                        <h1 class="text-white fw-bold mb-2" style="font-size: 2.5rem;">Empresa Portuaria Coquimbo</h1>
                         <p class="text-white-50 mb-0">Portal Corporativo</p>
                     </div>
                     

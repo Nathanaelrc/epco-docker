@@ -150,7 +150,7 @@ $pageTitle = 'Crear Ticket';
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <title>EPCO - Nuevo Ticket de Soporte</title>
+    <title>Empresa Portuaria Coquimbo - Nuevo Ticket de Soporte</title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -507,10 +507,7 @@ $pageTitle = 'Crear Ticket';
             <i class="bi bi-arrow-left"></i>
         </a>
         <div class="topbar-brand">
-            <picture>
-                <source srcset="img/Logo01.webp" type="image/webp">
-                <img src="img/Logo01.png" alt="EPCO" loading="eager">
-            </picture>
+            <img src="img/logo5-1.png" alt="Empresa Portuaria Coquimbo" loading="eager">
             <span>Mesa de Ayuda</span>
         </div>
         <div></div>
@@ -560,7 +557,7 @@ $pageTitle = 'Crear Ticket';
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Correo electrónico <span class="required">*</span></label>
-                                <input type="email" name="email" class="form-control" required placeholder="ejemplo@epco.cl">
+                                <input type="email" name="email" class="form-control" required placeholder="ejemplo@puertocoquimbo.cl">
                                 <div class="form-text">Se utilizará para notificaciones sobre el estado de su ticket.</div>
                             </div>
                         </div>

@@ -140,7 +140,7 @@ class MailService {
         $this->mailer->clearAddresses();
         $this->mailer->addAddress(trim($toEmail));
         
-        $this->mailer->Subject = "Correo de Prueba - Notificaciones EPCO";
+        $this->mailer->Subject = "Correo de Prueba - Notificaciones Empresa Portuaria Coquimbo";
         $this->mailer->Body = $this->getTicketCreatedTemplate($ticket);
         $this->mailer->AltBody = $this->getTicketCreatedPlainText($ticket);
         
@@ -165,7 +165,7 @@ class MailService {
             $this->mailer->addAddress(trim($userEmail));
             
             $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
-            $this->mailer->Subject = "Confirmación Ticket #{$ticketNumber} - Soporte TI EPCO";
+            $this->mailer->Subject = "Confirmación Ticket #{$ticketNumber} - Soporte TI Empresa Portuaria Coquimbo";
             $this->mailer->Body = $this->getUserConfirmationTemplate($ticket);
             $this->mailer->AltBody = $this->getUserConfirmationPlainText($ticket);
             
@@ -778,7 +778,7 @@ TEXT;
             $this->mailer->addAddress(trim($assigneeEmail));
 
             $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
-            $this->mailer->Subject = "Ticket #{$ticketNumber} asignado a ti - Soporte TI EPCO";
+            $this->mailer->Subject = "Ticket #{$ticketNumber} asignado a ti - Soporte TI Empresa Portuaria Coquimbo";
             $this->mailer->Body = $this->getTicketAssignedTemplate($ticket, $assigneeName);
             $this->mailer->AltBody = $this->getTicketAssignedPlainText($ticket, $assigneeName);
 
@@ -1014,7 +1014,7 @@ HTML;
             $ticketNumber = $ticket['ticket_number'] ?? "TK-{$ticket['id']}";
             $status = $ticket['status'] ?? 'cerrado';
             $statusLabel = $status === 'resuelto' ? 'Resuelto' : 'Cerrado';
-            $this->mailer->Subject = "Ticket #{$ticketNumber} {$statusLabel} - Soporte TI EPCO";
+            $this->mailer->Subject = "Ticket #{$ticketNumber} {$statusLabel} - Soporte TI Empresa Portuaria Coquimbo";
             $this->mailer->Body = $this->getTicketClosedTemplate($ticket, $resolvedByName);
             $this->mailer->AltBody = $this->getTicketClosedPlainText($ticket, $resolvedByName);
 
@@ -1410,7 +1410,7 @@ TEXT;
                 $this->mailer->clearAddresses();
                 $this->mailer->addAddress(trim($r['email']));
                 
-                $this->mailer->Subject = "Ticket #{$ticketNumber} actualizado - Soporte TI EPCO";
+                $this->mailer->Subject = "Ticket #{$ticketNumber} actualizado - Soporte TI Empresa Portuaria Coquimbo";
                 $this->mailer->Body = $this->getStatusUpdateTemplate($ticket, $oldStatus, $newStatus, $changedByName, $r['name'], $r['role']);
                 $this->mailer->AltBody = $this->getStatusUpdatePlainText($ticket, $oldStatus, $newStatus, $changedByName, $r['name']);
                 
@@ -1467,7 +1467,7 @@ TEXT;
                 $this->mailer->clearAddresses();
                 $this->mailer->addAddress(trim($r['email']));
                 
-                $this->mailer->Subject = "{$typeLabel} en Ticket #{$ticketNumber} - Soporte TI EPCO";
+                $this->mailer->Subject = "{$typeLabel} en Ticket #{$ticketNumber} - Soporte TI Empresa Portuaria Coquimbo";
                 $this->mailer->Body = $this->getCommentNotificationTemplate($ticket, $commentText, $commentByName, $isInternal, $r['name'], $r['role']);
                 $this->mailer->AltBody = $this->getCommentNotificationPlainText($ticket, $commentText, $commentByName, $r['name']);
                 
@@ -1673,7 +1673,7 @@ HTML;
         $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
 
         return <<<TEXT
-ESTADO ACTUALIZADO — Soporte TI EPCO
+ESTADO ACTUALIZADO — Soporte TI Empresa Portuaria Coquimbo
 
 Hola {$recipientName},
 
@@ -1842,7 +1842,7 @@ HTML;
         $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
 
         return <<<TEXT
-NUEVO COMENTARIO — Soporte TI EPCO
+NUEVO COMENTARIO — Soporte TI Empresa Portuaria Coquimbo
 
 Hola {$recipientName},
 

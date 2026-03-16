@@ -1,7 +1,7 @@
 {
-    "name": "EPCO Portal Corporativo",
-    "short_name": "EPCO",
-    "description": "Portal corporativo EPCO - Intranet, Soporte TI y Canal de Denuncias",
+    "name": "Empresa Portuaria Coquimbo - Portal Corporativo",
+    "short_name": "Empresa Portuaria Coquimbo",
+    "description": "Portal corporativo Empresa Portuaria Coquimbo - Intranet, Soporte TI y Canal de Denuncias",
     "start_url": "/public/index.php",
     "display": "standalone",
     "background_color": "#0ea5e9",

@@ -11,7 +11,7 @@ $user = isLoggedIn() ? getCurrentUser() : null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPCO - Documentación API</title>
+    <title>Empresa Portuaria Coquimbo - Documentación API</title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Fira+Code&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -65,10 +65,10 @@ $user = isLoggedIn() ? getCurrentUser() : null;
             <div class="col-lg-9">
                 <!-- Introducción -->
                 <section id="introduccion" class="mb-5">
-                    <h2 class="mb-4"><i class="bi bi-book me-2"></i>API REST EPCO</h2>
+                    <h2 class="mb-4"><i class="bi bi-book me-2"></i>API REST Empresa Portuaria Coquimbo</h2>
                     <div class="card">
                         <div class="card-body">
-                            <p>La API REST de EPCO permite integrar el sistema de soporte con aplicaciones externas. Soporta operaciones CRUD sobre tickets y consulta de usuarios y estadísticas.</p>
+                            <p>La API REST de Empresa Portuaria Coquimbo permite integrar el sistema de soporte con aplicaciones externas. Soporta operaciones CRUD sobre tickets y consulta de usuarios y estadísticas.</p>
                             
                             <h5 class="mt-4">URL Base</h5>
                             <pre><code>https://tu-dominio.com/public/api/</code></pre>
@@ -109,7 +109,7 @@ $user = isLoggedIn() ? getCurrentUser() : null;
                         
                         <h6>Request Body</h6>
                         <pre><code>{
-    "email": "usuario@epco.cl",
+    "email": "usuario@puertocoquimbo.cl",
     "password": "contraseña",
     "name": "Mi App Token"  // Opcional
 }</code></pre>
@@ -285,7 +285,7 @@ $user = isLoggedIn() ? getCurrentUser() : null;
                             <pre><code># Generar token
 curl -X POST https://tu-dominio.com/public/api/tokens \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@epco.cl","password":"password"}'
+  -d '{"email":"admin@puertocoquimbo.cl","password":"password"}'
 
 # Listar tickets
 curl https://tu-dominio.com/public/api/tickets \
