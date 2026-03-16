@@ -20,11 +20,12 @@ if (!in_array($user['role'], ['admin', 'denuncia'])) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Empresa Portuaria Coquimbo - Acceso Denegado</title>
         <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
-        <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
         <style>
-            * { font-family: 'Barlow', sans-serif; }
+            * { font-family: 'Lato', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
             body { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0ea5e9 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
             .error-card { background: white; border-radius: 20px; padding: 50px; text-align: center; max-width: 450px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); }
             .error-icon { width: 100px; height: 100px; background: linear-gradient(135deg, #dc2626, #f87171); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; }
@@ -259,13 +260,14 @@ if (in_array($page, ['detalle', 'editar']) && isset($_GET['id'])) {
     <title>Empresa Portuaria Coquimbo - Panel de Denuncias</title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        * { font-family: 'Barlow', sans-serif; }
+        * { font-family: 'Lato', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
         :root { 
             --primary-dark: #0c5a8a; 
             --primary-light: #094a72; 

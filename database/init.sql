@@ -831,7 +831,7 @@ Email: nombre@puertocoquimbo.cl
 <ol>
 <li><strong>Desconecta tu equipo de la red</strong> inmediatamente (desenchufa el cable o desactiva WiFi)</li>
 <li>No cierres el navegador (el equipo de seguridad puede necesitar la información)</li>
-<li>Llama al <strong>interno 6479</strong> (emergencias TI) e informa lo ocurrido</li>
+<li>Llama al teléfono <strong>512406479</strong> (emergencias TI) e informa lo ocurrido</li>
 <li>Cambia tu contraseña desde otro dispositivo si ingresaste credenciales</li>
 </ol>
 

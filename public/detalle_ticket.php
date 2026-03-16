@@ -296,11 +296,12 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <title>Empresa Portuaria Coquimbo - <?= htmlspecialchars($t['ticket_number']) ?></title>
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        * { font-family: 'Barlow', sans-serif; }
+        * { font-family: 'Lato', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
         :root {
             --primary-dark: #0c5a8a;
             --primary-light: #094a72;

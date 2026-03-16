@@ -171,7 +171,7 @@ $faqs = [
     ['question' => '¿Cuánto tiempo demora la atención?', 'answer' => '<strong>Urgente:</strong> 4 horas | <strong>Alta:</strong> 8 horas | <strong>Media:</strong> 24 horas | <strong>Baja:</strong> 48 horas'],
     ['question' => '¿Qué información debo incluir?', 'answer' => 'Describe detalladamente el problema, incluye mensajes de error si los hay, pasos para reproducirlo y cambios recientes.'],
     ['question' => '¿Puedo adjuntar archivos?', 'answer' => 'Sí, puedes adjuntar hasta 5 archivos (imágenes, PDF, Word) de máximo 5MB cada uno.'],
-    ['question' => '¿Qué hago en caso de emergencia?', 'answer' => 'Contacta directamente al <strong>interno 6479</strong> o envía correo a <strong>gismodes@puertocoquimbo.cl</strong> / <strong>asesorti@puertocoquimbo.cl</strong>']
+    ['question' => '¿Qué hago en caso de emergencia?', 'answer' => 'Contacta directamente al teléfono <strong>512406479</strong> o envía correo a <strong>gismodes@puertocoquimbo.cl</strong> / <strong>asesorti@puertocoquimbo.cl</strong>']
 ];
 
 $pageTitle = 'Soporte TI';
@@ -182,7 +182,7 @@ $pageTitle = 'Soporte TI';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Empresa Portuaria Coquimbo - Soporte TI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="css/intranet.css" rel="stylesheet">
@@ -673,7 +673,7 @@ $pageTitle = 'Soporte TI';
                             <div class="mt-4 p-4 bg-light rounded-3">
                                 <h6><i class="bi bi-telephone me-2"></i>¿Necesitas ayuda inmediata?</h6>
                                 <p class="mb-0 text-muted">
-                                    Llama al <strong>interno 6479</strong> o escríbenos a 
+                                    Llama al teléfono <strong>512406479</strong> o escríbenos a 
                                     <a href="mailto:gismodes@puertocoquimbo.cl">gismodes@puertocoquimbo.cl</a> / <a href="mailto:asesorti@puertocoquimbo.cl">asesorti@puertocoquimbo.cl</a>
                                 </p>
                             </div>

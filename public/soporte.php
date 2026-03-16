@@ -29,11 +29,14 @@ if ($user) {
 
 // FAQ items
 $faqs = [
-    ['q' => '¿Cómo puedo hacer seguimiento a mi ticket?', 'a' => 'Ingresa a "Consultar Ticket" con tu número de ticket y correo electrónico.', 'icon' => 'bi-search'],
-    ['q' => '¿Cuánto tiempo demora la atención?', 'a' => 'Urgente: 4h | Alta: 8h | Media: 24h | Baja: 48h', 'icon' => 'bi-clock'],
-    ['q' => '¿Qué información debo incluir?', 'a' => 'Descripción detallada, mensajes de error, pasos para reproducir y cambios recientes.', 'icon' => 'bi-info-circle'],
-    ['q' => '¿Puedo adjuntar archivos?', 'a' => 'Sí, puedes adjuntar capturas de pantalla y documentos al crear el ticket.', 'icon' => 'bi-paperclip'],
-    ['q' => '¿Qué hago en caso de emergencia?', 'a' => 'Contacta al interno 6479 o escribe a gismodes@puertocoquimbo.cl / asesorti@puertocoquimbo.cl', 'icon' => 'bi-exclamation-triangle'],
+    ['q' => '¿Cómo puedo hacer seguimiento a mi ticket?', 'a' => 'Ingresa a la sección <strong>"Consultar Ticket"</strong> desde esta misma página. Necesitarás el código de seguimiento con formato <code>TK-AAAAMMDD-XXXXX</code> que fue enviado a tu correo electrónico al momento de crear el ticket. Con ese código podrás ver el estado actual, la prioridad asignada, el técnico responsable y el historial de comentarios.', 'icon' => 'bi-search'],
+    ['q' => '¿Cuánto tiempo demora la atención?', 'a' => 'Los tiempos de primera respuesta dependen de la prioridad asignada:<br><strong>Urgente:</strong> máximo 4 horas (sistemas críticos caídos que afectan a múltiples usuarios).<br><strong>Alta:</strong> máximo 8 horas (problemas que impiden trabajar a un usuario).<br><strong>Media:</strong> máximo 24 horas (problemas que no impiden el trabajo pero lo dificultan).<br><strong>Baja:</strong> máximo 48 horas (consultas generales o mejoras).', 'icon' => 'bi-clock'],
+    ['q' => '¿Qué información debo incluir en mi ticket?', 'a' => 'Para una atención más rápida, incluye: <strong>1)</strong> Descripción clara del problema, <strong>2)</strong> Mensajes de error exactos que aparecen en pantalla, <strong>3)</strong> Pasos para reproducir el problema, <strong>4)</strong> Desde cuándo ocurre, <strong>5)</strong> Si realizaste algún cambio reciente en tu equipo. También puedes adjuntar capturas de pantalla que ayuden a entender mejor la situación.', 'icon' => 'bi-info-circle'],
+    ['q' => '¿Qué tipos de problemas puedo reportar?', 'a' => 'Puedes reportar cualquier incidencia tecnológica: problemas con tu computador (lentitud, pantallazos azules, no enciende), software (errores en aplicaciones, Office, correo Outlook), red e internet (sin conexión, WiFi lento), accesos (contraseñas bloqueadas, permisos), impresoras, telefonía y cualquier otro equipo tecnológico de la empresa.', 'icon' => 'bi-motherboard'],
+    ['q' => '¿Puedo adjuntar archivos a mi ticket?', 'a' => 'Sí, al crear el ticket puedes adjuntar archivos como capturas de pantalla, documentos o cualquier evidencia relevante. Los formatos aceptados incluyen imágenes (JPG, PNG), documentos (PDF, DOC) y otros archivos de uso común. Esto ayuda al equipo técnico a diagnosticar tu problema con mayor precisión.', 'icon' => 'bi-paperclip'],
+    ['q' => '¿Cómo sé qué prioridad asignar a mi ticket?', 'a' => '<strong>Urgente:</strong> Sistemas críticos completamente caídos que afectan a varios usuarios (ej: servidor de correo no funciona, sistema ERP caído).<br><strong>Alta:</strong> No puedes realizar tu trabajo (ej: tu PC no enciende, sin acceso al sistema).<br><strong>Media:</strong> Puedes trabajar pero con dificultad (ej: programa lento, impresora atascada).<br><strong>Baja:</strong> Consultas, solicitudes de mejora o problemas menores (ej: cambio de tóner, consulta sobre software).', 'icon' => 'bi-flag'],
+    ['q' => '¿Qué es la Base de Conocimiento?', 'a' => 'Es una biblioteca de artículos y guías que te permiten resolver problemas comunes por tu cuenta, sin necesidad de crear un ticket. Incluye soluciones para problemas de hardware, software, red, accesos y procedimientos de emergencia. Te recomendamos consultarla antes de crear un ticket, ya que podrías encontrar la solución de inmediato.', 'icon' => 'bi-book'],
+    ['q' => '¿Qué hago en caso de emergencia?', 'a' => 'Si se trata de un problema crítico que afecta sistemas esenciales o a múltiples usuarios, contacta directamente al teléfono <strong>512406479</strong> o escribe a <strong>gismodes@puertocoquimbo.cl</strong> / <strong>asesorti@puertocoquimbo.cl</strong>. El equipo de soporte evaluará la situación y activará el protocolo de emergencia correspondiente.', 'icon' => 'bi-exclamation-triangle'],
 ];
 ?>
 <!DOCTYPE html>
@@ -52,12 +55,13 @@ $faqs = [
     <link rel="icon" type="image/webp" href="img/Logo01.webp"><link rel="icon" type="image/png" href="img/Logo01.png">
     <link rel="shortcut icon" type="image/webp" href="img/Logo01.webp">
     
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
     <style>
-        * { font-family: 'Barlow', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        * { font-family: 'Lato', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        h1, h2, h3, h4, h5, h6, .fw-bold, .fw-semibold, .btn, .badge { font-family: 'Montserrat', sans-serif; }
         
         body {
             background: #f5f7fa;
@@ -699,7 +703,7 @@ $faqs = [
                 <div class="col-lg-4 col-md-6 fade-up">
                     <a href="<?= $ticketCreateUrl ?>" class="action-card primary">
                         <div class="action-icon">
-                            <i class="bi bi-plus-circle"></i>
+                            <i class="bi bi-file-earmark-plus"></i>
                         </div>
                         <h4>Crear Ticket</h4>
                         <p>Reporta un problema técnico o solicita asistencia de TI.</p>
@@ -712,7 +716,7 @@ $faqs = [
                 <div class="col-lg-4 col-md-6 fade-up">
                     <a href="#" class="action-card secondary" data-bs-toggle="modal" data-bs-target="#consultarTicketModal">
                         <div class="action-icon">
-                            <i class="bi bi-search"></i>
+                            <i class="bi bi-clipboard2-check"></i>
                         </div>
                         <h4>Consultar Ticket</h4>
                         <p>Revisa el estado de tu ticket con tu código de seguimiento.</p>
@@ -725,7 +729,7 @@ $faqs = [
                 <div class="col-lg-4 col-md-6 fade-up">
                     <a href="base_conocimiento.php" class="action-card tertiary">
                         <div class="action-icon">
-                            <i class="bi bi-book"></i>
+                            <i class="bi bi-journal-bookmark"></i>
                         </div>
                         <h4>Base de Conocimiento</h4>
                         <p>Encuentra soluciones a problemas comunes por tu cuenta.</p>
@@ -751,7 +755,7 @@ $faqs = [
                     <div class="process-step">
                         <div class="step-number">1</div>
                         <div class="step-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
-                            <i class="bi bi-pencil-square"></i>
+                            <i class="bi bi-file-earmark-text"></i>
                         </div>
                         <h5>Describe el Problema</h5>
                         <p>Completa el formulario con los detalles de tu incidencia técnica.</p>
@@ -761,7 +765,7 @@ $faqs = [
                     <div class="process-step">
                         <div class="step-number">2</div>
                         <div class="step-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
-                            <i class="bi bi-ticket-perforated"></i>
+                            <i class="bi bi-upc-scan"></i>
                         </div>
                         <h5>Recibe tu Código</h5>
                         <p>Obtendrás un número único para dar seguimiento a tu solicitud.</p>
@@ -771,7 +775,7 @@ $faqs = [
                     <div class="process-step">
                         <div class="step-number">3</div>
                         <div class="step-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-                            <i class="bi bi-person-gear"></i>
+                            <i class="bi bi-wrench-adjustable-circle"></i>
                         </div>
                         <h5>Atención Técnica</h5>
                         <p>Un especialista será asignado y trabajará en tu caso.</p>
@@ -781,7 +785,7 @@ $faqs = [
                     <div class="process-step">
                         <div class="step-number">4</div>
                         <div class="step-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                            <i class="bi bi-check-circle"></i>
+                            <i class="bi bi-shield-check"></i>
                         </div>
                         <h5>Problema Resuelto</h5>
                         <p>Recibirás notificación cuando tu ticket sea solucionado.</p>
@@ -841,7 +845,7 @@ $faqs = [
             </div>
             
             <div class="row justify-content-center">
-                <div class="col-lg-8">
+                <div class="col-lg-9">
                     <?php foreach ($faqs as $i => $faq): ?>
                     <div class="faq-item">
                         <div class="faq-question">
@@ -878,8 +882,8 @@ $faqs = [
                                         <i class="bi bi-telephone"></i>
                                     </div>
                                     <div>
-                                        <h6>Interno de Emergencias</h6>
-                                        <p>6479</p>
+                                        <h6>Teléfono de Soporte</h6>
+                                        <p>512406479</p>
                                     </div>
                                 </div>
                                 <div class="contact-info">
