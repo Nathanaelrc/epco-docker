@@ -13,13 +13,27 @@ function isSafeRedirect($redirect) {
     
     // Lista blanca de páginas permitidas
     $allowedPages = [
-        'soporte_admin', 'intranet_dashboard', 'intranet_soporte',
-        'denuncias', 'denuncia_seguimiento', 'profile', 'index',
-        'documents', 'events', 'knowledge_base', 'search', 'soporte'
+        'soporte_admin', 'panel_intranet', 'intranet_soporte',
+        'denuncias', 'denuncia_seguimiento', 'perfil', 'index',
+        'documentos', 'eventos', 'base_conocimiento', 'buscar', 'soporte',
+        'intranet', 'crear_ticket', 'reportes', 'encuesta'
     ];
     
     // Limpiar el redirect
     $redirect = basename(str_replace('.php', '', $redirect));
+    
+    // Mapeo de nombres antiguos a nuevos
+    $aliases = [
+        'intranet_dashboard' => 'panel_intranet',
+        'profile' => 'perfil',
+        'documents' => 'documentos',
+        'events' => 'eventos',
+        'knowledge_base' => 'base_conocimiento',
+        'search' => 'buscar',
+    ];
+    if (isset($aliases[$redirect])) {
+        $redirect = $aliases[$redirect];
+    }
     
     return in_array($redirect, $allowedPages);
 }
@@ -30,11 +44,13 @@ if (isLoggedIn()) {
     
     if ($redirect && isSafeRedirect($redirect)) {
         $redirect = basename(str_replace('.php', '', $redirect));
-        header("Location: $redirect");
+        $aliases = ['intranet_dashboard' => 'panel_intranet', 'profile' => 'perfil', 'documents' => 'documentos', 'events' => 'eventos', 'knowledge_base' => 'base_conocimiento', 'search' => 'buscar'];
+        if (isset($aliases[$redirect])) $redirect = $aliases[$redirect];
+        header("Location: {$redirect}.php");
     } elseif ($_SESSION['user_role'] === 'soporte') {
-        header("Location: soporte_admin");
+        header("Location: soporte_admin.php");
     } else {
-        header("Location: intranet_dashboard");
+        header("Location: panel_intranet.php");
     }
     exit;
 }
@@ -63,11 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 if ($redirect && isSafeRedirect($redirect)) {
                     $redirect = basename(str_replace('.php', '', $redirect));
-                    header("Location: $redirect");
+                    $aliases = ['intranet_dashboard' => 'panel_intranet', 'profile' => 'perfil', 'documents' => 'documentos', 'events' => 'eventos', 'knowledge_base' => 'base_conocimiento', 'search' => 'buscar'];
+                    if (isset($aliases[$redirect])) $redirect = $aliases[$redirect];
+                    header("Location: {$redirect}.php");
                 } elseif ($_SESSION['user_role'] === 'soporte') {
-                    header("Location: soporte_admin");
+                    header("Location: soporte_admin.php");
                 } else {
-                    header("Location: intranet_dashboard");
+                    header("Location: panel_intranet.php");
                 }
                 exit;
             } else {
