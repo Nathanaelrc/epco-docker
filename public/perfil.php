@@ -158,7 +158,14 @@ $roleColors = ['admin' => 'danger', 'soporte' => 'warning', 'social' => 'info', 
     <link href="css/intranet.css" rel="stylesheet">
 </head>
 <body class="has-sidebar">
-    <?php include '../includes/barra_lateral.php'; ?>
+    <?php 
+    // Usuarios de soporte ven la barra lateral de Soporte TI, no la de Intranet
+    if (in_array($user['role'], ['admin', 'soporte'])) {
+        include '../includes/barra_lateral_soporte.php';
+    } else {
+        include '../includes/barra_lateral.php';
+    }
+    ?>
 
     <!-- Profile Header -->
     <div class="profile-header">
