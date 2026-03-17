@@ -4184,489 +4184,418 @@ unset($tp);
             </script>
             
             <?php elseif ($page === 'notificaciones'): ?>
-            <!-- ========== GESTIÓN DE DESTINATARIOS DE NOTIFICACIONES ========== -->
+            <!-- ========== CENTRO DE NOTIFICACIONES - DISEÑO MODERNO ========== -->
             
-            <!-- Estadísticas rápidas -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-envelope"></i>
-                        </div>
-                        <div class="stat-number"><?= $notifStats['total'] ?></div>
-                        <div class="stat-label">Total Registrados</div>
+            <!-- Header de sección -->
+            <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+                <div>
+                    <h4 class="fw-bold mb-1" style="color: #1e293b;">Centro de Notificaciones</h4>
+                    <p class="text-muted mb-0 small">Gestiona destinatarios, remitentes y la configuración de envío de correos</p>
+                </div>
+                <?php if ($isAdmin): ?>
+                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2" style="font-size: 11px;">
+                    <i class="bi bi-shield-check me-1"></i>Administrador
+                </span>
+                <?php endif; ?>
+            </div>
+
+            <!-- Métricas resumidas -->
+            <div class="row g-3 mb-4">
+                <div class="col-lg-3 col-6">
+                    <div class="bg-white rounded-3 border p-3 text-center" style="border-left: 4px solid #3b82f6 !important;">
+                        <div class="text-muted small mb-1">Registrados</div>
+                        <div class="fw-bold fs-4" style="color: #1e293b;"><?= $notifStats['total'] ?></div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-check-circle"></i>
-                        </div>
-                        <div class="stat-number"><?= $notifStats['active'] ?></div>
-                        <div class="stat-label">Activos</div>
+                <div class="col-lg-3 col-6">
+                    <div class="bg-white rounded-3 border p-3 text-center" style="border-left: 4px solid #10b981 !important;">
+                        <div class="text-muted small mb-1">Activos</div>
+                        <div class="fw-bold fs-4" style="color: #1e293b;"><?= $notifStats['active'] ?></div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-ticket-perforated"></i>
-                        </div>
-                        <div class="stat-number"><?= $notifStats['ticket_created'] ?></div>
-                        <div class="stat-label">Reciben "Ticket Creado"</div>
+                <div class="col-lg-3 col-6">
+                    <div class="bg-white rounded-3 border p-3 text-center" style="border-left: 4px solid #f59e0b !important;">
+                        <div class="text-muted small mb-1">Ticket Creado</div>
+                        <div class="fw-bold fs-4" style="color: #1e293b;"><?= $notifStats['ticket_created'] ?></div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-arrow-repeat"></i>
-                        </div>
-                        <div class="stat-number"><?= $notifStats['ticket_updated'] ?></div>
-                        <div class="stat-label">Reciben "Ticket Actualizado"</div>
+                <div class="col-lg-3 col-6">
+                    <div class="bg-white rounded-3 border p-3 text-center" style="border-left: 4px solid #8b5cf6 !important;">
+                        <div class="text-muted small mb-1">Ticket Actualizado</div>
+                        <div class="fw-bold fs-4" style="color: #1e293b;"><?= $notifStats['ticket_updated'] ?></div>
                     </div>
                 </div>
             </div>
-            
-            <div class="row g-4">
-                <?php if ($isAdmin): ?>
-                <!-- Formulario para agregar correo (solo admin) -->
-                <div class="col-lg-4">
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-primary"></i>Agregar Destinatario</h5>
-                        </div>
-                        <div class="card-body px-4 pb-4">
+
+            <!-- Navegación por pestañas -->
+            <div class="bg-white rounded-3 border shadow-sm">
+                <ul class="nav nav-tabs px-4 pt-3" id="notifTabs" role="tablist" style="border-bottom: 2px solid #e2e8f0;">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-semibold px-4 pb-3" id="tab-destinatarios" data-bs-toggle="tab" data-bs-target="#panel-destinatarios" type="button" role="tab" style="border: none; border-bottom: 3px solid transparent; color: #64748b; font-size: 13px;">
+                            <i class="bi bi-people me-2"></i>Destinatarios
+                            <span class="badge bg-primary bg-opacity-15 text-primary ms-2" style="font-size: 10px;"><?= count($notificationRecipients) ?></span>
+                        </button>
+                    </li>
+                    <?php if ($isAdmin): ?>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold px-4 pb-3" id="tab-remitentes" data-bs-toggle="tab" data-bs-target="#panel-remitentes" type="button" role="tab" style="border: none; border-bottom: 3px solid transparent; color: #64748b; font-size: 13px;">
+                            <i class="bi bi-envelope-paper me-2"></i>Remitentes
+                            <span class="badge bg-success bg-opacity-15 text-success ms-2" style="font-size: 10px;"><?= count($smtpSenders) ?></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold px-4 pb-3" id="tab-smtp" data-bs-toggle="tab" data-bs-target="#panel-smtp" type="button" role="tab" style="border: none; border-bottom: 3px solid transparent; color: #64748b; font-size: 13px;">
+                            <i class="bi bi-gear me-2"></i>Configuración SMTP
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold px-4 pb-3" id="tab-prueba" data-bs-toggle="tab" data-bs-target="#panel-prueba" type="button" role="tab" style="border: none; border-bottom: 3px solid transparent; color: #64748b; font-size: 13px;">
+                            <i class="bi bi-send me-2"></i>Prueba de Envío
+                        </button>
+                    </li>
+                    <?php endif; ?>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- ==================== TAB: DESTINATARIOS ==================== -->
+                    <div class="tab-pane fade show active p-4" id="panel-destinatarios" role="tabpanel">
+                        
+                        <?php if ($isAdmin): ?>
+                        <!-- Formulario agregar destinatario -->
+                        <div class="bg-light rounded-3 p-4 mb-4">
+                            <h6 class="fw-bold mb-3" style="color: #1e293b;"><i class="bi bi-plus-circle me-2 text-primary"></i>Agregar nuevo destinatario</h6>
                             <form method="POST" id="addNotifForm">
-            <?= csrfInput() ?>
+                                <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="add_notification_email">
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold small">Correo Electrónico <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
-                                        <input type="email" name="notif_email" class="form-control" placeholder="correo@ejemplo.cl" required>
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold text-muted">Correo Electrónico <span class="text-danger">*</span></label>
+                                        <input type="email" name="notif_email" class="form-control form-control-sm" placeholder="correo@ejemplo.cl" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-semibold text-muted">Nombre (opcional)</label>
+                                        <input type="text" name="notif_name" class="form-control form-control-sm" placeholder="Nombre">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-semibold text-muted">Tipo de Evento</label>
+                                        <select name="notif_event" class="form-select form-select-sm">
+                                            <option value="all">Todas las notificaciones</option>
+                                            <option value="ticket_created">Solo tickets creados</option>
+                                            <option value="ticket_updated">Solo tickets actualizados</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                                            <i class="bi bi-plus-lg me-1"></i>Agregar
+                                        </button>
                                     </div>
                                 </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold small">Nombre (opcional)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
-                                        <input type="text" name="notif_name" class="form-control" placeholder="Nombre del destinatario">
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold small">Tipo de Evento</label>
-                                    <select name="notif_event" class="form-select">
-                                        <option value="all">Todas las notificaciones</option>
-                                        <option value="ticket_created">Solo tickets creados</option>
-                                        <option value="ticket_updated">Solo tickets actualizados</option>
-                                    </select>
-                                    <div class="form-text small">Selecciona qué tipo de notificaciones recibirá</div>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="bi bi-plus-lg me-1"></i> Agregar Correo
-                                </button>
                             </form>
                         </div>
-                    </div>
-                    
-                    <!-- Enviar correo de prueba -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-send me-2 text-info"></i>Enviar Correo de Prueba</h5>
-                        </div>
-                        <div class="card-body px-4 pb-4">
-                            <form method="POST">
-            <?= csrfInput() ?>
-                                <input type="hidden" name="action" value="send_test_email">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold small">Enviar prueba a:</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light"><i class="bi bi-envelope-paper"></i></span>
-                                        <input type="email" name="test_email" class="form-control" placeholder="correo@ejemplo.cl" required>
-                                    </div>
-                                    <div class="form-text small">Se enviará un ticket de prueba para verificar la configuración SMTP</div>
-                                </div>
-                                <button type="submit" class="btn btn-outline-info w-100">
-                                    <i class="bi bi-send me-1"></i> Enviar Prueba
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-                <!-- Tabla de destinatarios -->
-                <div class="<?= $isAdmin ? 'col-lg-8' : 'col-12' ?>">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Destinatarios Registrados</h5>
-                            <span class="badge bg-primary rounded-pill"><?= count($notificationRecipients) ?> total</span>
-                        </div>
-                        <div class="card-body p-0">
-                            <?php if (empty($notificationRecipients)): ?>
-                            <div class="text-center py-5">
-                                <i class="bi bi-envelope-x text-muted" style="font-size: 3rem;"></i>
-                                <p class="text-muted mt-3">No hay destinatarios registrados.<br>Agrega correos para recibir notificaciones.</p>
+                        <?php endif; ?>
+
+                        <!-- Tabla de destinatarios -->
+                        <?php if (empty($notificationRecipients)): ?>
+                        <div class="text-center py-5">
+                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="bi bi-envelope-x text-muted" style="font-size: 2rem;"></i>
                             </div>
-                            <?php else: ?>
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="bg-light">
-                                        <tr>
-                                            <th class="ps-4">Correo</th>
-                                            <th>Nombre</th>
-                                            <th>Evento</th>
-                                            <th>Estado</th>
-                                            <th>Registrado</th>
-                                            <?php if ($isAdmin): ?><th class="text-end pe-4">Acciones</th><?php endif; ?>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($notificationRecipients as $nr): ?>
-                                        <tr class="<?= !$nr['is_active'] ? 'table-secondary opacity-75' : '' ?>">
-                                            <td class="ps-4">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center <?= $nr['is_active'] ? 'bg-success' : 'bg-secondary' ?> bg-opacity-10" style="width: 36px; height: 36px;">
-                                                        <i class="bi bi-envelope <?= $nr['is_active'] ? 'text-success' : 'text-secondary' ?>"></i>
-                                                    </div>
-                                                    <div>
-                                                        <span class="fw-semibold small"><?= htmlspecialchars($nr['email']) ?></span>
-                                                    </div>
+                            <p class="text-muted mb-1 fw-semibold">No hay destinatarios registrados</p>
+                            <p class="text-muted small">Agrega correos para que reciban notificaciones del sistema.</p>
+                        </div>
+                        <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                                <thead>
+                                    <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                                        <th class="ps-4 py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Correo</th>
+                                        <th class="py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Nombre</th>
+                                        <th class="py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Evento</th>
+                                        <th class="py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Estado</th>
+                                        <th class="py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Fecha</th>
+                                        <?php if ($isAdmin): ?><th class="text-end pe-4 py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Acciones</th><?php endif; ?>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($notificationRecipients as $nr): ?>
+                                    <tr class="<?= !$nr['is_active'] ? 'opacity-50' : '' ?>" style="border-bottom: 1px solid #f1f5f9;">
+                                        <td class="ps-4 py-3">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center <?= $nr['is_active'] ? 'bg-success' : 'bg-secondary' ?> bg-opacity-10" style="width: 32px; height: 32px; min-width: 32px;">
+                                                    <i class="bi bi-envelope-fill <?= $nr['is_active'] ? 'text-success' : 'text-secondary' ?>" style="font-size: 13px;"></i>
                                                 </div>
-                                            </td>
-                                            <td class="small"><?= htmlspecialchars($nr['name'] ?: '—') ?></td>
-                                            <td>
-                                                <?php
-                                                $eventLabels = ['all' => 'Todas', 'ticket_created' => 'Ticket Creado', 'ticket_updated' => 'Ticket Actualizado'];
-                                                $eventColors = ['all' => 'primary', 'ticket_created' => 'warning', 'ticket_updated' => 'info'];
-                                                ?>
-                                                <span class="badge bg-<?= $eventColors[$nr['event_type']] ?? 'secondary' ?> bg-opacity-10 text-<?= $eventColors[$nr['event_type']] ?? 'secondary' ?>">
-                                                    <?= $eventLabels[$nr['event_type']] ?? $nr['event_type'] ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <?php if ($nr['is_active']): ?>
-                                                <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle me-1"></i>Activo</span>
-                                                <?php else: ?>
-                                                <span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-pause-circle me-1"></i>Pausado</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="small text-muted"><?= date('d/m/Y', strtotime($nr['created_at'])) ?></td>
-                                            <?php if ($isAdmin): ?>
-                                            <td class="text-end pe-4">
+                                                <span class="fw-semibold"><?= htmlspecialchars($nr['email']) ?></span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 text-muted"><?= htmlspecialchars($nr['name'] ?: '—') ?></td>
+                                        <td class="py-3">
+                                            <?php
+                                            $eventLabels = ['all' => 'Todas', 'ticket_created' => 'Creado', 'ticket_updated' => 'Actualizado'];
+                                            $eventColors = ['all' => 'primary', 'ticket_created' => 'warning', 'ticket_updated' => 'info'];
+                                            ?>
+                                            <span class="badge bg-<?= $eventColors[$nr['event_type']] ?? 'secondary' ?> bg-opacity-10 text-<?= $eventColors[$nr['event_type']] ?? 'secondary' ?>" style="font-size: 11px;">
+                                                <?= $eventLabels[$nr['event_type']] ?? $nr['event_type'] ?>
+                                            </span>
+                                        </td>
+                                        <td class="py-3">
+                                            <?php if ($nr['is_active']): ?>
+                                            <span class="d-inline-flex align-items-center gap-1"><span class="rounded-circle bg-success" style="width:8px;height:8px;display:inline-block;"></span> <span class="small">Activo</span></span>
+                                            <?php else: ?>
+                                            <span class="d-inline-flex align-items-center gap-1"><span class="rounded-circle bg-secondary" style="width:8px;height:8px;display:inline-block;"></span> <span class="small text-muted">Pausado</span></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-3 small text-muted"><?= date('d/m/Y', strtotime($nr['created_at'])) ?></td>
+                                        <?php if ($isAdmin): ?>
+                                        <td class="text-end pe-4 py-3">
+                                            <div class="d-flex gap-1 justify-content-end">
                                                 <form method="POST" class="d-inline">
-            <?= csrfInput() ?>
+                                                    <?= csrfInput() ?>
                                                     <input type="hidden" name="action" value="toggle_notification_email">
                                                     <input type="hidden" name="notif_id" value="<?= $nr['id'] ?>">
-                                                    <button type="submit" class="btn btn-sm <?= $nr['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?>" title="<?= $nr['is_active'] ? 'Pausar' : 'Activar' ?>">
-                                                        <i class="bi <?= $nr['is_active'] ? 'bi-pause' : 'bi-play' ?>"></i>
+                                                    <button type="submit" class="btn btn-sm btn-light border" title="<?= $nr['is_active'] ? 'Pausar' : 'Activar' ?>" style="width:32px;height:32px;padding:0;">
+                                                        <i class="bi <?= $nr['is_active'] ? 'bi-pause text-warning' : 'bi-play text-success' ?>" style="font-size:13px;"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="POST" class="d-inline">
+                                                    <?= csrfInput() ?>
+                                                    <input type="hidden" name="action" value="send_test_email">
+                                                    <input type="hidden" name="test_email" value="<?= htmlspecialchars($nr['email']) ?>">
+                                                    <button type="submit" class="btn btn-sm btn-light border" title="Enviar prueba" style="width:32px;height:32px;padding:0;">
+                                                        <i class="bi bi-send text-info" style="font-size:13px;"></i>
                                                     </button>
                                                 </form>
                                                 <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este destinatario?')">
-            <?= csrfInput() ?>
+                                                    <?= csrfInput() ?>
                                                     <input type="hidden" name="action" value="delete_notification_email">
                                                     <input type="hidden" name="notif_id" value="<?= $nr['id'] ?>">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                        <i class="bi bi-trash"></i>
+                                                    <button type="submit" class="btn btn-sm btn-light border" title="Eliminar" style="width:32px;height:32px;padding:0;">
+                                                        <i class="bi bi-trash text-danger" style="font-size:13px;"></i>
                                                     </button>
                                                 </form>
-                                                <form method="POST" class="d-inline">
-            <?= csrfInput() ?>
-                                                    <input type="hidden" name="action" value="send_test_email">
-                                                    <input type="hidden" name="test_email" value="<?= htmlspecialchars($nr['email']) ?>">
-                                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Enviar correo de prueba">
-                                                        <i class="bi bi-send"></i>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                            <?php endif; ?>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <?php endif; ?>
+                                            </div>
+                                        </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
+                        <?php endif; ?>
                     </div>
-                    
+
                     <?php if ($isAdmin): ?>
-                    <!-- ========== GESTIÓN DE REMITENTES ========== -->
-                    <div class="card border-0 shadow-sm mt-4">
-                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-envelope-paper me-2 text-success"></i>Remitentes de Correo <span class="badge bg-danger bg-opacity-10 text-danger ms-2" style="font-size:10px;">Solo Admin</span></h5>
-                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#sendersPanel" aria-expanded="false">
-                                <i class="bi bi-chevron-down me-1"></i>Mostrar
-                            </button>
-                        </div>
-                        <div class="collapse" id="sendersPanel">
-                        <div class="card-body px-4 pb-4">
-                            <p class="small text-muted mb-3"><i class="bi bi-info-circle me-1"></i>Gestiona los correos remitentes que aparecen como "De:" al enviar notificaciones. El remitente <strong>predeterminado</strong> se usa en todos los envíos automáticos.</p>
-                            
-                            <div class="row g-4">
-                                <!-- Formulario para agregar remitente -->
-                                <div class="col-lg-4">
-                                    <div class="card border-0 bg-light">
-                                        <div class="card-body p-3">
-                                            <h6 class="fw-bold mb-3"><i class="bi bi-plus-circle me-2 text-primary"></i>Agregar Remitente</h6>
-                                            <form method="POST" id="addSenderForm">
-                                                <?= csrfInput() ?>
-                                                <input type="hidden" name="action" value="add_sender">
-                                                
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold small">Correo Electrónico <span class="text-danger">*</span></label>
-                                                    <div class="input-group input-group-sm">
-                                                        <span class="input-group-text bg-white"><i class="bi bi-envelope-at"></i></span>
-                                                        <input type="email" name="sender_email" class="form-control" placeholder="noreply@puertocoquimbo.cl" required>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold small">Nombre del Remitente</label>
-                                                    <div class="input-group input-group-sm">
-                                                        <span class="input-group-text bg-white"><i class="bi bi-building"></i></span>
-                                                        <input type="text" name="sender_name" class="form-control" placeholder="Soporte TI - Empresa Portuaria">
-                                                    </div>
-                                                </div>
-                                                
-                                                <button type="submit" class="btn btn-primary btn-sm w-100">
-                                                    <i class="bi bi-plus-lg me-1"></i> Agregar Remitente
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Tabla de remitentes -->
-                                <div class="col-lg-8">
-                                    <?php if (empty($smtpSenders)): ?>
-                                    <div class="text-center py-5">
-                                        <i class="bi bi-envelope-x text-muted" style="font-size: 3rem;"></i>
-                                        <p class="text-muted mt-3">No hay remitentes registrados.<br>Agrega un correo remitente para enviar notificaciones.</p>
-                                    </div>
-                                    <?php else: ?>
-                                    <div class="table-responsive">
-                                        <table class="table table-hover mb-0 align-middle">
-                                            <thead class="bg-light">
-                                                <tr>
-                                                    <th class="ps-3">Correo</th>
-                                                    <th>Nombre</th>
-                                                    <th>Estado</th>
-                                                    <th>Registrado</th>
-                                                    <th class="text-end pe-3">Acciones</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach ($smtpSenders as $sender): ?>
-                                                <tr class="<?= !$sender['is_active'] ? 'table-secondary opacity-75' : '' ?>" id="sender-row-<?= $sender['id'] ?>">
-                                                    <td class="ps-3">
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <div class="rounded-circle d-flex align-items-center justify-content-center <?= $sender['is_default'] ? 'bg-warning' : ($sender['is_active'] ? 'bg-success' : 'bg-secondary') ?> bg-opacity-10" style="width: 36px; height: 36px;">
-                                                                <i class="bi <?= $sender['is_default'] ? 'bi-star-fill text-warning' : ($sender['is_active'] ? 'bi-envelope text-success' : 'bi-envelope text-secondary') ?>"></i>
-                                                            </div>
-                                                            <div>
-                                                                <span class="fw-semibold small"><?= htmlspecialchars($sender['email']) ?></span>
-                                                                <?php if ($sender['is_default']): ?>
-                                                                <span class="badge bg-warning bg-opacity-10 text-warning ms-1" style="font-size:9px;">Predeterminado</span>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td class="small"><?= htmlspecialchars($sender['name'] ?: '—') ?></td>
-                                                    <td>
-                                                        <?php if ($sender['is_active']): ?>
-                                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle me-1"></i>Activo</span>
-                                                        <?php else: ?>
-                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-pause-circle me-1"></i>Inactivo</span>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                    <td class="small text-muted"><?= date('d/m/Y', strtotime($sender['created_at'])) ?></td>
-                                                    <td class="text-end pe-3">
-                                                        <!-- Editar -->
-                                                        <button type="button" class="btn btn-sm btn-outline-primary" title="Editar" onclick="editSender(<?= $sender['id'] ?>, '<?= htmlspecialchars($sender['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sender['name'] ?? '', ENT_QUOTES) ?>')">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </button>
-                                                        <!-- Predeterminado -->
-                                                        <?php if (!$sender['is_default']): ?>
-                                                        <form method="POST" class="d-inline">
-                                                            <?= csrfInput() ?>
-                                                            <input type="hidden" name="action" value="set_default_sender">
-                                                            <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
-                                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Establecer como predeterminado">
-                                                                <i class="bi bi-star"></i>
-                                                            </button>
-                                                        </form>
-                                                        <?php endif; ?>
-                                                        <!-- Activar/Pausar -->
-                                                        <form method="POST" class="d-inline">
-                                                            <?= csrfInput() ?>
-                                                            <input type="hidden" name="action" value="toggle_sender">
-                                                            <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
-                                                            <button type="submit" class="btn btn-sm <?= $sender['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?>" title="<?= $sender['is_active'] ? 'Desactivar' : 'Activar' ?>">
-                                                                <i class="bi <?= $sender['is_active'] ? 'bi-pause' : 'bi-play' ?>"></i>
-                                                            </button>
-                                                        </form>
-                                                        <!-- Eliminar -->
-                                                        <?php if (!$sender['is_default']): ?>
-                                                        <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este remitente?')">
-                                                            <?= csrfInput() ?>
-                                                            <input type="hidden" name="action" value="delete_sender">
-                                                            <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </form>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                </tr>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
+                    <!-- ==================== TAB: REMITENTES ==================== -->
+                    <div class="tab-pane fade p-4" id="panel-remitentes" role="tabpanel">
+                        
+                        <div class="d-flex align-items-start justify-content-between mb-4">
+                            <div>
+                                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Gestiona los correos que aparecen como "De:" al enviar notificaciones. El remitente <strong>predeterminado</strong> se usa en todos los envíos automáticos.</p>
                             </div>
                         </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Modal Editar Remitente -->
-                    <div class="modal fade" id="editSenderModal" tabindex="-1">
-                        <div class="modal-dialog modal-sm">
-                            <div class="modal-content">
-                                <form method="POST">
-                                    <?= csrfInput() ?>
-                                    <input type="hidden" name="action" value="update_sender">
-                                    <input type="hidden" name="sender_id" id="editSenderId">
-                                    <div class="modal-header border-0 pb-0">
-                                        <h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Remitente</h6>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold small">Correo</label>
-                                            <input type="email" name="sender_email" id="editSenderEmail" class="form-control form-control-sm" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold small">Nombre</label>
-                                            <input type="text" name="sender_name" id="editSenderName" class="form-control form-control-sm">
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer border-0 pt-0">
-                                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <script>
-                    function editSender(id, email, name) {
-                        document.getElementById('editSenderId').value = id;
-                        document.getElementById('editSenderEmail').value = email;
-                        document.getElementById('editSenderName').value = name;
-                        new bootstrap.Modal(document.getElementById('editSenderModal')).show();
-                    }
-                    // Cambiar texto del botón al expandir/colapsar remitentes
-                    document.getElementById('sendersPanel').addEventListener('show.bs.collapse', function() {
-                        const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
-                        btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Ocultar';
-                    });
-                    document.getElementById('sendersPanel').addEventListener('hide.bs.collapse', function() {
-                        const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
-                        btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Mostrar';
-                    });
-                    </script>
-                    
-                    <!-- Configuración SMTP - Solo Administradores -->
-                    <div class="card border-0 shadow-sm mt-4">
-                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-shield-lock me-2 text-warning"></i>Configuración SMTP <span class="badge bg-danger bg-opacity-10 text-danger ms-2" style="font-size:10px;">Solo Admin</span></h5>
-                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#smtpConfigPanel" aria-expanded="false">
-                                <i class="bi bi-chevron-down me-1"></i>Mostrar
-                            </button>
-                        </div>
-                        <div class="collapse" id="smtpConfigPanel">
-                        <div class="card-body px-4 pb-4">
-                            <?php
-                            $cfgEnabled    = $smtpConfig['smtp_enabled'] ?? 'true';
-                            $cfgMode       = $smtpConfig['smtp_mode'] ?? 'direct';
-                            $cfgHost       = $smtpConfig['smtp_host'] ?? 'smtp.gmail.com';
-                            $cfgPort       = $smtpConfig['smtp_port'] ?? '587';
-                            $cfgUser       = $smtpConfig['smtp_user'] ?? '';
-                            $cfgPass       = $smtpConfig['smtp_pass'] ?? '';
-                            $cfgEncryption = $smtpConfig['smtp_encryption'] ?? 'tls';
-                            $cfgFromEmail  = $smtpConfig['smtp_from_email'] ?? '';
-                            $cfgFromName   = $smtpConfig['smtp_from_name'] ?? 'Soporte TI - Empresa Portuaria Coquimbo';
-                            ?>
-                            
-                            <!-- Resumen rápido del estado -->
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <div class="p-3 bg-<?= $cfgEnabled === 'true' ? 'success' : 'danger' ?> bg-opacity-10 rounded text-center">
-                                        <i class="bi <?= $cfgEnabled === 'true' ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' ?>" style="font-size:1.5rem;"></i>
-                                        <div class="fw-bold small mt-1"><?= $cfgEnabled === 'true' ? 'ACTIVO' : 'DESACTIVADO' ?></div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <div class="small text-muted">Servidor</div>
-                                        <div class="fw-bold small"><?= htmlspecialchars($cfgHost ?: 'No configurado') ?></div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <div class="small text-muted">Remitente</div>
-                                        <div class="fw-bold small"><?= htmlspecialchars($cfgFromEmail ?: $cfgUser ?: 'No configurado') ?></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <form method="POST">
+
+                        <!-- Formulario agregar remitente -->
+                        <div class="bg-light rounded-3 p-4 mb-4">
+                            <h6 class="fw-bold mb-3" style="color: #1e293b;"><i class="bi bi-plus-circle me-2 text-success"></i>Agregar nuevo remitente</h6>
+                            <form method="POST" id="addSenderForm">
                                 <?= csrfInput() ?>
-                                <input type="hidden" name="action" value="save_smtp_config">
-                                
-                                <div class="row g-3 mb-3">
+                                <input type="hidden" name="action" value="add_sender">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-semibold text-muted">Correo Electrónico <span class="text-danger">*</span></label>
+                                        <input type="email" name="sender_email" class="form-control form-control-sm" placeholder="noreply@puertocoquimbo.cl" required>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-semibold text-muted">Nombre del Remitente</label>
+                                        <input type="text" name="sender_name" class="form-control form-control-sm" placeholder="Soporte TI - Empresa Portuaria">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                            <i class="bi bi-plus-lg me-1"></i>Agregar
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Tabla de remitentes -->
+                        <?php if (empty($smtpSenders)): ?>
+                        <div class="text-center py-5">
+                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="bi bi-envelope-x text-muted" style="font-size: 2rem;"></i>
+                            </div>
+                            <p class="text-muted mb-1 fw-semibold">No hay remitentes registrados</p>
+                            <p class="text-muted small">Agrega un correo remitente para enviar notificaciones.</p>
+                        </div>
+                        <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                                <thead>
+                                    <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                                        <th class="ps-4 py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Correo</th>
+                                        <th class="py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Nombre</th>
+                                        <th class="py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Estado</th>
+                                        <th class="py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Fecha</th>
+                                        <th class="text-end pe-4 py-3 text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($smtpSenders as $sender): ?>
+                                    <tr class="<?= !$sender['is_active'] ? 'opacity-50' : '' ?>" style="border-bottom: 1px solid #f1f5f9;">
+                                        <td class="ps-4 py-3">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center <?= $sender['is_default'] ? 'bg-warning' : ($sender['is_active'] ? 'bg-success' : 'bg-secondary') ?> bg-opacity-10" style="width: 32px; height: 32px; min-width: 32px;">
+                                                    <i class="bi <?= $sender['is_default'] ? 'bi-star-fill text-warning' : ($sender['is_active'] ? 'bi-envelope-fill text-success' : 'bi-envelope-fill text-secondary') ?>" style="font-size: 13px;"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="fw-semibold"><?= htmlspecialchars($sender['email']) ?></span>
+                                                    <?php if ($sender['is_default']): ?>
+                                                    <span class="badge bg-warning bg-opacity-15 text-warning ms-2" style="font-size: 10px;">Predeterminado</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 text-muted"><?= htmlspecialchars($sender['name'] ?: '—') ?></td>
+                                        <td class="py-3">
+                                            <?php if ($sender['is_active']): ?>
+                                            <span class="d-inline-flex align-items-center gap-1"><span class="rounded-circle bg-success" style="width:8px;height:8px;display:inline-block;"></span> <span class="small">Activo</span></span>
+                                            <?php else: ?>
+                                            <span class="d-inline-flex align-items-center gap-1"><span class="rounded-circle bg-secondary" style="width:8px;height:8px;display:inline-block;"></span> <span class="small text-muted">Inactivo</span></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-3 small text-muted"><?= date('d/m/Y', strtotime($sender['created_at'])) ?></td>
+                                        <td class="text-end pe-4 py-3">
+                                            <div class="d-flex gap-1 justify-content-end">
+                                                <button type="button" class="btn btn-sm btn-light border" title="Editar" style="width:32px;height:32px;padding:0;" onclick="editSender(<?= $sender['id'] ?>, '<?= htmlspecialchars($sender['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sender['name'] ?? '', ENT_QUOTES) ?>')">
+                                                    <i class="bi bi-pencil text-primary" style="font-size:13px;"></i>
+                                                </button>
+                                                <?php if (!$sender['is_default']): ?>
+                                                <form method="POST" class="d-inline">
+                                                    <?= csrfInput() ?>
+                                                    <input type="hidden" name="action" value="set_default_sender">
+                                                    <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-light border" title="Establecer como predeterminado" style="width:32px;height:32px;padding:0;">
+                                                        <i class="bi bi-star text-warning" style="font-size:13px;"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                                <form method="POST" class="d-inline">
+                                                    <?= csrfInput() ?>
+                                                    <input type="hidden" name="action" value="toggle_sender">
+                                                    <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-light border" title="<?= $sender['is_active'] ? 'Desactivar' : 'Activar' ?>" style="width:32px;height:32px;padding:0;">
+                                                        <i class="bi <?= $sender['is_active'] ? 'bi-pause text-warning' : 'bi-play text-success' ?>" style="font-size:13px;"></i>
+                                                    </button>
+                                                </form>
+                                                <?php if (!$sender['is_default']): ?>
+                                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este remitente?')">
+                                                    <?= csrfInput() ?>
+                                                    <input type="hidden" name="action" value="delete_sender">
+                                                    <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-light border" title="Eliminar" style="width:32px;height:32px;padding:0;">
+                                                        <i class="bi bi-trash text-danger" style="font-size:13px;"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- ==================== TAB: CONFIGURACIÓN SMTP ==================== -->
+                    <div class="tab-pane fade p-4" id="panel-smtp" role="tabpanel">
+                        <?php
+                        $cfgEnabled    = $smtpConfig['smtp_enabled'] ?? 'true';
+                        $cfgMode       = $smtpConfig['smtp_mode'] ?? 'direct';
+                        $cfgHost       = $smtpConfig['smtp_host'] ?? 'smtp.gmail.com';
+                        $cfgPort       = $smtpConfig['smtp_port'] ?? '587';
+                        $cfgUser       = $smtpConfig['smtp_user'] ?? '';
+                        $cfgPass       = $smtpConfig['smtp_pass'] ?? '';
+                        $cfgEncryption = $smtpConfig['smtp_encryption'] ?? 'tls';
+                        $cfgFromEmail  = $smtpConfig['smtp_from_email'] ?? '';
+                        $cfgFromName   = $smtpConfig['smtp_from_name'] ?? 'Soporte TI - Empresa Portuaria Coquimbo';
+                        ?>
+                        
+                        <!-- Estado actual -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="rounded-3 border p-3 text-center <?= $cfgEnabled === 'true' ? 'border-success' : 'border-danger' ?>" style="border-width: 2px !important;">
+                                    <i class="bi <?= $cfgEnabled === 'true' ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger' ?>" style="font-size: 1.8rem;"></i>
+                                    <div class="fw-bold small mt-2"><?= $cfgEnabled === 'true' ? 'SMTP ACTIVO' : 'SMTP DESACTIVADO' ?></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="rounded-3 bg-light border p-3 text-center">
+                                    <div class="text-muted small mb-1">Servidor</div>
+                                    <div class="fw-bold" style="font-size: 13px;"><?= htmlspecialchars($cfgHost ?: 'No configurado') ?></div>
+                                    <div class="text-muted" style="font-size: 11px;">Puerto: <?= htmlspecialchars($cfgPort) ?> | <?= strtoupper($cfgEncryption ?: 'Sin cifrado') ?></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="rounded-3 bg-light border p-3 text-center">
+                                    <div class="text-muted small mb-1">Remitente</div>
+                                    <div class="fw-bold" style="font-size: 13px;"><?= htmlspecialchars($cfgFromEmail ?: $cfgUser ?: 'No configurado') ?></div>
+                                    <div class="text-muted" style="font-size: 11px;"><?= htmlspecialchars($cfgFromName) ?></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="POST">
+                            <?= csrfInput() ?>
+                            <input type="hidden" name="action" value="save_smtp_config">
+                            
+                            <!-- Sección: General -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-uppercase text-muted" style="font-size: 11px; letter-spacing: 1px;">
+                                    <i class="bi bi-sliders me-2"></i>General
+                                </h6>
+                                <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">Estado SMTP</label>
+                                        <label class="form-label small fw-semibold text-muted">Estado SMTP</label>
                                         <select name="smtp_enabled" class="form-select form-select-sm">
                                             <option value="true" <?= $cfgEnabled === 'true' ? 'selected' : '' ?>>Activado</option>
                                             <option value="false" <?= $cfgEnabled === 'false' ? 'selected' : '' ?>>Desactivado</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">Modo de Envío</label>
+                                        <label class="form-label small fw-semibold text-muted">Modo de Envío</label>
                                         <select name="smtp_mode" class="form-select form-select-sm">
                                             <option value="direct" <?= $cfgMode === 'direct' ? 'selected' : '' ?>>Directo (SMTP externo)</option>
                                             <option value="relay" <?= $cfgMode === 'relay' ? 'selected' : '' ?>>Relay (Postfix interno)</option>
                                         </select>
                                     </div>
                                 </div>
-                                
-                                <hr class="my-3">
-                                <p class="small text-muted mb-3"><i class="bi bi-info-circle me-1"></i>Configuración del servidor SMTP externo (modo directo)</p>
-                                
-                                <div class="row g-3 mb-3">
+                            </div>
+                            
+                            <hr class="my-4" style="border-color: #e2e8f0;">
+
+                            <!-- Sección: Servidor -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-uppercase text-muted" style="font-size: 11px; letter-spacing: 1px;">
+                                    <i class="bi bi-hdd-network me-2"></i>Servidor SMTP
+                                </h6>
+                                <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">Proveedor / Servidor SMTP</label>
+                                        <label class="form-label small fw-semibold text-muted">Proveedor</label>
                                         <select id="smtpPreset" class="form-select form-select-sm mb-2" onchange="applySmtpPreset()">
                                             <option value="">— Seleccionar proveedor —</option>
                                             <option value="gmail">Gmail (smtp.gmail.com)</option>
-                                            <option value="outlook">Outlook / Hotmail (smtp-mail.outlook.com)</option>
-                                            <option value="yahoo">Yahoo (smtp.mail.yahoo.com)</option>
+                                            <option value="outlook">Outlook / Hotmail</option>
+                                            <option value="yahoo">Yahoo</option>
                                             <option value="custom">Otro (personalizado)</option>
                                         </select>
                                         <input type="text" name="smtp_host" id="smtpHost" class="form-control form-control-sm" value="<?= htmlspecialchars($cfgHost) ?>" placeholder="smtp.gmail.com">
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold small">Puerto</label>
+                                        <label class="form-label small fw-semibold text-muted">Puerto</label>
                                         <input type="number" name="smtp_port" id="smtpPort" class="form-control form-control-sm" value="<?= htmlspecialchars($cfgPort) ?>" placeholder="587">
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold small">Encriptación</label>
+                                        <label class="form-label small fw-semibold text-muted">Encriptación</label>
                                         <select name="smtp_encryption" id="smtpEncryption" class="form-select form-select-sm">
                                             <option value="tls" <?= $cfgEncryption === 'tls' ? 'selected' : '' ?>>TLS (587)</option>
                                             <option value="ssl" <?= $cfgEncryption === 'ssl' ? 'selected' : '' ?>>SSL (465)</option>
@@ -4674,96 +4603,174 @@ unset($tp);
                                         </select>
                                     </div>
                                 </div>
-                                
-                                <div class="row g-3 mb-3">
+                            </div>
+
+                            <hr class="my-4" style="border-color: #e2e8f0;">
+
+                            <!-- Sección: Autenticación -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-uppercase text-muted" style="font-size: 11px; letter-spacing: 1px;">
+                                    <i class="bi bi-shield-lock me-2"></i>Autenticación
+                                </h6>
+                                <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">Usuario SMTP (correo)</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
-                                            <input type="email" name="smtp_user" class="form-control" value="<?= htmlspecialchars($cfgUser) ?>" placeholder="tucorreo@gmail.com">
-                                        </div>
+                                        <label class="form-label small fw-semibold text-muted">Usuario SMTP</label>
+                                        <input type="email" name="smtp_user" class="form-control form-control-sm" value="<?= htmlspecialchars($cfgUser) ?>" placeholder="tucorreo@gmail.com">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">Contraseña / App Password</label>
+                                        <label class="form-label small fw-semibold text-muted">Contraseña / App Password</label>
                                         <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
-                                            <input type="password" name="smtp_pass" class="form-control" value="<?= !empty($cfgPass) ? '••••••••' : '' ?>" placeholder="Contraseña de aplicación">
-                                            <button type="button" class="btn btn-outline-secondary" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'"><i class="bi bi-eye"></i></button>
+                                            <input type="password" name="smtp_pass" id="smtpPassInput" class="form-control" value="<?= !empty($cfgPass) ? '••••••••' : '' ?>" placeholder="Contraseña de aplicación">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="toggleSmtpPass()"><i class="bi bi-eye" id="smtpPassIcon"></i></button>
                                         </div>
-                                        <div class="form-text" style="font-size:10px;">Para Gmail: usa una <a href="https://myaccount.google.com/apppasswords" target="_blank">contraseña de aplicación</a></div>
-                                    </div>
-                                </div>
-                                
-                                <hr class="my-3">
-                                <p class="small text-muted mb-3"><i class="bi bi-envelope me-1"></i>Remitente activo (se selecciona desde la tabla de Remitentes arriba)</p>
-                                
-                                <div class="row g-3 mb-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">Correo Remitente (From)</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-light"><i class="bi bi-envelope-at"></i></span>
-                                            <?php if (!empty($smtpSenders)): ?>
-                                            <select name="smtp_from_email" class="form-select">
-                                                <?php foreach ($smtpSenders as $s): if ($s['is_active']): ?>
-                                                <option value="<?= htmlspecialchars($s['email']) ?>" <?= $cfgFromEmail === $s['email'] ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars($s['email']) ?><?= $s['is_default'] ? ' ⭐ (predeterminado)' : '' ?>
-                                                </option>
-                                                <?php endif; endforeach; ?>
-                                                <option value="" <?= empty($cfgFromEmail) ? 'selected' : '' ?>>— Usar usuario SMTP —</option>
-                                            </select>
-                                            <?php else: ?>
-                                            <input type="email" name="smtp_from_email" class="form-control" value="<?= htmlspecialchars($cfgFromEmail) ?>" placeholder="noreply@puertocoquimbo.cl">
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="form-text" style="font-size:10px;">Selecciona un remitente activo o gestiona desde la tabla de Remitentes</div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold small">Nombre del Remitente</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-light"><i class="bi bi-building"></i></span>
-                                            <input type="text" name="smtp_from_name" class="form-control" value="<?= htmlspecialchars($cfgFromName) ?>" placeholder="Soporte TI - Empresa Portuaria Coquimbo">
-                                        </div>
-                                        <div class="form-text" style="font-size:10px;">Se autocompleta al cambiar el remitente predeterminado</div>
+                                        <div class="form-text" style="font-size: 10px;">Para Gmail: usa una <a href="https://myaccount.google.com/apppasswords" target="_blank" class="text-decoration-none">contraseña de aplicación</a></div>
                                     </div>
                                 </div>
-                                
-                                <div class="d-flex gap-2 mt-3">
-                                    <button type="submit" class="btn btn-primary btn-sm px-4">
-                                        <i class="bi bi-save me-1"></i> Guardar Configuración
-                                    </button>
+                            </div>
+
+                            <hr class="my-4" style="border-color: #e2e8f0;">
+
+                            <!-- Sección: Remitente -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-uppercase text-muted" style="font-size: 11px; letter-spacing: 1px;">
+                                    <i class="bi bi-envelope-at me-2"></i>Remitente Activo
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-muted">Correo Remitente (From)</label>
+                                        <?php if (!empty($smtpSenders)): ?>
+                                        <select name="smtp_from_email" class="form-select form-select-sm">
+                                            <?php foreach ($smtpSenders as $s): if ($s['is_active']): ?>
+                                            <option value="<?= htmlspecialchars($s['email']) ?>" <?= $cfgFromEmail === $s['email'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($s['email']) ?><?= $s['is_default'] ? ' ★ predeterminado' : '' ?>
+                                            </option>
+                                            <?php endif; endforeach; ?>
+                                            <option value="" <?= empty($cfgFromEmail) ? 'selected' : '' ?>>— Usar usuario SMTP —</option>
+                                        </select>
+                                        <div class="form-text" style="font-size: 10px;">Gestiona remitentes desde la pestaña "Remitentes"</div>
+                                        <?php else: ?>
+                                        <input type="email" name="smtp_from_email" class="form-control form-control-sm" value="<?= htmlspecialchars($cfgFromEmail) ?>" placeholder="noreply@puertocoquimbo.cl">
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-muted">Nombre del Remitente</label>
+                                        <input type="text" name="smtp_from_name" class="form-control form-control-sm" value="<?= htmlspecialchars($cfgFromName) ?>" placeholder="Soporte TI - Empresa Portuaria Coquimbo">
+                                    </div>
                                 </div>
-                            </form>
+                            </div>
                             
-                            <script>
-                            function applySmtpPreset() {
-                                const presets = {
-                                    gmail: { host: 'smtp.gmail.com', port: 587, enc: 'tls' },
-                                    outlook: { host: 'smtp-mail.outlook.com', port: 587, enc: 'tls' },
-                                    yahoo: { host: 'smtp.mail.yahoo.com', port: 587, enc: 'tls' }
-                                };
-                                const val = document.getElementById('smtpPreset').value;
-                                if (presets[val]) {
-                                    document.getElementById('smtpHost').value = presets[val].host;
-                                    document.getElementById('smtpPort').value = presets[val].port;
-                                    document.getElementById('smtpEncryption').value = presets[val].enc;
-                                }
-                            }
-                            // Cambiar texto del botón al expandir/colapsar
-                            document.getElementById('smtpConfigPanel').addEventListener('show.bs.collapse', function() {
-                                const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
-                                btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Ocultar';
-                            });
-                            document.getElementById('smtpConfigPanel').addEventListener('hide.bs.collapse', function() {
-                                const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
-                                btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Mostrar';
-                            });
-                            </script>
-                        </div>
+                            <div class="pt-3 border-top">
+                                <button type="submit" class="btn btn-primary btn-sm px-4">
+                                    <i class="bi bi-save me-1"></i> Guardar Configuración
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ==================== TAB: PRUEBA DE ENVÍO ==================== -->
+                    <div class="tab-pane fade p-4" id="panel-prueba" role="tabpanel">
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <div class="text-center mb-4">
+                                    <div class="rounded-circle bg-info bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-send text-info" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h6 class="fw-bold">Prueba de Configuración SMTP</h6>
+                                    <p class="text-muted small">Envía un correo de prueba para verificar que la configuración SMTP funciona correctamente.</p>
+                                </div>
+                                <form method="POST">
+                                    <?= csrfInput() ?>
+                                    <input type="hidden" name="action" value="send_test_email">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-muted">Dirección de destino</label>
+                                        <input type="email" name="test_email" class="form-control" placeholder="correo@ejemplo.cl" required>
+                                        <div class="form-text small">Se enviará un correo de prueba con los datos del remitente predeterminado</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-info text-white w-100">
+                                        <i class="bi bi-send me-1"></i> Enviar Correo de Prueba
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                     <?php endif; ?>
                 </div>
             </div>
+
+            <!-- Modal Editar Remitente -->
+            <?php if ($isAdmin): ?>
+            <div class="modal fade" id="editSenderModal" tabindex="-1">
+                <div class="modal-dialog modal-sm modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <form method="POST">
+                            <?= csrfInput() ?>
+                            <input type="hidden" name="action" value="update_sender">
+                            <input type="hidden" name="sender_id" id="editSenderId">
+                            <div class="modal-header border-0 pb-0">
+                                <h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Remitente</h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">Correo</label>
+                                    <input type="email" name="sender_email" id="editSenderEmail" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">Nombre</label>
+                                    <input type="text" name="sender_name" id="editSenderName" class="form-control form-control-sm">
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function editSender(id, email, name) {
+                document.getElementById('editSenderId').value = id;
+                document.getElementById('editSenderEmail').value = email;
+                document.getElementById('editSenderName').value = name;
+                new bootstrap.Modal(document.getElementById('editSenderModal')).show();
+            }
+            function toggleSmtpPass() {
+                const inp = document.getElementById('smtpPassInput');
+                const icon = document.getElementById('smtpPassIcon');
+                if (inp.type === 'password') { inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+                else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
+            }
+            function applySmtpPreset() {
+                const presets = {
+                    gmail: { host: 'smtp.gmail.com', port: 587, enc: 'tls' },
+                    outlook: { host: 'smtp-mail.outlook.com', port: 587, enc: 'tls' },
+                    yahoo: { host: 'smtp.mail.yahoo.com', port: 587, enc: 'tls' }
+                };
+                const val = document.getElementById('smtpPreset').value;
+                if (presets[val]) {
+                    document.getElementById('smtpHost').value = presets[val].host;
+                    document.getElementById('smtpPort').value = presets[val].port;
+                    document.getElementById('smtpEncryption').value = presets[val].enc;
+                }
+            }
+            // Estilo activo para tabs
+            document.querySelectorAll('#notifTabs .nav-link').forEach(function(tab) {
+                tab.addEventListener('shown.bs.tab', function() {
+                    document.querySelectorAll('#notifTabs .nav-link').forEach(t => {
+                        t.style.borderBottomColor = 'transparent';
+                        t.style.color = '#64748b';
+                    });
+                    this.style.borderBottomColor = '#3b82f6';
+                    this.style.color = '#1e293b';
+                });
+            });
+            // Activar estilo del primer tab
+            document.querySelector('#notifTabs .nav-link.active').style.borderBottomColor = '#3b82f6';
+            document.querySelector('#notifTabs .nav-link.active').style.color = '#1e293b';
+            </script>
+            <?php endif; ?>
 
             <?php endif; ?>
         </div>
