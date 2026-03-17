@@ -642,8 +642,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // ===== GESTIÓN DE DESTINATARIOS DE NOTIFICACIONES =====
-    if ($action === 'add_notification_email') {
+    // ===== GESTIÓN DE DESTINATARIOS DE NOTIFICACIONES (solo admin) =====
+    if ($action === 'add_notification_email' && $isAdmin) {
         $notifEmail = sanitize($_POST['notif_email'] ?? '');
         $notifName = sanitize($_POST['notif_name'] ?? '');
         $notifEvent = sanitize($_POST['notif_event'] ?? 'all');
@@ -671,7 +671,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    if ($action === 'toggle_notification_email') {
+    if ($action === 'toggle_notification_email' && $isAdmin) {
         $notifId = (int)$_POST['notif_id'];
         $stmt = $pdo->prepare('UPDATE notification_recipients SET is_active = NOT is_active WHERE id = ?');
         $stmt->execute([$notifId]);
@@ -680,7 +680,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageType = 'success';
     }
     
-    if ($action === 'delete_notification_email') {
+    if ($action === 'delete_notification_email' && $isAdmin) {
         $notifId = (int)$_POST['notif_id'];
         $stmt = $pdo->prepare('SELECT email FROM notification_recipients WHERE id = ?');
         $stmt->execute([$notifId]);
@@ -4110,7 +4110,8 @@ unset($tp);
             </div>
             
             <div class="row g-4">
-                <!-- Formulario para agregar correo -->
+                <?php if ($isAdmin): ?>
+                <!-- Formulario para agregar correo (solo admin) -->
                 <div class="col-lg-4">
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
@@ -4178,9 +4179,10 @@ unset($tp);
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Tabla de destinatarios -->
-                <div class="col-lg-8">
+                <div class="<?= $isAdmin ? 'col-lg-8' : 'col-12' ?>">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
                             <h5 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Destinatarios Registrados</h5>
@@ -4202,7 +4204,7 @@ unset($tp);
                                             <th>Evento</th>
                                             <th>Estado</th>
                                             <th>Registrado</th>
-                                            <th class="text-end pe-4">Acciones</th>
+                                            <?php if ($isAdmin): ?><th class="text-end pe-4">Acciones</th><?php endif; ?>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -4236,6 +4238,7 @@ unset($tp);
                                                 <?php endif; ?>
                                             </td>
                                             <td class="small text-muted"><?= date('d/m/Y', strtotime($nr['created_at'])) ?></td>
+                                            <?php if ($isAdmin): ?>
                                             <td class="text-end pe-4">
                                                 <form method="POST" class="d-inline">
             <?= csrfInput() ?>
@@ -4262,6 +4265,7 @@ unset($tp);
                                                     </button>
                                                 </form>
                                             </td>
+                                            <?php endif; ?>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -4271,11 +4275,16 @@ unset($tp);
                         </div>
                     </div>
                     
-                    <!-- Configuración SMTP editable -->
+                    <?php if ($isAdmin): ?>
+                    <!-- Configuración SMTP - Solo Administradores -->
                     <div class="card border-0 shadow-sm mt-4">
-                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-gear me-2 text-primary"></i>Configuración SMTP (Correo Remitente)</h5>
+                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-shield-lock me-2 text-warning"></i>Configuración SMTP <span class="badge bg-danger bg-opacity-10 text-danger ms-2" style="font-size:10px;">Solo Admin</span></h5>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#smtpConfigPanel" aria-expanded="false">
+                                <i class="bi bi-chevron-down me-1"></i>Mostrar
+                            </button>
                         </div>
+                        <div class="collapse" id="smtpConfigPanel">
                         <div class="card-body px-4 pb-4">
                             <?php
                             $cfgEnabled    = $smtpConfig['smtp_enabled'] ?? 'true';
@@ -4288,7 +4297,29 @@ unset($tp);
                             $cfgFromEmail  = $smtpConfig['smtp_from_email'] ?? '';
                             $cfgFromName   = $smtpConfig['smtp_from_name'] ?? 'Soporte TI - Empresa Portuaria Coquimbo';
                             ?>
-                            <?php if ($isAdmin): ?>
+                            
+                            <!-- Resumen rápido del estado -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-<?= $cfgEnabled === 'true' ? 'success' : 'danger' ?> bg-opacity-10 rounded text-center">
+                                        <i class="bi <?= $cfgEnabled === 'true' ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' ?>" style="font-size:1.5rem;"></i>
+                                        <div class="fw-bold small mt-1"><?= $cfgEnabled === 'true' ? 'ACTIVO' : 'DESACTIVADO' ?></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded text-center">
+                                        <div class="small text-muted">Servidor</div>
+                                        <div class="fw-bold small"><?= htmlspecialchars($cfgHost ?: 'No configurado') ?></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded text-center">
+                                        <div class="small text-muted">Remitente</div>
+                                        <div class="fw-bold small"><?= htmlspecialchars($cfgFromEmail ?: $cfgUser ?: 'No configurado') ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <form method="POST">
                                 <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="save_smtp_config">
@@ -4400,14 +4431,20 @@ unset($tp);
                                     document.getElementById('smtpEncryption').value = presets[val].enc;
                                 }
                             }
+                            // Cambiar texto del botón al expandir/colapsar
+                            document.getElementById('smtpConfigPanel').addEventListener('show.bs.collapse', function() {
+                                const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
+                                btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Ocultar';
+                            });
+                            document.getElementById('smtpConfigPanel').addEventListener('hide.bs.collapse', function() {
+                                const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
+                                btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Mostrar';
+                            });
                             </script>
-                            <?php else: ?>
-                            <div class="alert alert-info mb-0 small">
-                                <i class="bi bi-lock me-1"></i>Solo los administradores pueden modificar la configuración SMTP.
-                            </div>
-                            <?php endif; ?>
+                        </div>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
