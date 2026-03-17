@@ -808,51 +808,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'toggle_sender' && $isAdmin) {
         $senderId = (int)$_POST['sender_id'];
-        $stmt = $pdo->prepare('UPDATE smtp_senders SET is_active = NOT is_active WHERE id = ?');
-        $stmt->execute([$senderId]);
-        logActivity($user['id'], 'sender_toggled', 'smtp_senders', $senderId, 'Estado de remitente cambiado');
-        $message = 'Estado del remitente actualizado';
-        $messageType = 'success';
+        try {
+            $stmt = $pdo->prepare('UPDATE smtp_senders SET is_active = NOT is_active WHERE id = ?');
+            $stmt->execute([$senderId]);
+            logActivity($user['id'], 'sender_toggled', 'smtp_senders', $senderId, 'Estado de remitente cambiado');
+            $message = 'Estado del remitente actualizado';
+            $messageType = 'success';
+        } catch (PDOException $e) {
+            $message = 'Error al actualizar el estado del remitente';
+            $messageType = 'danger';
+            error_log("[EPCO] Error toggle_sender: " . $e->getMessage());
+        }
     }
     
     if ($action === 'delete_sender' && $isAdmin) {
         $senderId = (int)$_POST['sender_id'];
-        $stmt = $pdo->prepare('SELECT email, is_default FROM smtp_senders WHERE id = ?');
-        $stmt->execute([$senderId]);
-        $delSender = $stmt->fetch();
-        
-        if ($delSender && $delSender['is_default']) {
-            $message = 'No se puede eliminar el remitente predeterminado. Asigna otro como predeterminado primero.';
-            $messageType = 'warning';
-        } else {
-            $pdo->prepare('DELETE FROM smtp_senders WHERE id = ?')->execute([$senderId]);
-            logActivity($user['id'], 'sender_deleted', 'smtp_senders', $senderId, "Remitente eliminado: " . ($delSender['email'] ?? 'desconocido'));
-            $message = 'Remitente eliminado correctamente';
-            $messageType = 'success';
+        try {
+            $stmt = $pdo->prepare('SELECT email, is_default FROM smtp_senders WHERE id = ?');
+            $stmt->execute([$senderId]);
+            $delSender = $stmt->fetch();
+            
+            if ($delSender && $delSender['is_default']) {
+                $message = 'No se puede eliminar el remitente predeterminado. Asigna otro como predeterminado primero.';
+                $messageType = 'warning';
+            } else {
+                $pdo->prepare('DELETE FROM smtp_senders WHERE id = ?')->execute([$senderId]);
+                logActivity($user['id'], 'sender_deleted', 'smtp_senders', $senderId, "Remitente eliminado: " . ($delSender['email'] ?? 'desconocido'));
+                $message = 'Remitente eliminado correctamente';
+                $messageType = 'success';
+            }
+        } catch (PDOException $e) {
+            $message = 'Error al eliminar el remitente';
+            $messageType = 'danger';
+            error_log("[EPCO] Error delete_sender: " . $e->getMessage());
         }
     }
     
     if ($action === 'set_default_sender' && $isAdmin) {
         $senderId = (int)$_POST['sender_id'];
-        // Quitar default de todos
-        $pdo->exec('UPDATE smtp_senders SET is_default = 0');
-        // Poner default al seleccionado y activarlo
-        $stmt = $pdo->prepare('UPDATE smtp_senders SET is_default = 1, is_active = 1 WHERE id = ?');
-        $stmt->execute([$senderId]);
-        
-        // Sincronizar con smtp_config para que ServicioCorreo use este remitente
-        $stmt = $pdo->prepare('SELECT email, name FROM smtp_senders WHERE id = ?');
-        $stmt->execute([$senderId]);
-        $defSender = $stmt->fetch();
-        if ($defSender) {
-            $stmtUp = $pdo->prepare("INSERT INTO smtp_config (config_key, config_value, updated_by) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)");
-            $stmtUp->execute(['smtp_from_email', $defSender['email'], $user['id']]);
-            $stmtUp->execute(['smtp_from_name', $defSender['name'], $user['id']]);
+        try {
+            $pdo->exec('UPDATE smtp_senders SET is_default = 0');
+            $stmt = $pdo->prepare('UPDATE smtp_senders SET is_default = 1, is_active = 1 WHERE id = ?');
+            $stmt->execute([$senderId]);
+            
+            $stmt = $pdo->prepare('SELECT email, name FROM smtp_senders WHERE id = ?');
+            $stmt->execute([$senderId]);
+            $defSender = $stmt->fetch();
+            if ($defSender) {
+                $stmtUp = $pdo->prepare("INSERT INTO smtp_config (config_key, config_value, updated_by) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)");
+                $stmtUp->execute(['smtp_from_email', $defSender['email'], $user['id']]);
+                $stmtUp->execute(['smtp_from_name', $defSender['name'], $user['id']]);
+            }
+            
+            logActivity($user['id'], 'sender_set_default', 'smtp_senders', $senderId, 'Remitente predeterminado cambiado');
+            $message = 'Remitente predeterminado actualizado';
+            $messageType = 'success';
+        } catch (PDOException $e) {
+            $message = 'Error al establecer el remitente predeterminado';
+            $messageType = 'danger';
+            error_log("[EPCO] Error set_default_sender: " . $e->getMessage());
         }
-        
-        logActivity($user['id'], 'sender_set_default', 'smtp_senders', $senderId, 'Remitente predeterminado cambiado');
-        $message = 'Remitente predeterminado actualizado';
-        $messageType = 'success';
     }
 }
 

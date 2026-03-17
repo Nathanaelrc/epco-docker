@@ -66,6 +66,31 @@ epco_ensure_tables() {
                 INDEX idx_event_active (event_type, is_active)
             ) ENGINE=InnoDB;
         " 2>/dev/null && echo "[EPCO] ✓ Tabla notification_recipients verificada" || true
+
+        mysql -u root -p"${MYSQL_ROOT_PASSWORD}" "${MYSQL_DATABASE}" -e "
+            CREATE TABLE IF NOT EXISTS smtp_config (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                config_key VARCHAR(50) NOT NULL UNIQUE,
+                config_value TEXT DEFAULT NULL,
+                updated_by INT DEFAULT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;
+        " 2>/dev/null && echo "[EPCO] ✓ Tabla smtp_config verificada" || true
+
+        mysql -u root -p"${MYSQL_ROOT_PASSWORD}" "${MYSQL_DATABASE}" -e "
+            CREATE TABLE IF NOT EXISTS smtp_senders (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(150) NOT NULL,
+                name VARCHAR(100) DEFAULT NULL,
+                is_active TINYINT(1) DEFAULT 1,
+                is_default TINYINT(1) DEFAULT 0,
+                created_by INT DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_sender_email (email),
+                INDEX idx_active_default (is_active, is_default)
+            ) ENGINE=InnoDB;
+        " 2>/dev/null && echo "[EPCO] ✓ Tabla smtp_senders verificada" || true
     fi
 }
 
