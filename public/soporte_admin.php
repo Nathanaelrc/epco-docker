@@ -2943,6 +2943,28 @@ unset($tp);
                 const html = `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
 <title>Informe Cumplimiento - ${userName}</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Lato', sans-serif; color: #1e293b; padding: 30px 40px; background: #fff; line-height: 1.5; }
+    h1 { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 700; color: #0c4a6e; margin-bottom: 8px; border-bottom: 3px solid #0369a1; padding-bottom: 10px; }
+    h2 { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: #0c4a6e; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; }
+    .header-info { display: flex; justify-content: space-between; color: #64748b; font-size: 13px; margin-bottom: 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; }
+    .stat-box .number { font-size: 22px; font-weight: 700; color: #0369a1; }
+    .stat-box .label { font-size: 11px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+    th { background: #0c4a6e; color: white; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) { background: #f8fafc; }
+    tr:hover { background: #f1f5f9; }
+    .footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
+    .footer p { margin: 3px 0; }
+    .no-print button { background: #0c5a8a; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; }
+    @media print { body { padding: 15px; } .no-print { display: none !important; } table { page-break-inside: auto; } tr { page-break-inside: avoid; } }
+</style>
+</head><body>
 <div class="no-print" style="text-align:right;margin-bottom:15px;">
 <button onclick="window.print()" style="background:#0c5a8a;color:white;border:none;padding:10px 25px;border-radius:6px;cursor:pointer;">Imprimir / Guardar como PDF</button>
 </div>
@@ -3857,6 +3879,48 @@ unset($tp);
 <head>
 <meta charset="UTF-8">
 <title>Informe de Auditoría - Empresa Portuaria Coquimbo</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Lato', sans-serif; color: #1e293b; padding: 30px 40px; background: #fff; line-height: 1.5; }
+    h1 { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 700; color: #0c4a6e; margin-bottom: 8px; border-bottom: 3px solid #0369a1; padding-bottom: 10px; }
+    h2 { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: #0c4a6e; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; }
+    h3 { font-size: 12px; color: #475569; margin-bottom: 6px; }
+    .header-info { display: flex; justify-content: space-between; color: #64748b; font-size: 13px; margin-bottom: 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; }
+    .stat-box .number { font-size: 22px; font-weight: 700; color: #0369a1; }
+    .stat-box .label { font-size: 11px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sla-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+    .sla-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; text-align: center; }
+    .sla-box.warn { background: #fffbeb; border-color: #fde68a; }
+    .sla-box.danger { background: #fef2f2; border-color: #fecaca; }
+    .sla-box .pct { font-size: 24px; font-weight: 700; }
+    .sla-box .pct.ok { color: #16a34a; }
+    .sla-box .pct.warn { color: #d97706; }
+    .sla-box .pct.danger { color: #dc2626; }
+    .sla-box .label { font-size: 12px; color: #475569; font-weight: 600; margin-top: 4px; }
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
+    .charts-grid div { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+    .charts-grid img { max-width: 100%; height: auto; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+    th { background: #0c4a6e; color: white; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) { background: #f8fafc; }
+    tr:hover { background: #f1f5f9; }
+    .footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
+    .footer p { margin: 3px 0; }
+    .no-print button { background: #0c5a8a; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    @media print {
+        body { padding: 15px; }
+        .no-print { display: none !important; }
+        h1 { font-size: 18px; }
+        .stats-grid { grid-template-columns: repeat(4, 1fr); }
+        .charts-grid { grid-template-columns: repeat(2, 1fr); }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; }
+    }
+</style>
 </head>
 <body>
 <div class="no-print" style="text-align:right;margin-bottom:15px;">
