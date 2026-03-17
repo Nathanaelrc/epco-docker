@@ -196,7 +196,7 @@ $pageTitle = 'Crear Ticket';
         <?php if ($success): ?>
         <div class="alert-success-custom mb-4">
             <h5>Ticket registrado correctamente</h5>
-            <p class="mb-3"><?= htmlspecialchars($success) ?></p>
+            <p class="mb-3"><?= $success ?></p>
             <div class="d-flex gap-2 flex-wrap">
                 <a href="seguimiento_ticket.php?ticket=<?= $ticketNumber ?><?= $fromIntranet ? '&from=intranet' : '' ?>" class="btn btn-primary-submit">Ver ticket</a>
                 <a href="<?= $backUrl ?>" class="btn btn-cancel"><?= $backText ?></a>
