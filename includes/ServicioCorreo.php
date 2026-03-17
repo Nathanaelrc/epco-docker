@@ -63,6 +63,19 @@ class MailService {
                 $smtp['from_name'] = $rows['smtp_from_name'];
             }
             
+            // Intentar obtener el remitente predeterminado desde smtp_senders
+            try {
+                $defaultSender = $pdo->query("SELECT email, name FROM smtp_senders WHERE is_default = 1 AND is_active = 1 LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+                if ($defaultSender) {
+                    $smtp['from_email'] = $defaultSender['email'];
+                    if (!empty($defaultSender['name'])) {
+                        $smtp['from_name'] = $defaultSender['name'];
+                    }
+                }
+            } catch (\Exception $e) {
+                // Tabla puede no existir aún, se usa el valor de smtp_config
+            }
+            
             error_log("[EPCO Mail] Config SMTP cargada desde BD: modo={$smtp['mode']}, host={$smtp['host']}");
         } catch (\Exception $e) {
             error_log("[EPCO Mail] No se pudo cargar config SMTP desde BD: " . $e->getMessage());

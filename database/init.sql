@@ -493,6 +493,26 @@ INSERT IGNORE INTO smtp_config (config_key, config_value) VALUES
 ('smtp_from_name', 'Soporte TI - Empresa Portuaria Coquimbo');
 
 -- =============================================
+-- TABLA: REMITENTES DE CORREO (CRUD desde UI)
+-- =============================================
+CREATE TABLE IF NOT EXISTS smtp_senders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    name VARCHAR(100) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    is_default TINYINT(1) DEFAULT 0,
+    created_by INT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_sender_email (email),
+    INDEX idx_active_default (is_active, is_default)
+) ENGINE=InnoDB;
+
+-- Remitente por defecto
+INSERT IGNORE INTO smtp_senders (email, name, is_active, is_default) VALUES
+('soporteepco@gmail.com', 'Soporte TI - Empresa Portuaria Coquimbo', 1, 1);
+
+-- =============================================
 -- TABLA: API TOKENS
 -- =============================================
 CREATE TABLE IF NOT EXISTS api_tokens (

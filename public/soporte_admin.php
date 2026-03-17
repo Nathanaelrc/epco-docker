@@ -750,6 +750,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Configuración SMTP guardada correctamente';
         $messageType = 'success';
     }
+    
+    // ===== GESTIÓN DE REMITENTES (CRUD - solo admin) =====
+    if ($action === 'add_sender' && $isAdmin) {
+        $senderEmail = sanitize($_POST['sender_email'] ?? '');
+        $senderName = sanitize($_POST['sender_name'] ?? '');
+        
+        if (!filter_var($senderEmail, FILTER_VALIDATE_EMAIL)) {
+            $message = 'El correo del remitente no es válido';
+            $messageType = 'danger';
+        } else {
+            try {
+                $stmt = $pdo->prepare('INSERT INTO smtp_senders (email, name, created_by) VALUES (?, ?, ?)');
+                $stmt->execute([$senderEmail, $senderName, $user['id']]);
+                logActivity($user['id'], 'sender_added', 'smtp_senders', $pdo->lastInsertId(), "Remitente agregado: $senderEmail");
+                $message = "Remitente <strong>$senderEmail</strong> agregado correctamente";
+                $messageType = 'success';
+            } catch (PDOException $e) {
+                if ($e->getCode() == 23000) {
+                    $message = 'Este correo ya está registrado como remitente';
+                    $messageType = 'warning';
+                } else {
+                    $message = 'Error al agregar el remitente';
+                    $messageType = 'danger';
+                    error_log("[EPCO] Error insertando remitente: " . $e->getMessage());
+                }
+            }
+        }
+    }
+    
+    if ($action === 'update_sender' && $isAdmin) {
+        $senderId = (int)$_POST['sender_id'];
+        $senderEmail = sanitize($_POST['sender_email'] ?? '');
+        $senderName = sanitize($_POST['sender_name'] ?? '');
+        
+        if (!filter_var($senderEmail, FILTER_VALIDATE_EMAIL)) {
+            $message = 'El correo del remitente no es válido';
+            $messageType = 'danger';
+        } else {
+            try {
+                $stmt = $pdo->prepare('UPDATE smtp_senders SET email = ?, name = ? WHERE id = ?');
+                $stmt->execute([$senderEmail, $senderName, $senderId]);
+                logActivity($user['id'], 'sender_updated', 'smtp_senders', $senderId, "Remitente actualizado: $senderEmail");
+                $message = "Remitente actualizado correctamente";
+                $messageType = 'success';
+            } catch (PDOException $e) {
+                if ($e->getCode() == 23000) {
+                    $message = 'Ya existe otro remitente con ese correo';
+                    $messageType = 'warning';
+                } else {
+                    $message = 'Error al actualizar el remitente';
+                    $messageType = 'danger';
+                }
+            }
+        }
+    }
+    
+    if ($action === 'toggle_sender' && $isAdmin) {
+        $senderId = (int)$_POST['sender_id'];
+        $stmt = $pdo->prepare('UPDATE smtp_senders SET is_active = NOT is_active WHERE id = ?');
+        $stmt->execute([$senderId]);
+        logActivity($user['id'], 'sender_toggled', 'smtp_senders', $senderId, 'Estado de remitente cambiado');
+        $message = 'Estado del remitente actualizado';
+        $messageType = 'success';
+    }
+    
+    if ($action === 'delete_sender' && $isAdmin) {
+        $senderId = (int)$_POST['sender_id'];
+        $stmt = $pdo->prepare('SELECT email, is_default FROM smtp_senders WHERE id = ?');
+        $stmt->execute([$senderId]);
+        $delSender = $stmt->fetch();
+        
+        if ($delSender && $delSender['is_default']) {
+            $message = 'No se puede eliminar el remitente predeterminado. Asigna otro como predeterminado primero.';
+            $messageType = 'warning';
+        } else {
+            $pdo->prepare('DELETE FROM smtp_senders WHERE id = ?')->execute([$senderId]);
+            logActivity($user['id'], 'sender_deleted', 'smtp_senders', $senderId, "Remitente eliminado: " . ($delSender['email'] ?? 'desconocido'));
+            $message = 'Remitente eliminado correctamente';
+            $messageType = 'success';
+        }
+    }
+    
+    if ($action === 'set_default_sender' && $isAdmin) {
+        $senderId = (int)$_POST['sender_id'];
+        // Quitar default de todos
+        $pdo->exec('UPDATE smtp_senders SET is_default = 0');
+        // Poner default al seleccionado y activarlo
+        $stmt = $pdo->prepare('UPDATE smtp_senders SET is_default = 1, is_active = 1 WHERE id = ?');
+        $stmt->execute([$senderId]);
+        
+        // Sincronizar con smtp_config para que ServicioCorreo use este remitente
+        $stmt = $pdo->prepare('SELECT email, name FROM smtp_senders WHERE id = ?');
+        $stmt->execute([$senderId]);
+        $defSender = $stmt->fetch();
+        if ($defSender) {
+            $stmtUp = $pdo->prepare("INSERT INTO smtp_config (config_key, config_value, updated_by) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)");
+            $stmtUp->execute(['smtp_from_email', $defSender['email'], $user['id']]);
+            $stmtUp->execute(['smtp_from_name', $defSender['name'], $user['id']]);
+        }
+        
+        logActivity($user['id'], 'sender_set_default', 'smtp_senders', $senderId, 'Remitente predeterminado cambiado');
+        $message = 'Remitente predeterminado actualizado';
+        $messageType = 'success';
+    }
 }
 
 // Obtener datos según la página
@@ -958,6 +1062,19 @@ try {
     }
 } catch (PDOException $e) {
     error_log("[EPCO] Tabla smtp_config no disponible: " . $e->getMessage());
+}
+
+// ===== REMITENTES DE CORREO (desde BD) =====
+$smtpSenders = [];
+try {
+    $smtpSenders = $pdo->query("
+        SELECT s.*, u.name as created_by_name 
+        FROM smtp_senders s 
+        LEFT JOIN users u ON s.created_by = u.id 
+        ORDER BY s.is_default DESC, s.is_active DESC, s.created_at DESC
+    ")->fetchAll();
+} catch (PDOException $e) {
+    error_log("[EPCO] Tabla smtp_senders no disponible: " . $e->getMessage());
 }
 
 // ===== ESTADÍSTICAS SLA MEJORADAS =====
@@ -4276,6 +4393,194 @@ unset($tp);
                     </div>
                     
                     <?php if ($isAdmin): ?>
+                    <!-- ========== GESTIÓN DE REMITENTES ========== -->
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-envelope-paper me-2 text-success"></i>Remitentes de Correo <span class="badge bg-danger bg-opacity-10 text-danger ms-2" style="font-size:10px;">Solo Admin</span></h5>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#sendersPanel" aria-expanded="false">
+                                <i class="bi bi-chevron-down me-1"></i>Mostrar
+                            </button>
+                        </div>
+                        <div class="collapse" id="sendersPanel">
+                        <div class="card-body px-4 pb-4">
+                            <p class="small text-muted mb-3"><i class="bi bi-info-circle me-1"></i>Gestiona los correos remitentes que aparecen como "De:" al enviar notificaciones. El remitente <strong>predeterminado</strong> se usa en todos los envíos automáticos.</p>
+                            
+                            <div class="row g-4">
+                                <!-- Formulario para agregar remitente -->
+                                <div class="col-lg-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body p-3">
+                                            <h6 class="fw-bold mb-3"><i class="bi bi-plus-circle me-2 text-primary"></i>Agregar Remitente</h6>
+                                            <form method="POST" id="addSenderForm">
+                                                <?= csrfInput() ?>
+                                                <input type="hidden" name="action" value="add_sender">
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Correo Electrónico <span class="text-danger">*</span></label>
+                                                    <div class="input-group input-group-sm">
+                                                        <span class="input-group-text bg-white"><i class="bi bi-envelope-at"></i></span>
+                                                        <input type="email" name="sender_email" class="form-control" placeholder="noreply@puertocoquimbo.cl" required>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Nombre del Remitente</label>
+                                                    <div class="input-group input-group-sm">
+                                                        <span class="input-group-text bg-white"><i class="bi bi-building"></i></span>
+                                                        <input type="text" name="sender_name" class="form-control" placeholder="Soporte TI - Empresa Portuaria">
+                                                    </div>
+                                                </div>
+                                                
+                                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                    <i class="bi bi-plus-lg me-1"></i> Agregar Remitente
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tabla de remitentes -->
+                                <div class="col-lg-8">
+                                    <?php if (empty($smtpSenders)): ?>
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-envelope-x text-muted" style="font-size: 3rem;"></i>
+                                        <p class="text-muted mt-3">No hay remitentes registrados.<br>Agrega un correo remitente para enviar notificaciones.</p>
+                                    </div>
+                                    <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0 align-middle">
+                                            <thead class="bg-light">
+                                                <tr>
+                                                    <th class="ps-3">Correo</th>
+                                                    <th>Nombre</th>
+                                                    <th>Estado</th>
+                                                    <th>Registrado</th>
+                                                    <th class="text-end pe-3">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($smtpSenders as $sender): ?>
+                                                <tr class="<?= !$sender['is_active'] ? 'table-secondary opacity-75' : '' ?>" id="sender-row-<?= $sender['id'] ?>">
+                                                    <td class="ps-3">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="rounded-circle d-flex align-items-center justify-content-center <?= $sender['is_default'] ? 'bg-warning' : ($sender['is_active'] ? 'bg-success' : 'bg-secondary') ?> bg-opacity-10" style="width: 36px; height: 36px;">
+                                                                <i class="bi <?= $sender['is_default'] ? 'bi-star-fill text-warning' : ($sender['is_active'] ? 'bi-envelope text-success' : 'bi-envelope text-secondary') ?>"></i>
+                                                            </div>
+                                                            <div>
+                                                                <span class="fw-semibold small"><?= htmlspecialchars($sender['email']) ?></span>
+                                                                <?php if ($sender['is_default']): ?>
+                                                                <span class="badge bg-warning bg-opacity-10 text-warning ms-1" style="font-size:9px;">Predeterminado</span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="small"><?= htmlspecialchars($sender['name'] ?: '—') ?></td>
+                                                    <td>
+                                                        <?php if ($sender['is_active']): ?>
+                                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle me-1"></i>Activo</span>
+                                                        <?php else: ?>
+                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-pause-circle me-1"></i>Inactivo</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td class="small text-muted"><?= date('d/m/Y', strtotime($sender['created_at'])) ?></td>
+                                                    <td class="text-end pe-3">
+                                                        <!-- Editar -->
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" title="Editar" onclick="editSender(<?= $sender['id'] ?>, '<?= htmlspecialchars($sender['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($sender['name'] ?? '', ENT_QUOTES) ?>')">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <!-- Predeterminado -->
+                                                        <?php if (!$sender['is_default']): ?>
+                                                        <form method="POST" class="d-inline">
+                                                            <?= csrfInput() ?>
+                                                            <input type="hidden" name="action" value="set_default_sender">
+                                                            <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
+                                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Establecer como predeterminado">
+                                                                <i class="bi bi-star"></i>
+                                                            </button>
+                                                        </form>
+                                                        <?php endif; ?>
+                                                        <!-- Activar/Pausar -->
+                                                        <form method="POST" class="d-inline">
+                                                            <?= csrfInput() ?>
+                                                            <input type="hidden" name="action" value="toggle_sender">
+                                                            <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
+                                                            <button type="submit" class="btn btn-sm <?= $sender['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?>" title="<?= $sender['is_active'] ? 'Desactivar' : 'Activar' ?>">
+                                                                <i class="bi <?= $sender['is_active'] ? 'bi-pause' : 'bi-play' ?>"></i>
+                                                            </button>
+                                                        </form>
+                                                        <!-- Eliminar -->
+                                                        <?php if (!$sender['is_default']): ?>
+                                                        <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este remitente?')">
+                                                            <?= csrfInput() ?>
+                                                            <input type="hidden" name="action" value="delete_sender">
+                                                            <input type="hidden" name="sender_id" value="<?= $sender['id'] ?>">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Editar Remitente -->
+                    <div class="modal fade" id="editSenderModal" tabindex="-1">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <form method="POST">
+                                    <?= csrfInput() ?>
+                                    <input type="hidden" name="action" value="update_sender">
+                                    <input type="hidden" name="sender_id" id="editSenderId">
+                                    <div class="modal-header border-0 pb-0">
+                                        <h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Editar Remitente</h6>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small">Correo</label>
+                                            <input type="email" name="sender_email" id="editSenderEmail" class="form-control form-control-sm" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small">Nombre</label>
+                                            <input type="text" name="sender_name" id="editSenderName" class="form-control form-control-sm">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0 pt-0">
+                                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <script>
+                    function editSender(id, email, name) {
+                        document.getElementById('editSenderId').value = id;
+                        document.getElementById('editSenderEmail').value = email;
+                        document.getElementById('editSenderName').value = name;
+                        new bootstrap.Modal(document.getElementById('editSenderModal')).show();
+                    }
+                    // Cambiar texto del botón al expandir/colapsar remitentes
+                    document.getElementById('sendersPanel').addEventListener('show.bs.collapse', function() {
+                        const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
+                        btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Ocultar';
+                    });
+                    document.getElementById('sendersPanel').addEventListener('hide.bs.collapse', function() {
+                        const btn = this.closest('.card').querySelector('[data-bs-toggle="collapse"]');
+                        btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Mostrar';
+                    });
+                    </script>
+                    
                     <!-- Configuración SMTP - Solo Administradores -->
                     <div class="card border-0 shadow-sm mt-4">
                         <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
@@ -4390,16 +4695,27 @@ unset($tp);
                                 </div>
                                 
                                 <hr class="my-3">
-                                <p class="small text-muted mb-3"><i class="bi bi-envelope me-1"></i>Datos del remitente (cómo aparece el correo al destinatario)</p>
+                                <p class="small text-muted mb-3"><i class="bi bi-envelope me-1"></i>Remitente activo (se selecciona desde la tabla de Remitentes arriba)</p>
                                 
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold small">Correo Remitente (From)</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light"><i class="bi bi-envelope-at"></i></span>
+                                            <?php if (!empty($smtpSenders)): ?>
+                                            <select name="smtp_from_email" class="form-select">
+                                                <?php foreach ($smtpSenders as $s): if ($s['is_active']): ?>
+                                                <option value="<?= htmlspecialchars($s['email']) ?>" <?= $cfgFromEmail === $s['email'] ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($s['email']) ?><?= $s['is_default'] ? ' ⭐ (predeterminado)' : '' ?>
+                                                </option>
+                                                <?php endif; endforeach; ?>
+                                                <option value="" <?= empty($cfgFromEmail) ? 'selected' : '' ?>>— Usar usuario SMTP —</option>
+                                            </select>
+                                            <?php else: ?>
                                             <input type="email" name="smtp_from_email" class="form-control" value="<?= htmlspecialchars($cfgFromEmail) ?>" placeholder="noreply@puertocoquimbo.cl">
+                                            <?php endif; ?>
                                         </div>
-                                        <div class="form-text" style="font-size:10px;">Si se deja vacío, se usa el usuario SMTP</div>
+                                        <div class="form-text" style="font-size:10px;">Selecciona un remitente activo o gestiona desde la tabla de Remitentes</div>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold small">Nombre del Remitente</label>
@@ -4407,6 +4723,7 @@ unset($tp);
                                             <span class="input-group-text bg-light"><i class="bi bi-building"></i></span>
                                             <input type="text" name="smtp_from_name" class="form-control" value="<?= htmlspecialchars($cfgFromName) ?>" placeholder="Soporte TI - Empresa Portuaria Coquimbo">
                                         </div>
+                                        <div class="form-text" style="font-size:10px;">Se autocompleta al cambiar el remitente predeterminado</div>
                                     </div>
                                 </div>
                                 
