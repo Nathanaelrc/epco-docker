@@ -12,6 +12,7 @@ $messageType = '';
 
 // Procesar acciones admin
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     if ($action === 'create') {
@@ -538,6 +539,7 @@ $totalFeatured = count($featured);
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: brightness(0) invert(1);"></button>
                 </div>
                 <form method="POST">
+            <?= csrfInput() ?>
                     <div class="modal-body">
                         <input type="hidden" name="action" value="create">
                         

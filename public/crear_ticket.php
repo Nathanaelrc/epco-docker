@@ -21,6 +21,7 @@ $maxFileSize = 5 * 1024 * 1024; // 5MB
 $maxFiles = 5;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $name = sanitize($_POST['name'] ?? '');
     $email = sanitize($_POST['email'] ?? '');
     $category = sanitize($_POST['category'] ?? 'otro');
@@ -81,10 +82,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $fileSize = $_FILES['attachments']['size'][$i];
                     $fileType = $_FILES['attachments']['type'][$i];
                     
-                    // Validar tipo y tamaño
-                    if (in_array($fileType, $allowedTypes) && $fileSize <= $maxFileSize) {
-                        $ext = pathinfo($fileName, PATHINFO_EXTENSION);
-                        $newFileName = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '', $fileName);
+                    // Validar extensión real del archivo (no confiar en MIME del cliente)
+                    $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx'];
+                    
+                    // Verificar MIME real con finfo
+                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                    $realMime = $finfo->file($tmpName);
+                    
+                    if (in_array($ext, $allowedExtensions) && in_array($realMime, $allowedTypes) && $fileSize <= $maxFileSize) {
+                        $newFileName = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '', basename($fileName));
                         $destination = $ticketDir . $newFileName;
                         
                         if (move_uploaded_file($tmpName, $destination)) {
@@ -189,7 +196,7 @@ $pageTitle = 'Crear Ticket';
         <?php if ($success): ?>
         <div class="alert-success-custom mb-4">
             <h5>Ticket registrado correctamente</h5>
-            <p class="mb-3"><?= $success ?></p>
+            <p class="mb-3"><?= htmlspecialchars($success) ?></p>
             <div class="d-flex gap-2 flex-wrap">
                 <a href="seguimiento_ticket.php?ticket=<?= $ticketNumber ?><?= $fromIntranet ? '&from=intranet' : '' ?>" class="btn btn-primary-submit">Ver ticket</a>
                 <a href="<?= $backUrl ?>" class="btn btn-cancel"><?= $backText ?></a>
@@ -198,10 +205,11 @@ $pageTitle = 'Crear Ticket';
         <?php else: ?>
 
         <?php if ($error): ?>
-        <div class="alert-danger-custom mb-4"><?= $error ?></div>
+        <div class="alert-danger-custom mb-4"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
         <form method="POST" action="" enctype="multipart/form-data" id="ticketForm">
+            <?= csrfInput() ?>
             <div class="form-card">
                 <div class="form-card-header">
                     <h2>Formulario de Solicitud</h2>

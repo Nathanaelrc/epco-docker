@@ -19,6 +19,7 @@ if (!is_dir($uploadDir)) {
 
 // Procesar acciones
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     if ($action === 'upload' && $isAdmin) {
@@ -49,8 +50,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'El archivo excede el tamaño máximo de 10MB';
                 $messageType = 'danger';
             } else {
+                // Validar extensión real del archivo
+                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+                $allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'jpg', 'jpeg', 'png', 'gif'];
+                
+                // Verificar MIME real con finfo
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $realMime = $finfo->file($file['tmp_name']);
+                
+                if (!in_array($extension, $allowedExtensions) || !in_array($realMime, $allowedTypes)) {
+                    $message = 'Tipo de archivo no permitido (extensión o contenido inválido)';
+                    $messageType = 'danger';
+                } else {
                 // Generar nombre único
-                $extension = pathinfo($originalName, PATHINFO_EXTENSION);
                 $filename = uniqid('doc_') . '_' . time() . '.' . $extension;
                 $filePath = 'uploads/documents/' . $filename;
                 
@@ -69,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = 'Error al guardar el archivo';
                     $messageType = 'danger';
                 }
+                } // end extension/mime validation
             }
         } else {
             $message = 'Selecciona un archivo para subir';
@@ -130,7 +143,16 @@ if (isset($_GET['download'])) {
         $stmt->execute([$docId]);
         
         $filePath = __DIR__ . '/' . $doc['file_path'];
-        if (file_exists($filePath)) {
+        
+        // Protección contra path traversal
+        $realPath = realpath($filePath);
+        $allowedDir = realpath(__DIR__ . '/uploads/documents/');
+        if ($realPath === false || $allowedDir === false || strpos($realPath, $allowedDir) !== 0) {
+            header('HTTP/1.1 403 Forbidden');
+            exit('Acceso denegado');
+        }
+        
+        if (file_exists($realPath)) {
             header('Content-Type: ' . $doc['file_type']);
             header('Content-Disposition: attachment; filename="' . basename($doc['title']) . '.' . pathinfo($doc['file_path'], PATHINFO_EXTENSION) . '"');
             header('Content-Length: ' . filesize($filePath));
@@ -361,6 +383,7 @@ function formatFileSize($bytes) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" enctype="multipart/form-data">
+            <?= csrfInput() ?>
                     <div class="modal-body">
                         <input type="hidden" name="action" value="upload">
                         

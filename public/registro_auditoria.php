@@ -68,8 +68,10 @@ $stmt = $pdo->prepare("
     LEFT JOIN users u ON al.user_id = u.id 
     WHERE $where 
     ORDER BY al.created_at DESC 
-    LIMIT $perPage OFFSET $offset
+    LIMIT ? OFFSET ?
 ");
+$params[] = (int)$perPage;
+$params[] = (int)$offset;
 $stmt->execute($params);
 $logs = $stmt->fetchAll();
 
@@ -237,8 +239,8 @@ $actionMeta = [
                                 <select name="action" class="form-select">
                                     <option value="">Todas</option>
                                     <?php foreach ($actions as $a): ?>
-                                    <option value="<?= $a ?>" <?= $filterAction === $a ? 'selected' : '' ?>>
-                                        <?= $actionMeta[$a]['label'] ?? $a ?>
+                                    <option value="<?= htmlspecialchars($a) ?>" <?= $filterAction === $a ? 'selected' : '' ?>>
+                                        <?= $actionMeta[$a]['label'] ?? htmlspecialchars($a) ?>
                                     </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -248,7 +250,7 @@ $actionMeta = [
                                 <select name="entity" class="form-select">
                                     <option value="">Todas</option>
                                     <?php foreach ($entities as $e): ?>
-                                    <option value="<?= $e ?>" <?= $filterEntity === $e ? 'selected' : '' ?>><?= ucfirst($e) ?></option>
+                                    <option value="<?= htmlspecialchars($e) ?>" <?= $filterEntity === $e ? 'selected' : '' ?>><?= ucfirst(htmlspecialchars($e)) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>

@@ -31,16 +31,16 @@ services:
       - APP_ENV=${APP_ENV:-production}
       - APP_URL=${APP_URL:-http://localhost:8090}
       - TZ=America/Santiago
-      # SMTP - Configuración de correo
-      - SMTP_ENABLED=true
-      - SMTP_MODE=direct
-      - SMTP_HOST=smtp.gmail.com
-      - SMTP_PORT=587
-      - SMTP_USER=soporteepco@gmail.com
-      - SMTP_PASS=uonf zgkc sfzq xgbc
-      - SMTP_ENCRYPTION=tls
-      - SMTP_FROM_EMAIL=soporteepco@gmail.com
-      - SMTP_FROM_NAME=Soporte TI - Empresa Portuaria Coquimbo
+      # SMTP - Configuración de correo (credenciales en .env)
+      - SMTP_ENABLED=${SMTP_ENABLED:-true}
+      - SMTP_MODE=${SMTP_MODE:-direct}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-tls}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Soporte TI - Empresa Portuaria Coquimbo}
       # Relay interno (microservicio de correo)
       - SMTP_RELAY_HOST=mailrelay
       - SMTP_RELAY_PORT=25
@@ -66,7 +66,7 @@ services:
     container_name: epco-db
     restart: unless-stopped
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-cambiar-root-pass}
       MYSQL_DATABASE: ${DB_NAME:-epco}
@@ -113,14 +113,17 @@ services:
       - epco-network
 
   # =============================================
-  # phpMyAdmin (opcional, para administrar la BD)
+  # phpMyAdmin (solo desarrollo - no usar en producción)
+  # Para habilitar: docker compose --profile dev up -d
   # =============================================
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: epco-phpmyadmin
     restart: unless-stopped
+    profiles:
+      - dev
     ports:
-      - "${PMA_PORT:-8082}:80"
+      - "127.0.0.1:${PMA_PORT:-8082}:80"
     environment:
       PMA_HOST: db
       PMA_PORT: 3306

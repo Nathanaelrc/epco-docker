@@ -5,7 +5,17 @@
  */
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+
+// CORS restringido - solo aceptar orígenes conocidos
+$allowedOrigins = [
+    getenv('APP_URL') ?: 'http://localhost:8090',
+];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} else {
+    header('Access-Control-Allow-Origin: ' . $allowedOrigins[0]);
+}
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 

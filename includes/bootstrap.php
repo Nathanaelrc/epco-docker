@@ -43,6 +43,13 @@ if (!headers_sent()) {
     // Permissions Policy - restringir APIs del navegador
     header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
     
+    // Content Security Policy - restringir orígenes de scripts y estilos
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; font-src fonts.gstatic.com cdn.jsdelivr.net; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'self';");
+    
+    // HSTS - forzar HTTPS si está disponible
+    if (isset($_SERVER['HTTPS']) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }    
     // Cache control para páginas autenticadas
     if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['logged_in'])) {
         header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -73,3 +80,17 @@ require_once EPCO_ROOT . '/includes/optimizacion.php';
 
 // Cargar autenticación
 require_once EPCO_ROOT . '/includes/autenticacion.php';
+
+/**
+ * Verificar CSRF en peticiones POST automáticamente.
+ * Llamar al inicio de cada handler POST.
+ */
+function enforcePostCsrf() {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $token = $_POST[CSRF_TOKEN_NAME] ?? '';
+        if (!verifyCsrfToken($token)) {
+            http_response_code(403);
+            die('Solicitud inválida: token CSRF no válido. <a href="javascript:history.back()">Volver</a>');
+        }
+    }
+}

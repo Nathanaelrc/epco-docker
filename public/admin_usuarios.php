@@ -19,6 +19,7 @@ $editUser = null;
 
 // Procesar acciones
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     if ($action === 'create') {
@@ -358,6 +359,7 @@ $roleLabels = ['admin' => 'Administrador', 'soporte' => 'Soporte TI', 'social' =
                                 </button>
                                 <?php if ($u['id'] != $user['id']): ?>
                                 <form method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro?')">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="toggle_active">
                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                     <button type="submit" class="btn btn-sm btn-outline-<?= $u['is_active'] ? 'warning' : 'success' ?> me-1" title="<?= $u['is_active'] ? 'Desactivar' : 'Activar' ?>">
@@ -365,6 +367,7 @@ $roleLabels = ['admin' => 'Administrador', 'soporte' => 'Soporte TI', 'social' =
                                     </button>
                                 </form>
                                 <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este usuario permanentemente?')">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -398,6 +401,7 @@ $roleLabels = ['admin' => 'Administrador', 'soporte' => 'Soporte TI', 'social' =
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" id="userForm">
+            <?= csrfInput() ?>
                     <div class="modal-body">
                         <input type="hidden" name="action" id="formAction" value="create">
                         <input type="hidden" name="user_id" id="userId" value="">

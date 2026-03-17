@@ -18,10 +18,20 @@ if (isLoggedIn()) {
 
 // Paso 1: Solicitar recuperación
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    enforcePostCsrf();
     
     if ($_POST['action'] === 'request') {
         $email = sanitize($_POST['email']);
         
+        // Rate limiting: máximo 3 solicitudes por hora por email
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM password_resets WHERE created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR) AND user_id IN (SELECT id FROM users WHERE email = ?)');
+        $stmt->execute([$email]);
+        $recentRequests = $stmt->fetchColumn();
+        
+        if ($recentRequests >= 3) {
+            $message = 'Has excedido el límite de solicitudes. Intenta de nuevo en una hora.';
+            $messageType = 'warning';
+        } else {
         // Buscar usuario
         $stmt = $pdo->prepare('SELECT id, name, email FROM users WHERE email = ? AND is_active = 1');
         $stmt->execute([$email]);
@@ -66,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $message = 'Si el email está registrado, recibirás instrucciones para restablecer tu contraseña.';
         $messageType = 'success';
         $success = true;
+        } // end rate limit check
     }
     
     if ($_POST['action'] === 'reset') {
@@ -86,8 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if (!$reset) {
             $message = 'El enlace ha expirado o no es válido. Solicita uno nuevo.';
             $messageType = 'danger';
-        } elseif (strlen($newPassword) < 6) {
-            $message = 'La contraseña debe tener al menos 6 caracteres';
+        } elseif (strlen($newPassword) < PASSWORD_MIN_LENGTH) {
+            $message = 'La contraseña debe tener al menos ' . PASSWORD_MIN_LENGTH . ' caracteres';
+            $messageType = 'danger';
+            $step = 'reset';
+        } elseif ($pwError = validatePassword($newPassword)) {
+            $message = $pwError;
             $messageType = 'danger';
             $step = 'reset';
         } elseif ($newPassword !== $confirmPassword) {
@@ -184,6 +199,7 @@ if ($step === 'reset' && $token) {
                             <?php endif; ?>
                             
                             <form method="POST">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="reset">
                                 <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
                                 
@@ -222,6 +238,7 @@ if ($step === 'reset' && $token) {
                             
                             <?php if (!$success): ?>
                             <form method="POST">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="request">
                                 
                                 <div class="mb-4">

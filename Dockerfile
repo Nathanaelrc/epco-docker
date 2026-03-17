@@ -59,6 +59,10 @@ RUN mkdir -p /var/www/html/logs \
     && mkdir -p /var/www/html/public/uploads/documents \
     && mkdir -p /var/www/html/public/uploads/tickets
 
+# Crear .htaccess de seguridad para uploads (bloquear ejecución PHP)
+RUN printf 'php_flag engine off\n<FilesMatch "\\.ph(p[3457]?|t|tml|ps)$$">\n    Require all denied\n</FilesMatch>\n' \
+    > /var/www/html/public/uploads/.htaccess
+
 # Copiar todo el proyecto
 COPY . /var/www/html/
 

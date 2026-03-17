@@ -66,7 +66,19 @@ if ($isSupport) {
 
 $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Filtrar campos sensibles antes de devolver
+$safeTicketFields = ['id', 'ticket_number', 'title', 'description', 'category', 'priority', 'status', 'created_at', 'updated_at', 'assigned_name'];
+if ($isSupport) {
+    $safeTicketFields = array_merge($safeTicketFields, ['user_name', 'user_email', 'assigned_to', 'resolution', 'sla_first_response', 'sla_resolution']);
+}
+$filteredTicket = array_intersect_key($ticket, array_flip($safeTicketFields));
+
+$safeCommentFields = ['id', 'user_name', 'comment', 'created_at'];
+$filteredComments = array_map(function($c) use ($safeCommentFields) {
+    return array_intersect_key($c, array_flip($safeCommentFields));
+}, $comments);
+
 echo json_encode([
-    'ticket' => $ticket,
-    'comments' => $comments
+    'ticket' => $filteredTicket,
+    'comments' => $filteredComments
 ]);

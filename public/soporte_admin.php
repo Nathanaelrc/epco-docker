@@ -91,6 +91,7 @@ if (isset($_GET['msg'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     // ========== PROCESAMIENTO POST ==========
@@ -1727,6 +1728,7 @@ unset($tp);
             <!-- Barra de acciones masivas -->
             <div id="bulkBar" class="bulk-action-bar" style="display:none;">
                 <form method="POST" id="bulkDeleteForm" onsubmit="return confirm('¿Eliminar los tickets seleccionados? Esta acción no se puede deshacer.');">
+            <?= csrfInput() ?>
                     <input type="hidden" name="action" value="bulk_delete_tickets">
                     <div id="bulkIdsContainer"></div>
                     <div class="d-flex align-items-center gap-3">
@@ -1845,6 +1847,7 @@ unset($tp);
             <!-- Barra de acciones masivas Mis Tickets -->
             <div id="bulkBarMy" class="bulk-action-bar" style="display:none;">
                 <form method="POST" id="bulkDeleteFormMy" onsubmit="return confirm('¿Eliminar los tickets seleccionados? Esta acción no se puede deshacer.');">
+            <?= csrfInput() ?>
                     <input type="hidden" name="action" value="bulk_delete_tickets">
                     <div id="bulkIdsContainerMy"></div>
                     <div class="d-flex align-items-center gap-3">
@@ -2315,6 +2318,7 @@ unset($tp);
                         <div class="card-header-custom"><h5 class="card-title-custom"><i class="bi bi-plus-circle me-2"></i>Crear Nuevo Ticket</h5></div>
                         <div class="p-4">
                             <form method="POST" enctype="multipart/form-data">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="create_ticket">
                                 <div class="row g-3">
                                     <div class="col-md-6">
@@ -2391,6 +2395,7 @@ unset($tp);
                                 <button class="btn-action btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal<?= $u['id'] ?>" title="Editar"><i class="bi bi-pencil"></i></button>
                                 <?php if ($u['id'] != $user['id']): ?>
                                 <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar usuario?')">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="delete_user">
                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                     <button type="submit" class="btn-action btn btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
@@ -2405,6 +2410,7 @@ unset($tp);
                                 <div class="modal-content">
                                     <div class="modal-header"><h5 class="modal-title">Editar Usuario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                                     <form method="POST">
+            <?= csrfInput() ?>
                                         <div class="modal-body">
                                             <input type="hidden" name="action" value="update_user">
                                             <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
@@ -2439,6 +2445,7 @@ unset($tp);
                     <div class="modal-content">
                         <div class="modal-header"><h5 class="modal-title">Crear Usuario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                         <form method="POST">
+            <?= csrfInput() ?>
                             <div class="modal-body">
                                 <input type="hidden" name="action" value="create_user">
                                 <div class="mb-3"><label class="form-label">Nombre completo *</label><input type="text" name="name" class="form-control" required placeholder="Ej: Juan Pérez González"></div>
@@ -4009,6 +4016,7 @@ unset($tp);
                         </div>
                         <div class="card-body px-4 pb-4">
                             <form method="POST" id="addNotifForm">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="add_notification_email">
                                 
                                 <div class="mb-3">
@@ -4051,6 +4059,7 @@ unset($tp);
                         </div>
                         <div class="card-body px-4 pb-4">
                             <form method="POST">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="send_test_email">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold small">Enviar prueba a:</label>
@@ -4127,6 +4136,7 @@ unset($tp);
                                             <td class="small text-muted"><?= date('d/m/Y', strtotime($nr['created_at'])) ?></td>
                                             <td class="text-end pe-4">
                                                 <form method="POST" class="d-inline">
+            <?= csrfInput() ?>
                                                     <input type="hidden" name="action" value="toggle_notification_email">
                                                     <input type="hidden" name="notif_id" value="<?= $nr['id'] ?>">
                                                     <button type="submit" class="btn btn-sm <?= $nr['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?>" title="<?= $nr['is_active'] ? 'Pausar' : 'Activar' ?>">
@@ -4134,6 +4144,7 @@ unset($tp);
                                                     </button>
                                                 </form>
                                                 <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este destinatario?')">
+            <?= csrfInput() ?>
                                                     <input type="hidden" name="action" value="delete_notification_email">
                                                     <input type="hidden" name="notif_id" value="<?= $nr['id'] ?>">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
@@ -4141,6 +4152,7 @@ unset($tp);
                                                     </button>
                                                 </form>
                                                 <form method="POST" class="d-inline">
+            <?= csrfInput() ?>
                                                     <input type="hidden" name="action" value="send_test_email">
                                                     <input type="hidden" name="test_email" value="<?= htmlspecialchars($nr['email']) ?>">
                                                     <button type="submit" class="btn btn-sm btn-outline-info" title="Enviar correo de prueba">

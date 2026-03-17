@@ -96,6 +96,7 @@ $pageTitle = 'Seguimiento de Denuncias';
                     
                     <div class="p-4">
                         <form method="POST" action="" class="d-flex gap-3">
+            <?= csrfInput() ?>
                             <input type="text" name="complaint_number" class="form-control" placeholder="Ingresa tu número de denuncia (ej: DN-20260117-XXXXX)" value="<?= htmlspecialchars($_POST['complaint_number'] ?? $_GET['complaint'] ?? '') ?>">
                             <button type="submit" class="btn text-white px-4" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 12px;">
                                 <i class="bi bi-search"></i>

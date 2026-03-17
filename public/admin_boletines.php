@@ -34,6 +34,7 @@ $priorities = [
 
 // Procesar acciones
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     // Crear boletín
@@ -220,6 +221,7 @@ if (isset($_GET['edit'])) {
                     <h5><i class="bi bi-<?= $editBulletin ? 'pencil' : 'plus-circle' ?> me-2"></i><?= $editBulletin ? 'Editar Boletín' : 'Nuevo Boletín' ?></h5>
                     
                     <form method="POST">
+            <?= csrfInput() ?>
                         <input type="hidden" name="action" value="<?= $editBulletin ? 'update' : 'create' ?>">
                         <?php if ($editBulletin): ?>
                         <input type="hidden" name="bulletin_id" value="<?= $editBulletin['id'] ?>">
@@ -380,6 +382,7 @@ if (isset($_GET['edit'])) {
                             <div class="d-flex gap-1">
                                 <!-- Toggle Pinned -->
                                 <form method="POST" class="d-inline">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="toggle_pinned">
                                     <input type="hidden" name="bulletin_id" value="<?= $b['id'] ?>">
                                     <button type="submit" class="action-btn btn btn-<?= $b['is_pinned'] ? 'warning' : 'outline-warning' ?>" title="Destacar">
@@ -389,6 +392,7 @@ if (isset($_GET['edit'])) {
                                 
                                 <!-- Toggle Active -->
                                 <form method="POST" class="d-inline">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="toggle_active">
                                     <input type="hidden" name="bulletin_id" value="<?= $b['id'] ?>">
                                     <button type="submit" class="action-btn btn btn-<?= $b['is_active'] ? 'success' : 'outline-secondary' ?>" title="<?= $b['is_active'] ? 'Desactivar' : 'Activar' ?>">
@@ -403,6 +407,7 @@ if (isset($_GET['edit'])) {
                                 
                                 <!-- Eliminar -->
                                 <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este boletín?');">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="bulletin_id" value="<?= $b['id'] ?>">
                                     <button type="submit" class="action-btn btn btn-outline-danger" title="Eliminar">

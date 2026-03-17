@@ -494,15 +494,15 @@ CREATE TABLE IF NOT EXISTS api_tokens (
 -- USUARIOS (Contraseña para todos: password)
 -- =============================================
 INSERT INTO users (name, username, email, password, role, department, position) VALUES 
-('Administrador Empresa Portuaria Coquimbo', 'admin.epco', 'admin@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'TI', 'Administrador de Sistemas'),
-('Soporte TI', 'soporte.ti', 'soporte@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
-('Técnico Soporte', 'tecnico.soporte', 'tecnico@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
-('Comunicaciones', 'comunicaciones.epco', 'social@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'social', 'Comunicaciones', 'Encargado de Comunicaciones'),
-('Comité de Ética', 'comite.etica', 'etica@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'denuncia', 'Recursos Humanos', 'Encargado Ley Karin'),
-('Usuario Demo', 'usuario.demo', 'usuario@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Colaborador'),
-('María González', 'maria.gonzalez', 'maria.gonzalez@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Administración', 'Asistente Administrativo'),
-('Carlos Pérez', 'carlos.perez', 'carlos.perez@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Operador Portuario'),
-('Ana López', 'ana.lopez', 'ana.lopez@puertocoquimbo.cl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Finanzas', 'Analista Financiero');
+('Administrador Empresa Portuaria Coquimbo', 'admin.epco', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'TI', 'Administrador de Sistemas'),
+('Soporte TI', 'soporte.ti', 'soporte@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
+('Técnico Soporte', 'tecnico.soporte', 'tecnico@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'soporte', 'TI', 'Técnico de Soporte'),
+('Comunicaciones', 'comunicaciones.epco', 'social@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'social', 'Comunicaciones', 'Encargado de Comunicaciones'),
+('Comité de Ética', 'comite.etica', 'etica@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'denuncia', 'Recursos Humanos', 'Encargado Ley Karin'),
+('Usuario Demo', 'usuario.demo', 'usuario@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Colaborador'),
+('María González', 'maria.gonzalez', 'maria.gonzalez@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Administración', 'Asistente Administrativo'),
+('Carlos Pérez', 'carlos.perez', 'carlos.perez@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Operaciones', 'Operador Portuario'),
+('Ana López', 'ana.lopez', 'ana.lopez@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Finanzas', 'Analista Financiero');
 
 -- =============================================
 -- CONFIGURACIÓN SLA (tiempos en minutos)
@@ -628,7 +628,7 @@ Nombre Apellido
 Cargo
 Empresa Portuaria Coquimbo
 Teléfono: +56 XX XXX XXXX
-Email: nombre@puertocoquimbo.cl
+Email: nombre@example.com
 </pre>',
 'Cómo añadir y personalizar tu firma de correo electrónico', 'software',
 'outlook,correo,firma,email,microsoft', 1, 1, 0),
@@ -1075,22 +1075,22 @@ INSERT INTO tickets (
     category, priority, title, description, status,
     sla_response_target, sla_resolution_target, created_at
 ) VALUES 
-('TK-2026-0001', 6, 'Usuario Demo', 'usuario@puertocoquimbo.cl', 'Operaciones',
+('TK-2026-0001', 6, 'Usuario Demo', 'usuario@example.com', 'Operaciones',
  'software', 'media', 'Problema con Microsoft Office', 
  'Excel se cierra inesperadamente al abrir archivos grandes. El problema comenzó después de la última actualización de Windows.', 
  'abierto', 480, 2880, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
 
-('TK-2026-0002', 7, 'María González', 'maria.gonzalez@puertocoquimbo.cl', 'Administración',
+('TK-2026-0002', 7, 'María González', 'maria.gonzalez@example.com', 'Administración',
  'hardware', 'alta', 'Monitor no enciende', 
  'El monitor de mi estación de trabajo no enciende desde esta mañana. Ya verifiqué los cables y están bien conectados.', 
  'asignado', 240, 1440, DATE_SUB(NOW(), INTERVAL 5 HOUR)),
 
-('TK-2026-0003', 8, 'Carlos Pérez', 'carlos.perez@puertocoquimbo.cl', 'Operaciones',
+('TK-2026-0003', 8, 'Carlos Pérez', 'carlos.perez@example.com', 'Operaciones',
  'red', 'urgente', 'Sin acceso a internet', 
  'Todo el departamento de Operaciones quedó sin acceso a internet desde las 9:00 AM. Necesitamos conexión para las operaciones del puerto.', 
  'en_proceso', 60, 240, DATE_SUB(NOW(), INTERVAL 1 HOUR)),
 
-('TK-2026-0004', 9, 'Ana López', 'ana.lopez@puertocoquimbo.cl', 'Finanzas',
+('TK-2026-0004', 9, 'Ana López', 'ana.lopez@example.com', 'Finanzas',
  'acceso', 'media', 'Solicitud de acceso a SAP', 
  'Necesito acceso al módulo de reportes financieros de SAP para generar los informes mensuales.', 
  'abierto', 480, 2880, DATE_SUB(NOW(), INTERVAL 30 MINUTE));

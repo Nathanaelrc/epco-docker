@@ -26,6 +26,14 @@ function login($identifier, $password) {
     $user = $stmt->fetch();
     
     if ($user && password_verify($password, $user['password'])) {
+        // Verificar bloqueo por intentos fallidos
+        if ($user['login_attempts'] >= MAX_LOGIN_ATTEMPTS && !empty($user['locked_until']) && $user['locked_until'] > date('Y-m-d H:i:s')) {
+            return false;
+        }
+        
+        // Regenerar session ID para prevenir session fixation
+        session_regenerate_id(true);
+        
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_username'] = $user['username'];
@@ -33,8 +41,24 @@ function login($identifier, $password) {
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['logged_in'] = true;
         
+        // Resetear intentos fallidos
+        $resetStmt = $pdo->prepare('UPDATE users SET login_attempts = 0, locked_until = NULL WHERE id = ?');
+        $resetStmt->execute([$user['id']]);
+        
         return true;
     }
+    
+    // Incrementar intentos fallidos si el usuario existe
+    if ($user) {
+        $attempts = ($user['login_attempts'] ?? 0) + 1;
+        $lockUntil = null;
+        if ($attempts >= MAX_LOGIN_ATTEMPTS) {
+            $lockUntil = date('Y-m-d H:i:s', time() + LOGIN_LOCKOUT_TIME);
+        }
+        $failStmt = $pdo->prepare('UPDATE users SET login_attempts = ?, locked_until = ? WHERE id = ?');
+        $failStmt->execute([$attempts, $lockUntil, $user['id']]);
+    }
+    
     return false;
 }
 
@@ -42,8 +66,23 @@ function login($identifier, $password) {
  * Cerrar sesión
  */
 function logout() {
+    $_SESSION = [];
+    
+    // Eliminar cookie de sesión
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $params['path'],
+            $params['domain'],
+            $params['secure'],
+            $params['httponly']
+        );
+    }
+    
     session_destroy();
-    session_start();
 }
 
 /**

@@ -46,6 +46,7 @@ if (isset($_GET['msg'])) {
 
 // ========== PROCESAR ACCIONES POST ==========
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     $redirectBase = "detalle_ticket.php?id={$ticketId}";
     
@@ -454,6 +455,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                         <div class="collapse" id="editSection">
                             <div class="p-3">
                                 <form method="POST">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="update_ticket">
                                     <div class="row g-2">
                                         <div class="col-md-6">
@@ -503,6 +505,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                     </div>
                     <div class="card-section">
                         <form method="POST">
+            <?= csrfInput() ?>
                             <input type="hidden" name="action" value="update_ticket_work">
                             
                             <div class="row g-3 mb-3">
@@ -555,6 +558,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                         <!-- Eliminar (separado) -->
                         <div class="mt-3 pt-3 border-top">
                             <form method="POST" onsubmit="return confirm('¿Eliminar este ticket? Esta acción no se puede deshacer.')">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="delete_ticket">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar Ticket</button>
                             </form>
@@ -625,6 +629,7 @@ $returnUrl = "soporte_admin.php?page={$returnPage}" . ($returnFilter ? "&filter=
                     <!-- Agregar Comentario -->
                     <div class="card-section border-top">
                         <form method="POST">
+            <?= csrfInput() ?>
                             <input type="hidden" name="action" value="add_comment">
                             <div class="mb-2">
                                 <textarea name="comment" class="form-control" rows="3" placeholder="Agregar nota de trabajo..." required></textarea>

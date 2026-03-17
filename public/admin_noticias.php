@@ -19,6 +19,7 @@ $error = '';
 
 // Procesar acciones
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     if ($action === 'create') {
@@ -28,7 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newsUrl = sanitize($_POST['news_url'] ?? '');
         $isPublished = isset($_POST['is_published']) ? 1 : 0;
         
-        if (empty($title) || empty($content)) {
+        // Validar URLs (solo http/https permitido)
+        if (!empty($imageUrl) && !preg_match('#^https?://#i', $imageUrl)) {
+            $error = 'La URL de imagen debe comenzar con http:// o https://';
+        } elseif (!empty($newsUrl) && !preg_match('#^https?://#i', $newsUrl)) {
+            $error = 'La URL de noticia debe comenzar con http:// o https://';
+        } elseif (empty($title) || empty($content)) {
             $error = 'El título y contenido son obligatorios.';
         } else {
             $stmt = $pdo->prepare('INSERT INTO news (title, content, image_url, news_url, author_id, is_published) VALUES (?, ?, ?, ?, ?, ?)');
@@ -209,6 +215,7 @@ $draftNews = $totalNews - $publishedNews;
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <form method="POST" class="d-inline">
+            <?= csrfInput() ?>
                                         <input type="hidden" name="action" value="toggle_publish">
                                         <input type="hidden" name="id" value="<?= $item['id'] ?>">
                                         <button type="submit" class="action-btn btn <?= $item['is_published'] ? 'btn-outline-warning' : 'btn-outline-success' ?>" title="<?= $item['is_published'] ? 'Despublicar' : 'Publicar' ?>">
@@ -216,6 +223,7 @@ $draftNews = $totalNews - $publishedNews;
                                         </button>
                                     </form>
                                     <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta noticia?')">
+            <?= csrfInput() ?>
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $item['id'] ?>">
                                         <button type="submit" class="action-btn btn btn-outline-danger" title="Eliminar">
@@ -242,6 +250,7 @@ $draftNews = $totalNews - $publishedNews;
                             </h4>
                             
                             <form method="POST" action="">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="<?= $editNews ? 'update' : 'create' ?>">
                                 <?php if ($editNews): ?>
                                 <input type="hidden" name="id" value="<?= $editNews['id'] ?>">

@@ -99,6 +99,7 @@ $pageTitle = 'Seguimiento de Tickets';
                     
                     <div class="p-4">
                         <form method="POST" action="" class="d-flex gap-3">
+            <?= csrfInput() ?>
                             <input type="text" name="ticket_number" class="form-control" placeholder="Ingresa tu número de ticket (ej: TK-20260117-XXXXX)" value="<?= htmlspecialchars($_POST['ticket_number'] ?? $_GET['ticket'] ?? '') ?>">
                             <button type="submit" class="btn btn-search text-white px-4">
                                 <i class="bi bi-search"></i>

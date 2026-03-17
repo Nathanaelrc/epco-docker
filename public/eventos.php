@@ -17,6 +17,7 @@ $messageType = '';
 
 // Procesar acciones
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     if ($action === 'create' && $isAdmin) {
@@ -290,6 +291,7 @@ $dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este evento?')">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="event_id" value="<?= $event['id'] ?>">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -353,6 +355,7 @@ $dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: brightness(0) invert(1);"></button>
                 </div>
                 <form method="POST" id="eventForm">
+            <?= csrfInput() ?>
                     <div class="modal-body">
                         <input type="hidden" name="action" id="formAction" value="create">
                         <input type="hidden" name="event_id" id="eventId">

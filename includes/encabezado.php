@@ -26,12 +26,12 @@ if (!defined('EPCO_APP')) {
     <!-- Google Fonts - Montserrat + Lato (con display=swap para evitar bloqueo) -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Bootstrap 5 con SRI -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-4LISEZ5TT/GELsOufYz1SjaAB1bJDL6Jqr6Hhyq3cb208V0sLLPf00pU7D5ik3tB" crossorigin="anonymous">
     
-    <!-- GSAP - carga diferida, solo cuando se necesita -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+    <!-- GSAP - carga diferida -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer integrity="sha512-16bd2E3Bl8jBSCMGJLwHNvGVBjNamdK1CfuF0pV4GwjHSKsJMcFiVgfCRj6+2JWzWEilELEqse3gx0GK63Yw==" crossorigin="anonymous"></script>
     
     <!-- Chart.js - carga diferida, solo páginas que lo necesitan -->
     <?php if (!empty($needsChartJs)): ?>

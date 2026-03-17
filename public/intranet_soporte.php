@@ -21,6 +21,7 @@ $maxFiles = 5;
 
 // Procesar creación de ticket
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    enforcePostCsrf();
     if ($_POST['action'] === 'create_ticket') {
         $category = sanitize($_POST['category'] ?? 'otro');
         $priority = sanitize($_POST['priority'] ?? 'media');
@@ -297,6 +298,7 @@ $pageTitle = 'Soporte TI';
                             </div>
                             
                             <form method="POST" enctype="multipart/form-data" class="p-4">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="create_ticket">
                                 
                                 <!-- Info usuario (solo lectura) -->
@@ -602,6 +604,7 @@ $pageTitle = 'Soporte TI';
                     
                     ${data.ticket.status !== 'cerrado' ? `
                     <form method="POST" class="border-top pt-3">
+            <?= csrfInput() ?>
                         <input type="hidden" name="action" value="add_comment">
                         <input type="hidden" name="ticket_id" value="${data.ticket.id}">
                         <div class="mb-3">

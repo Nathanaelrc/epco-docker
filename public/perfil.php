@@ -17,6 +17,7 @@ $userData = $stmt->fetch();
 
 // Procesar actualización de perfil
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     if ($action === 'update_profile') {
@@ -52,8 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!password_verify($currentPassword, $userData['password'])) {
             $message = 'La contraseña actual es incorrecta';
             $messageType = 'danger';
-        } elseif (strlen($newPassword) < 6) {
-            $message = 'La nueva contraseña debe tener al menos 6 caracteres';
+        } elseif (strlen($newPassword) < PASSWORD_MIN_LENGTH) {
+            $message = 'La nueva contraseña debe tener al menos ' . PASSWORD_MIN_LENGTH . ' caracteres';
+            $messageType = 'danger';
+        } elseif ($pwError = validatePassword($newPassword)) {
+            $message = $pwError;
             $messageType = 'danger';
         } elseif ($newPassword !== $confirmPassword) {
             $message = 'Las contraseñas no coinciden';
@@ -248,6 +252,7 @@ $roleColors = ['admin' => 'danger', 'soporte' => 'warning', 'social' => 'info', 
                             </div>
                             <div class="card-body">
                                 <form method="POST">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="update_profile">
                                     <div class="row g-3">
                                         <div class="col-md-6">
@@ -298,6 +303,7 @@ $roleColors = ['admin' => 'danger', 'soporte' => 'warning', 'social' => 'info', 
                             </div>
                             <div class="card-body">
                                 <form method="POST">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="change_password">
                                     <div class="row g-3">
                                         <div class="col-md-12">
@@ -349,6 +355,7 @@ $roleColors = ['admin' => 'danger', 'soporte' => 'warning', 'social' => 'info', 
                             </div>
                             <div class="card-body">
                                 <form method="POST">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="update_preferences">
                                     <div class="row g-3">
                                         <div class="col-md-6">
@@ -387,6 +394,7 @@ $roleColors = ['admin' => 'danger', 'soporte' => 'warning', 'social' => 'info', 
                             </div>
                             <div class="card-body">
                                 <form method="POST">
+            <?= csrfInput() ?>
                                     <input type="hidden" name="action" value="update_notifications">
                                     <h6 class="text-muted mb-3">Notificaciones por Email</h6>
                                     <div class="mb-3">

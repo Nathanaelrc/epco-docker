@@ -215,6 +215,15 @@ DB_PASS="${DB_PASS:-$(generate_password)}"
 DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-$(generate_password)}"
 APP_ENV="${APP_ENV:-production}"
 
+# Preservar credenciales SMTP si ya existen en .env
+SMTP_HOST="${SMTP_HOST:-smtp.gmail.com}"
+SMTP_PORT="${SMTP_PORT:-587}"
+SMTP_USER="${SMTP_USER:-}"
+SMTP_PASS="${SMTP_PASS:-}"
+SMTP_ENCRYPTION="${SMTP_ENCRYPTION:-tls}"
+SMTP_FROM_EMAIL="${SMTP_FROM_EMAIL:-}"
+SMTP_FROM_NAME="${SMTP_FROM_NAME:-Soporte TI - Empresa Portuaria Coquimbo}"
+
 cat > "$ENV_FILE" << EOF
 # =============================================
 # EPCO - Variables de Entorno
@@ -234,6 +243,17 @@ DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASS=${DB_PASS}
 DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+
+# SMTP - Correo (completar manualmente)
+SMTP_ENABLED=true
+SMTP_MODE=direct
+SMTP_HOST=${SMTP_HOST}
+SMTP_PORT=${SMTP_PORT}
+SMTP_USER=${SMTP_USER}
+SMTP_PASS=${SMTP_PASS}
+SMTP_ENCRYPTION=${SMTP_ENCRYPTION}
+SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+SMTP_FROM_NAME=${SMTP_FROM_NAME}
 EOF
 
 echo -e "  ${GREEN}✓${NC} Archivo .env generado"

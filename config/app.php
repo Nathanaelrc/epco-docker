@@ -18,7 +18,7 @@ if (session_status() === PHP_SESSION_NONE) {
         'lifetime' => 0,
         'path' => '/',
         'domain' => '',
-        'secure' => isset($_SERVER['HTTPS']),
+        'secure' => isset($_SERVER['HTTPS']) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https'),
         'httponly' => true,
         'samesite' => 'Strict'
     ]);
@@ -206,13 +206,39 @@ function csrfInput() {
 }
 
 /**
- * Sanitizar entrada
+ * Sanitizar entrada para almacenamiento (sin htmlspecialchars - eso va al renderizar)
  */
 function sanitize($data) {
     if (is_array($data)) {
         return array_map('sanitize', $data);
     }
-    return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
+    return trim(strip_tags((string)$data));
+}
+
+/**
+ * Escapar para HTML (usar al renderizar datos en vistas)
+ */
+function e($data) {
+    return htmlspecialchars((string)$data, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Validar fortaleza de contraseña
+ */
+function validatePassword($password) {
+    if (strlen($password) < PASSWORD_MIN_LENGTH) {
+        return 'La contraseña debe tener al menos ' . PASSWORD_MIN_LENGTH . ' caracteres.';
+    }
+    if (!preg_match('/[a-z]/', $password)) {
+        return 'La contraseña debe contener al menos una letra minúscula.';
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return 'La contraseña debe contener al menos una letra mayúscula.';
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        return 'La contraseña debe contener al menos un número.';
+    }
+    return null; // null = válida
 }
 
 /**
@@ -258,8 +284,20 @@ function getFlashMessage() {
 function logActivity($userId, $action, $entityType = null, $entityId = null, $details = '') {
     global $pdo;
     
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    // Obtener IP real (soporte para proxies)
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    // Tomar solo la primera IP si hay múltiples
+    if (strpos($ip, ',') !== false) {
+        $ip = trim(explode(',', $ip)[0]);
+    }
+    // Validar formato de IP
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        $ip = 'invalid';
+    }
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    
+    // Sanitizar details para evitar log injection
+    $details = str_replace(["\r", "\n", "\t"], ' ', $details);
     
     // Registrar en base de datos
     try {

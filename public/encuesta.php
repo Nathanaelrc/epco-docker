@@ -43,6 +43,7 @@ if (!empty($token)) {
 
 // Procesar encuesta
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
+    enforcePostCsrf();
     $rating = (int)$_POST['rating'];
     $responseTime = (int)$_POST['response_time'];
     $resolution = (int)$_POST['resolution'];
@@ -125,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
         
         <div class="survey-body">
             <form method="POST">
+            <?= csrfInput() ?>
                 <!-- Calificación general -->
                 <div class="question-section">
                     <h5 class="question-title text-center">

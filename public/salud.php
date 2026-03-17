@@ -12,8 +12,14 @@ $result = [
     'time' => date('c')
 ];
 
-// Si se pide chequeo de BD
+// Si se pide chequeo de BD (restringir a localhost/Docker internos)
 if (isset($_GET['db'])) {
+    $remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
+    $isInternal = in_array($remoteIp, ['127.0.0.1', '::1', '172.16.0.0/12'], true) || strpos($remoteIp, '172.') === 0 || strpos($remoteIp, '10.') === 0;
+    
+    if (!$isInternal && (ENVIRONMENT ?? 'production') === 'production') {
+        $result['database'] = 'access_restricted';
+    } else {
     $dbHost = getenv('DB_HOST') ?: 'db';
     $dbName = getenv('DB_NAME') ?: 'epco';
     $dbUser = getenv('DB_USER') ?: 'epco_user';
@@ -28,17 +34,15 @@ if (isset($_GET['db'])) {
             [PDO::ATTR_TIMEOUT => 3]
         );
         $result['database'] = 'connected';
-        $result['db_host'] = $dbHost;
-        $result['db_name'] = $dbName;
-        $result['db_user'] = $dbUser;
     } catch (PDOException $e) {
         http_response_code(503);
         $result['status'] = 'degraded';
         $result['database'] = 'error';
-        $result['db_host'] = $dbHost;
-        $result['db_name'] = $dbName;
-        $result['db_user'] = $dbUser;
-        $result['db_error'] = $e->getMessage();
+        // No exponer detalles de error en producción
+        if ((ENVIRONMENT ?? 'production') === 'development') {
+            $result['db_error'] = $e->getMessage();
+        }
+    }
     }
 }
 

@@ -14,6 +14,7 @@ $error = '';
 $complaintNumber = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $isAnonymous = isset($_POST['is_anonymous']) ? 1 : 0;
     $complainantName = $isAnonymous ? null : sanitize($_POST['complainant_name'] ?? '');
     $complainantEmail = $isAnonymous ? null : sanitize($_POST['complainant_email'] ?? '');
@@ -104,7 +105,7 @@ $pageTitle = 'Crear Denuncia';
                     <div class="p-5">
                         <?php if ($success): ?>
                         <div class="alert alert-success rounded-4 mb-4">
-                            <i class="bi bi-check-circle me-2"></i><?= $success ?>
+                            <i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($success) ?>
                             <hr>
                             <p class="mb-0"><strong>Importante:</strong> Guarda este número para consultar el estado de tu denuncia. La información será tratada con absoluta confidencialidad.</p>
                         </div>
@@ -117,11 +118,12 @@ $pageTitle = 'Crear Denuncia';
                         
                         <?php if ($error): ?>
                         <div class="alert alert-danger rounded-4 mb-4">
-                            <i class="bi bi-exclamation-circle me-2"></i><?= $error ?>
+                            <i class="bi bi-exclamation-circle me-2"></i><?= htmlspecialchars($error) ?>
                         </div>
                         <?php endif; ?>
                         
                         <form method="POST" action="">
+            <?= csrfInput() ?>
                             <!-- Opción anónima -->
                             <div class="bg-light rounded-4 p-4 mb-4">
                                 <div class="form-check">

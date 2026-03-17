@@ -69,6 +69,7 @@ if (isset($_GET['msg'])) {
 
 // Procesar acciones POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    enforcePostCsrf();
     $action = $_POST['action'] ?? '';
     
     // Cambiar estado de denuncia
@@ -585,6 +586,7 @@ if (in_array($page, ['detalle', 'editar']) && isset($_GET['id'])) {
                             
                             <!-- Agregar nota -->
                             <form method="POST" class="mt-4 pt-3 border-top">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="add_note">
                                 <input type="hidden" name="complaint_id" value="<?= $complaint['id'] ?>">
                                 <div class="mb-2">
@@ -606,6 +608,7 @@ if (in_array($page, ['detalle', 'editar']) && isset($_GET['id'])) {
                         <div class="p-4">
                             <!-- Asignar investigador -->
                             <form method="POST" class="mb-4">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="assign_investigator">
                                 <input type="hidden" name="complaint_id" value="<?= $complaint['id'] ?>">
                                 <label class="form-label small fw-semibold">Investigador Asignado</label>
@@ -620,6 +623,7 @@ if (in_array($page, ['detalle', 'editar']) && isset($_GET['id'])) {
                             
                             <!-- Cambiar estado -->
                             <form method="POST">
+            <?= csrfInput() ?>
                                 <input type="hidden" name="action" value="change_status">
                                 <input type="hidden" name="complaint_id" value="<?= $complaint['id'] ?>">
                                 <label class="form-label small fw-semibold">Estado</label>
@@ -686,6 +690,7 @@ if (in_array($page, ['detalle', 'editar']) && isset($_GET['id'])) {
                 </div>
                 <div class="p-4">
                     <form method="POST">
+            <?= csrfInput() ?>
                         <input type="hidden" name="action" value="edit_complaint">
                         <input type="hidden" name="complaint_id" value="<?= $complaint['id'] ?>">
                         
@@ -773,6 +778,7 @@ if (in_array($page, ['detalle', 'editar']) && isset($_GET['id'])) {
                 </div>
                 <div class="modal-footer border-0">
                     <form method="POST" id="deleteForm">
+            <?= csrfInput() ?>
                         <input type="hidden" name="action" value="delete_complaint">
                         <input type="hidden" name="complaint_id" id="deleteId">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
