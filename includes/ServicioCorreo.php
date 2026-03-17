@@ -16,8 +16,57 @@ class MailService {
     
     public function __construct() {
         $this->config = require __DIR__ . '/../config/correo.php';
+        $this->loadDbConfig();
         $this->mailer = new PHPMailer(true);
         $this->configure();
+    }
+    
+    /**
+     * Cargar configuración SMTP desde la base de datos (sobrescribe env vars)
+     */
+    private function loadDbConfig() {
+        try {
+            global $pdo;
+            if (!$pdo) return;
+            
+            $rows = $pdo->query("SELECT config_key, config_value FROM smtp_config")->fetchAll(PDO::FETCH_KEY_PAIR);
+            if (empty($rows)) return;
+            
+            $smtp = &$this->config['smtp'];
+            if (isset($rows['smtp_enabled']) && $rows['smtp_enabled'] !== '') {
+                $smtp['use_smtp'] = filter_var($rows['smtp_enabled'], FILTER_VALIDATE_BOOLEAN);
+            }
+            if (isset($rows['smtp_mode']) && $rows['smtp_mode'] !== '') {
+                $smtp['mode'] = $rows['smtp_mode'];
+            }
+            if (isset($rows['smtp_host']) && $rows['smtp_host'] !== '') {
+                $smtp['host'] = $rows['smtp_host'];
+            }
+            if (isset($rows['smtp_port']) && $rows['smtp_port'] !== '') {
+                $smtp['port'] = (int)$rows['smtp_port'];
+            }
+            if (isset($rows['smtp_user']) && $rows['smtp_user'] !== '') {
+                $smtp['username'] = $rows['smtp_user'];
+            }
+            if (isset($rows['smtp_pass']) && $rows['smtp_pass'] !== '') {
+                $smtp['password'] = $rows['smtp_pass'];
+            }
+            if (isset($rows['smtp_encryption'])) {
+                $smtp['encryption'] = $rows['smtp_encryption'];
+            }
+            if (isset($rows['smtp_from_email']) && $rows['smtp_from_email'] !== '') {
+                $smtp['from_email'] = $rows['smtp_from_email'];
+            } elseif (isset($rows['smtp_user']) && $rows['smtp_user'] !== '') {
+                $smtp['from_email'] = $rows['smtp_user'];
+            }
+            if (isset($rows['smtp_from_name']) && $rows['smtp_from_name'] !== '') {
+                $smtp['from_name'] = $rows['smtp_from_name'];
+            }
+            
+            error_log("[EPCO Mail] Config SMTP cargada desde BD: modo={$smtp['mode']}, host={$smtp['host']}");
+        } catch (\Exception $e) {
+            error_log("[EPCO Mail] No se pudo cargar config SMTP desde BD: " . $e->getMessage());
+        }
     }
     
     private function configure() {

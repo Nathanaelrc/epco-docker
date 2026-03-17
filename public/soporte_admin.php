@@ -723,6 +723,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'danger';
         }
     }
+    
+    // ===== GUARDAR CONFIGURACIÓN SMTP DESDE LA INTERFAZ =====
+    if ($action === 'save_smtp_config' && $isAdmin) {
+        $smtpFields = [
+            'smtp_enabled'    => sanitize($_POST['smtp_enabled'] ?? 'true'),
+            'smtp_mode'       => sanitize($_POST['smtp_mode'] ?? 'direct'),
+            'smtp_host'       => sanitize($_POST['smtp_host'] ?? ''),
+            'smtp_port'       => (string)(int)($_POST['smtp_port'] ?? 587),
+            'smtp_user'       => trim($_POST['smtp_user'] ?? ''),
+            'smtp_encryption' => sanitize($_POST['smtp_encryption'] ?? 'tls'),
+            'smtp_from_email' => sanitize($_POST['smtp_from_email'] ?? ''),
+            'smtp_from_name'  => sanitize($_POST['smtp_from_name'] ?? ''),
+        ];
+        // Solo actualizar contraseña si se proporcionó una nueva
+        $newPass = $_POST['smtp_pass'] ?? '';
+        if ($newPass !== '' && $newPass !== '••••••••') {
+            $smtpFields['smtp_pass'] = $newPass;
+        }
+        
+        $stmtUpsert = $pdo->prepare("INSERT INTO smtp_config (config_key, config_value, updated_by) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)");
+        foreach ($smtpFields as $key => $val) {
+            $stmtUpsert->execute([$key, $val, $user['id']]);
+        }
+        logActivity($user['id'], 'smtp_config_updated', 'smtp_config', null, 'Configuración SMTP actualizada desde panel');
+        $message = 'Configuración SMTP guardada correctamente';
+        $messageType = 'success';
+    }
 }
 
 // Obtener datos según la página
@@ -921,6 +948,17 @@ $notifStats = [
     'ticket_created' => count(array_filter($notificationRecipients, fn($r) => $r['is_active'] && in_array($r['event_type'], ['ticket_created', 'all']))),
     'ticket_updated' => count(array_filter($notificationRecipients, fn($r) => $r['is_active'] && in_array($r['event_type'], ['ticket_updated', 'all']))),
 ];
+
+// ===== CONFIGURACIÓN SMTP (desde BD) =====
+$smtpConfig = [];
+try {
+    $rows = $pdo->query("SELECT config_key, config_value FROM smtp_config")->fetchAll();
+    foreach ($rows as $r) {
+        $smtpConfig[$r['config_key']] = $r['config_value'];
+    }
+} catch (PDOException $e) {
+    error_log("[EPCO] Tabla smtp_config no disponible: " . $e->getMessage());
+}
 
 // ===== ESTADÍSTICAS SLA MEJORADAS =====
 // Obtener configuración SLA desde la base de datos
@@ -4233,45 +4271,139 @@ unset($tp);
                         </div>
                     </div>
                     
-                    <!-- Info SMTP actual -->
+                    <!-- Configuración SMTP editable -->
                     <div class="card border-0 shadow-sm mt-4">
                         <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2 text-secondary"></i>Configuración SMTP Actual</h5>
+                            <h5 class="fw-bold mb-0"><i class="bi bi-gear me-2 text-primary"></i>Configuración SMTP (Correo Remitente)</h5>
                         </div>
                         <div class="card-body px-4 pb-4">
-                            <?php 
-                            $smtpEnabled = filter_var(getenv('SMTP_ENABLED') ?: 'false', FILTER_VALIDATE_BOOLEAN);
-                            $smtpHost = getenv('SMTP_HOST') ?: 'No configurado';
-                            $smtpUser = getenv('SMTP_USER') ?: 'No configurado';
-                            $smtpFromName = getenv('SMTP_FROM_NAME') ?: 'Sin nombre';
+                            <?php
+                            $cfgEnabled    = $smtpConfig['smtp_enabled'] ?? 'true';
+                            $cfgMode       = $smtpConfig['smtp_mode'] ?? 'direct';
+                            $cfgHost       = $smtpConfig['smtp_host'] ?? 'smtp.gmail.com';
+                            $cfgPort       = $smtpConfig['smtp_port'] ?? '587';
+                            $cfgUser       = $smtpConfig['smtp_user'] ?? '';
+                            $cfgPass       = $smtpConfig['smtp_pass'] ?? '';
+                            $cfgEncryption = $smtpConfig['smtp_encryption'] ?? 'tls';
+                            $cfgFromEmail  = $smtpConfig['smtp_from_email'] ?? '';
+                            $cfgFromName   = $smtpConfig['smtp_from_name'] ?? 'Soporte TI - Empresa Portuaria Coquimbo';
                             ?>
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <div class="p-3 bg-<?= $smtpEnabled ? 'success' : 'danger' ?> bg-opacity-10 rounded">
-                                        <div class="small text-muted mb-1">Estado</div>
-                                        <div class="fw-bold text-<?= $smtpEnabled ? 'success' : 'danger' ?>">
-                                            <i class="bi <?= $smtpEnabled ? 'bi-check-circle' : 'bi-x-circle' ?> me-1"></i>
-                                            <?= $smtpEnabled ? 'ACTIVO' : 'DESACTIVADO' ?>
+                            <?php if ($isAdmin): ?>
+                            <form method="POST">
+                                <?= csrfInput() ?>
+                                <input type="hidden" name="action" value="save_smtp_config">
+                                
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Estado SMTP</label>
+                                        <select name="smtp_enabled" class="form-select form-select-sm">
+                                            <option value="true" <?= $cfgEnabled === 'true' ? 'selected' : '' ?>>Activado</option>
+                                            <option value="false" <?= $cfgEnabled === 'false' ? 'selected' : '' ?>>Desactivado</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Modo de Envío</label>
+                                        <select name="smtp_mode" class="form-select form-select-sm">
+                                            <option value="direct" <?= $cfgMode === 'direct' ? 'selected' : '' ?>>Directo (SMTP externo)</option>
+                                            <option value="relay" <?= $cfgMode === 'relay' ? 'selected' : '' ?>>Relay (Postfix interno)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-3">
+                                <p class="small text-muted mb-3"><i class="bi bi-info-circle me-1"></i>Configuración del servidor SMTP externo (modo directo)</p>
+                                
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Proveedor / Servidor SMTP</label>
+                                        <select id="smtpPreset" class="form-select form-select-sm mb-2" onchange="applySmtpPreset()">
+                                            <option value="">— Seleccionar proveedor —</option>
+                                            <option value="gmail">Gmail (smtp.gmail.com)</option>
+                                            <option value="outlook">Outlook / Hotmail (smtp-mail.outlook.com)</option>
+                                            <option value="yahoo">Yahoo (smtp.mail.yahoo.com)</option>
+                                            <option value="custom">Otro (personalizado)</option>
+                                        </select>
+                                        <input type="text" name="smtp_host" id="smtpHost" class="form-control form-control-sm" value="<?= htmlspecialchars($cfgHost) ?>" placeholder="smtp.gmail.com">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small">Puerto</label>
+                                        <input type="number" name="smtp_port" id="smtpPort" class="form-control form-control-sm" value="<?= htmlspecialchars($cfgPort) ?>" placeholder="587">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small">Encriptación</label>
+                                        <select name="smtp_encryption" id="smtpEncryption" class="form-select form-select-sm">
+                                            <option value="tls" <?= $cfgEncryption === 'tls' ? 'selected' : '' ?>>TLS (587)</option>
+                                            <option value="ssl" <?= $cfgEncryption === 'ssl' ? 'selected' : '' ?>>SSL (465)</option>
+                                            <option value="" <?= $cfgEncryption === '' ? 'selected' : '' ?>>Ninguna</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Usuario SMTP (correo)</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                            <input type="email" name="smtp_user" class="form-control" value="<?= htmlspecialchars($cfgUser) ?>" placeholder="tucorreo@gmail.com">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Contraseña / App Password</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                                            <input type="password" name="smtp_pass" class="form-control" value="<?= !empty($cfgPass) ? '••••••••' : '' ?>" placeholder="Contraseña de aplicación">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'"><i class="bi bi-eye"></i></button>
+                                        </div>
+                                        <div class="form-text" style="font-size:10px;">Para Gmail: usa una <a href="https://myaccount.google.com/apppasswords" target="_blank">contraseña de aplicación</a></div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-3">
+                                <p class="small text-muted mb-3"><i class="bi bi-envelope me-1"></i>Datos del remitente (cómo aparece el correo al destinatario)</p>
+                                
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Correo Remitente (From)</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light"><i class="bi bi-envelope-at"></i></span>
+                                            <input type="email" name="smtp_from_email" class="form-control" value="<?= htmlspecialchars($cfgFromEmail) ?>" placeholder="noreply@puertocoquimbo.cl">
+                                        </div>
+                                        <div class="form-text" style="font-size:10px;">Si se deja vacío, se usa el usuario SMTP</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold small">Nombre del Remitente</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light"><i class="bi bi-building"></i></span>
+                                            <input type="text" name="smtp_from_name" class="form-control" value="<?= htmlspecialchars($cfgFromName) ?>" placeholder="Soporte TI - Empresa Portuaria Coquimbo">
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="p-3 bg-light rounded">
-                                        <div class="small text-muted mb-1">Servidor SMTP</div>
-                                        <div class="fw-bold small"><?= htmlspecialchars($smtpHost) ?></div>
-                                    </div>
+                                
+                                <div class="d-flex gap-2 mt-3">
+                                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                                        <i class="bi bi-save me-1"></i> Guardar Configuración
+                                    </button>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="p-3 bg-light rounded">
-                                        <div class="small text-muted mb-1">Correo Remitente</div>
-                                        <div class="fw-bold small"><?= htmlspecialchars($smtpUser) ?></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <?php if (!$smtpEnabled): ?>
-                            <div class="alert alert-warning mt-3 mb-0 small">
-                                <i class="bi bi-exclamation-triangle me-1"></i>
-                                El envío de correos está <strong>desactivado</strong>. Configure las variables de entorno SMTP en Portainer para activarlo.
+                            </form>
+                            
+                            <script>
+                            function applySmtpPreset() {
+                                const presets = {
+                                    gmail: { host: 'smtp.gmail.com', port: 587, enc: 'tls' },
+                                    outlook: { host: 'smtp-mail.outlook.com', port: 587, enc: 'tls' },
+                                    yahoo: { host: 'smtp.mail.yahoo.com', port: 587, enc: 'tls' }
+                                };
+                                const val = document.getElementById('smtpPreset').value;
+                                if (presets[val]) {
+                                    document.getElementById('smtpHost').value = presets[val].host;
+                                    document.getElementById('smtpPort').value = presets[val].port;
+                                    document.getElementById('smtpEncryption').value = presets[val].enc;
+                                }
+                            }
+                            </script>
+                            <?php else: ?>
+                            <div class="alert alert-info mb-0 small">
+                                <i class="bi bi-lock me-1"></i>Solo los administradores pueden modificar la configuración SMTP.
                             </div>
                             <?php endif; ?>
                         </div>

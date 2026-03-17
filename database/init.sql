@@ -470,6 +470,29 @@ CREATE TABLE IF NOT EXISTS email_queue (
 ) ENGINE=InnoDB;
 
 -- =============================================
+-- TABLA: CONFIGURACIÓN SMTP (editable desde UI)
+-- =============================================
+CREATE TABLE IF NOT EXISTS smtp_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(50) NOT NULL UNIQUE,
+    config_value TEXT DEFAULT NULL,
+    updated_by INT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Valores por defecto SMTP
+INSERT IGNORE INTO smtp_config (config_key, config_value) VALUES
+('smtp_enabled', 'true'),
+('smtp_mode', 'direct'),
+('smtp_host', 'smtp.gmail.com'),
+('smtp_port', '587'),
+('smtp_user', ''),
+('smtp_pass', ''),
+('smtp_encryption', 'tls'),
+('smtp_from_email', ''),
+('smtp_from_name', 'Soporte TI - Empresa Portuaria Coquimbo');
+
+-- =============================================
 -- TABLA: API TOKENS
 -- =============================================
 CREATE TABLE IF NOT EXISTS api_tokens (
